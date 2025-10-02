@@ -208,6 +208,7 @@ func ensureIAM(ctx context.Context) error {
 func yandexOCR(ctx context.Context, image []byte, langs []string) (string, error) {
 	// 1) IAM токен (как у тебя реализовано в ensureIAM)
 	if err := ensureIAM(ctx); err != nil {
+		log.Printf("failed to ensure IAM: %v", err)
 		return "", err
 	}
 
@@ -219,7 +220,7 @@ func yandexOCR(ctx context.Context, image []byte, langs []string) (string, error
 		Model:         "page",
 	}
 	payload, _ := json.Marshal(reqBody)
-
+	log.Printf("payload: %s", string(payload))
 	// 3) Запрос
 	url := "https://ocr.api.cloud.yandex.net/ocr/v1/recognizeText"
 	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(payload))
@@ -229,12 +230,14 @@ func yandexOCR(ctx context.Context, image []byte, langs []string) (string, error
 
 	resp, err := httpc.Do(req)
 	if err != nil {
+		log.Printf("failed to send ocr request: %s", err)
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	// 4) Если 401 — пробуем обновить IAM и повторить один раз
 	if resp.StatusCode == http.StatusUnauthorized {
+		log.Printf("response status: %s", resp.Status)
 		iamToken = ""
 		if err := ensureIAM(ctx); err != nil {
 			return "", err
@@ -246,7 +249,7 @@ func yandexOCR(ctx context.Context, image []byte, langs []string) (string, error
 		}
 		defer resp.Body.Close()
 	}
-
+	log.Printf("response status: %s", resp.Status)
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)
 		return "", fmt.Errorf("ocr %d: %s", resp.StatusCode, string(b))
@@ -260,11 +263,13 @@ func yandexOCR(ctx context.Context, image []byte, langs []string) (string, error
 
 	ta := out.TextAnnotation
 	if ta == nil {
+		log.Printf("ocr recognize: no textAnnotation")
 		return "", nil
 	}
 
 	// 6) Приоритет — fullText
 	if t := strings.TrimSpace(ta.FullText); t != "" {
+		log.Printf("ocr recognize: textAnnotation: %s", t)
 		return t, nil
 	}
 
