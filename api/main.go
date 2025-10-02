@@ -23,6 +23,7 @@ var (
 	ycOAuth    = mustEnv("YC_OAUTH_TOKEN")
 	folderID   = mustEnv("YC_FOLDER_ID")
 	webhookURL = mustEnv("WEBHOOK_URL") // напр.: https://<app>.koyeb.app
+	apiKey     = mustEnv("SECRET_KEY")
 
 	httpc    = &http.Client{Timeout: 60 * time.Second}
 	iamToken string
@@ -219,12 +220,13 @@ func yandexOCR(ctx context.Context, image []byte, langs []string) (string, error
 		LanguageCodes: langs,
 		Model:         "page",
 	}
+	log.Printf("mimetype: %s", reqBody.MimeType)
+
 	payload, _ := json.Marshal(reqBody)
-	log.Printf("payload: %s", string(payload))
 	// 3) Запрос
 	url := "https://ocr.api.cloud.yandex.net/ocr/v1/recognizeText"
 	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(payload))
-	req.Header.Set("Authorization", "Bearer "+iamToken)
+	req.Header.Set("Authorization", "Api-Key "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-folder-id", folderID)
 
