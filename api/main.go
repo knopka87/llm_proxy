@@ -40,15 +40,17 @@ type ocrRecognizeRequest struct {
 
 // ----- Response (минимально необходимая часть) -----
 type ocrRecognizeResponse struct {
-	TextAnnotation *struct {
-		FullText string `json:"fullText,omitempty"`
-		Blocks   []struct {
-			Lines []struct {
-				Text string `json:"text,omitempty"`
-			} `json:"lines,omitempty"`
-		} `json:"blocks,omitempty"`
-	} `json:"textAnnotation,omitempty"`
-	Page string `json:"page,omitempty"`
+	Result *struct {
+		TextAnnotation *struct {
+			FullText string `json:"fullText,omitempty"`
+			Blocks   []struct {
+				Lines []struct {
+					Text string `json:"text,omitempty"`
+				} `json:"lines,omitempty"`
+			} `json:"blocks,omitempty"`
+		} `json:"textAnnotation,omitempty"`
+		Page string `json:"page,omitempty"`
+	} `json:"result,omitempty"`
 }
 
 func mustEnv(k string) string {
@@ -253,18 +255,20 @@ func yandexOCR(ctx context.Context, image []byte, langs []string) (string, error
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		return "", err
 	}
-	if out.TextAnnotation == nil {
+	if out.Result == nil || out.Result.TextAnnotation == nil {
+		log.Print("textAnnotation is nil")
 		return "", nil
 	}
 
 	// 6) приоритет — fullText
-	if t := strings.TrimSpace(out.TextAnnotation.FullText); t != "" {
+	if t := strings.TrimSpace(out.Result.TextAnnotation.FullText); t != "" {
+		log.Printf("textAnnotation: %s", t)
 		return t, nil
 	}
 
 	// 7) фоллбэк — собрать строки из blocks[].lines[].text
 	var lines []string
-	for _, b := range out.TextAnnotation.Blocks {
+	for _, b := range out.Result.TextAnnotation.Blocks {
 		for _, l := range b.Lines {
 			if s := strings.TrimSpace(l.Text); s != "" {
 				lines = append(lines, s)
