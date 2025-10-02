@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	tgToken = mustEnv("TELEGRAM_BOT_TOKEN")
-	ycOAuth = mustEnv("YC_OAUTH_TOKEN")
-	// folderID   = mustEnv("YC_FOLDER_ID")
+	tgToken    = mustEnv("TELEGRAM_BOT_TOKEN")
+	ycOAuth    = mustEnv("YC_OAUTH_TOKEN")
+	folderID   = mustEnv("YC_FOLDER_ID")
 	webhookURL = mustEnv("WEBHOOK_URL") // напр.: https://<app>.koyeb.app
 
 	httpc    = &http.Client{Timeout: 60 * time.Second}
@@ -225,6 +225,7 @@ func yandexOCR(ctx context.Context, image []byte, langs []string) (string, error
 	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(payload))
 	req.Header.Set("Authorization", "Bearer "+iamToken)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-folder-id", folderID)
 
 	resp, err := httpc.Do(req)
 	if err != nil {
