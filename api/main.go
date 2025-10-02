@@ -19,15 +19,43 @@ import (
 )
 
 var (
-	tgToken    = mustEnv("TELEGRAM_BOT_TOKEN")
-	ycOAuth    = mustEnv("YC_OAUTH_TOKEN")
-	folderID   = mustEnv("YC_FOLDER_ID")
+	tgToken = mustEnv("TELEGRAM_BOT_TOKEN")
+	ycOAuth = mustEnv("YC_OAUTH_TOKEN")
+	// folderID   = mustEnv("YC_FOLDER_ID")
 	webhookURL = mustEnv("WEBHOOK_URL") // напр.: https://<app>.koyeb.app
 
 	httpc    = &http.Client{Timeout: 60 * time.Second}
 	iamToken string
 	iamExp   time.Time
 )
+
+// ----- Request -----
+type ocrRecognizeRequest struct {
+	Content       string   `json:"content"`                 // base64
+	MimeType      string   `json:"mimeType,omitempty"`      // image/jpeg | image/png | application/pdf
+	LanguageCodes []string `json:"languageCodes,omitempty"` // ["ru","en"]
+	Model         string   `json:"model,omitempty"`         // напр. "page", "markdown", "math-markdown" (если доступно)
+}
+
+// ----- Response (минимально необходимая часть) -----
+type ocrRecognizeResponse struct {
+	TextAnnotation *ocrTextAnnotation `json:"textAnnotation,omitempty"`
+	Page           string             `json:"page,omitempty"`
+}
+
+type ocrTextAnnotation struct {
+	FullText string     `json:"fullText,omitempty"`
+	Blocks   []ocrBlock `json:"blocks,omitempty"`
+	// прочие поля опущены за ненадобностью
+}
+
+type ocrBlock struct {
+	Lines []ocrLine `json:"lines,omitempty"`
+}
+
+type ocrLine struct {
+	Text string `json:"text,omitempty"`
+}
 
 func mustEnv(k string) string {
 	v := os.Getenv(k)
@@ -172,34 +200,29 @@ func ensureIAM(ctx context.Context) error {
 		return err
 	}
 	iamToken = out.IamToken
+	log.Printf("IAM token: %s", out.IamToken)
 	iamExp = time.Now().Add(11 * time.Hour)
 	return nil
 }
 
 func yandexOCR(ctx context.Context, image []byte, langs []string) (string, error) {
+	// 1) IAM токен (как у тебя реализовано в ensureIAM)
 	if err := ensureIAM(ctx); err != nil {
 		return "", err
 	}
-	payload := map[string]any{
-		"folderId": folderID,
-		"analyze_specs": []any{
-			map[string]any{
-				"content": base64.StdEncoding.EncodeToString(image),
-				"features": []any{
-					map[string]any{
-						"type": "TEXT_DETECTION",
-						"text_detection_config": map[string]any{
-							"language_codes": langs,
-						},
-					},
-				},
-			},
-		},
+
+	// 2) Собираем тело запроса для нового OCR endpoint
+	reqBody := ocrRecognizeRequest{
+		Content:       base64.StdEncoding.EncodeToString(image),
+		MimeType:      sniffMime(image),
+		LanguageCodes: langs,
+		Model:         "page",
 	}
-	b, _ := json.Marshal(payload)
-	req, _ := http.NewRequestWithContext(ctx, "POST",
-		"https://vision.api.cloud.yandex.net/vision/v1/batchAnalyze",
-		bytes.NewReader(b))
+	payload, _ := json.Marshal(reqBody)
+
+	// 3) Запрос
+	url := "https://ocr.api.cloud.yandex.net/ocr/v1/recognizeText"
+	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(payload))
 	req.Header.Set("Authorization", "Bearer "+iamToken)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -209,8 +232,8 @@ func yandexOCR(ctx context.Context, image []byte, langs []string) (string, error
 	}
 	defer resp.Body.Close()
 
-	// одна попытка обновить IAM при 401
-	if resp.StatusCode == 401 {
+	// 4) Если 401 — пробуем обновить IAM и повторить один раз
+	if resp.StatusCode == http.StatusUnauthorized {
 		iamToken = ""
 		if err := ensureIAM(ctx); err != nil {
 			return "", err
@@ -222,44 +245,63 @@ func yandexOCR(ctx context.Context, image []byte, langs []string) (string, error
 		}
 		defer resp.Body.Close()
 	}
-	if resp.StatusCode != 200 {
-		x, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("vision %d: %s", resp.StatusCode, string(x))
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("ocr %d: %s", resp.StatusCode, string(b))
 	}
 
-	// Разбор 2 популярных схем ответа
-	var vr struct {
-		Results []struct {
-			Results []struct {
-				TextAnnotation *struct {
-					Text string `json:"text"`
-				} `json:"textAnnotation,omitempty"`
-				TextDetection *struct {
-					FullTextAnnotation *struct {
-						Text string `json:"text"`
-					} `json:"fullTextAnnotation,omitempty"`
-				} `json:"textDetection,omitempty"`
-			} `json:"results"`
-		} `json:"results"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&vr); err != nil {
+	// 5) Разбор ответа
+	var out ocrRecognizeResponse
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		return "", err
 	}
-	for _, r1 := range vr.Results {
-		for _, r2 := range r1.Results {
-			if r2.TextAnnotation != nil && r2.TextAnnotation.Text != "" {
-				return r2.TextAnnotation.Text, nil
-			}
-			if r2.TextDetection != nil && r2.TextDetection.FullTextAnnotation != nil &&
-				r2.TextDetection.FullTextAnnotation.Text != "" {
-				return r2.TextDetection.FullTextAnnotation.Text, nil
+
+	ta := out.TextAnnotation
+	if ta == nil {
+		return "", nil
+	}
+
+	// 6) Приоритет — fullText
+	if t := strings.TrimSpace(ta.FullText); t != "" {
+		return t, nil
+	}
+
+	// 7) Фоллбэк — собрать строки из blocks.lines[].text
+	var lines []string
+	for _, b := range ta.Blocks {
+		for _, l := range b.Lines {
+			if s := strings.TrimSpace(l.Text); s != "" {
+				lines = append(lines, s)
 			}
 		}
 	}
+	if len(lines) > 0 {
+		return strings.Join(lines, "\n"), nil
+	}
+
 	return "", nil
 }
 
 func shortHash(s string) string {
 	h := sha256.Sum256([]byte(s))
 	return hex.EncodeToString(h[:])[:16]
+}
+
+func sniffMime(b []byte) string {
+	// JPEG
+	if len(b) >= 2 && b[0] == 0xFF && b[1] == 0xD8 {
+		return "image/jpeg"
+	}
+	// PNG
+	if len(b) >= 8 &&
+		b[0] == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47 &&
+		b[4] == 0x0D && b[5] == 0x0A && b[6] == 0x1A && b[7] == 0x0A {
+		return "image/png"
+	}
+	// PDF (magic: %PDF-)
+	if len(b) >= 5 && b[0] == '%' && b[1] == 'P' && b[2] == 'D' && b[3] == 'F' && b[4] == '-' {
+		return "application/pdf"
+	}
+	return "" // можно не указывать — но лучше проставлять
 }
