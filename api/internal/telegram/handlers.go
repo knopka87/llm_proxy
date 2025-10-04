@@ -60,6 +60,7 @@ func (r *Router) HandleUpdate(upd tgbotapi.Update, engines Engines) {
 					engines.Deepseek.Model = mdl
 				}
 				r.EngManager.Set(cid, engines.Deepseek)
+				r.send(cid, "⚠️ Внимание: DeepSeek Chat API не умеет работать с картинками. Для OCR используйте /engine yandex | gemini | gpt.")
 			default:
 				r.send(cid, "Неизвестный движок")
 				return
