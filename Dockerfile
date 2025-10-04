@@ -1,4 +1,4 @@
-# -------- build stage --------
+# ---------- build ----------
 FROM golang:1.24-alpine AS build
 WORKDIR /src
 
@@ -11,7 +11,7 @@ RUN go mod download
 COPY api ./api
 
 # сборка бинарника из api/
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/server ./api
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/server ./api/cmd/bot
 
 # -------- runtime stage --------
 FROM gcr.io/distroless/base-debian12
