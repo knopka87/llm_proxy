@@ -55,7 +55,7 @@ func (e *Engine) Recognize(ctx context.Context, image []byte, opt ocr.Options) (
 		},
 	}
 	payload, _ := json.Marshal(body)
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", e.Model, e.APIKey)
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1/models/%s:generateContent?key=%s", e.Model, e.APIKey)
 
 	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")

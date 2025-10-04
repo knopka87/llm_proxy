@@ -49,7 +49,7 @@ func Load() *Config {
 		YCFolderID:   mustEnv("YC_FOLDER_ID"),
 
 		GeminiAPIKey:   os.Getenv("GEMINI_API_KEY"),
-		GeminiModel:    getenv("GEMINI_MODEL", "gemini-1.5-flash"),
+		GeminiModel:    getenv("GEMINI_MODEL", "gemini-2.5-flash"),
 		OpenAIAPIKey:   os.Getenv("OPENAI_API_KEY"),
 		OpenAIModel:    getenv("OPENAI_MODEL", "gpt-4o-mini"),
 		DeepseekAPIKey: os.Getenv("DEEPSEEK_API_KEY"),
