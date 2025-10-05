@@ -43,15 +43,14 @@ func main() {
 	updates := bot.ListenForWebhook(path)
 
 	// Engines
-	yandexEng := yandex.New(cfg.YCOAuthToken, cfg.YCFolderID)
-	manager := ocr.NewManager(yandexEng)
-
 	engines := telegram.Engines{
-		Yandex:   yandexEng,
+		Yandex:   yandex.New(cfg.YCOAuthToken, cfg.YCFolderID),
 		Gemini:   gemini.New(cfg.GeminiAPIKey, cfg.GeminiModel),
 		OpenAI:   openai.New(cfg.OpenAIAPIKey, cfg.OpenAIModel),
 		Deepseek: deepseek.New(cfg.DeepseekAPIKey, cfg.DeepseekModel),
 	}
+
+	manager := ocr.NewManager(engines.Gemini)
 
 	r := &telegram.Router{
 		Bot:           bot,

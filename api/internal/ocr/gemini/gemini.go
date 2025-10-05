@@ -42,28 +42,11 @@ func (e *Engine) Analyze(ctx context.Context, image []byte, opt ocr.Options) (oc
 	mime := util.SniffMimeHTTP(image)
 	b64 := base64.StdEncoding.EncodeToString(image)
 
-	system := `You are an assistant that analyzes a PHOTO of a school math/logic task.
-1) Extract the task text (human-readable string).
-2) Detect if a written SOLUTION is present on the photo.
-3) If there is NO solution -> produce exactly 3 hints (L1..L3): from light nudge to more detailed plan. Do NOT give the final answer.
-4) If there IS a solution -> check it. If correct -> verdict "correct".
-   Otherwise -> verdict "incorrect" and explain WHERE or WHAT KIND OF error (without giving the actual fix or final result).
-   In both cases produce 3 hints as above (no final answer).
-Return STRICT JSON with the following fields (text and solutionNote on russian language):
-{
-  "text": string,                 // extracted readable text from the photo (may be empty)
-  "foundTask": boolean,
-  "foundSolution": boolean,
-  "solutionVerdict": "correct" | "incorrect" | "uncertain" | "",
-  "solutionNote": string,         // short note about where/what kind of the error (no final answer)
-  "hints": [string, string, string] // exactly 3 items when possible
-}`
-
 	body := map[string]any{
 		"contents": []any{
 			map[string]any{
 				"parts": []any{
-					map[string]any{"text": system},
+					map[string]any{"text": prompt},
 					map[string]any{"inline_data": map[string]any{
 						"mime_type": mime,
 						"data":      b64,
