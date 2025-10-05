@@ -31,24 +31,34 @@ func New(key, model string) *Engine {
 
 func (e *Engine) Name() string { return "gpt" }
 
-func (e *Engine) Recognize(ctx context.Context, image []byte, opt ocr.Options) (string, error) {
+func (e *Engine) Analyze(ctx context.Context, image []byte, opt ocr.Options) (ocr.Result, error) {
 	if e.APIKey == "" {
-		return "", fmt.Errorf("OPENAI_API_KEY is empty")
+		return ocr.Result{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
+	model := e.Model
 	if opt.Model != "" {
-		e.Model = opt.Model
+		model = opt.Model
 	}
 	mime := util.SniffMimeHTTP(image)
 	b64 := base64.StdEncoding.EncodeToString(image)
 	dataURL := util.MakeDataURL(mime, b64)
 
+	system := `You analyze a PHOTO of a school task. Do:
+1) Extract readable task text.
+2) Detect whether there is a written solution on the photo.
+3) If no solution: produce exactly 3 hints (L1..L3) guiding to solving, without final answer.
+4) If a solution exists: check it and set verdict "correct" or "incorrect" (or "uncertain"); if incorrect, tell WHERE/WHAT KIND OF error (no final result); and produce 3 hints as above.
+Respond with STRICT JSON:
+{"text":string,"foundTask":bool,"foundSolution":bool,"solutionVerdict":"correct"|"incorrect"|"uncertain"|"","solutionNote":string,"hints":[string,string,string]}`
+
 	body := map[string]any{
-		"model": e.Model,
+		"model": model,
 		"messages": []any{
+			map[string]any{"role": "system", "content": system},
 			map[string]any{
 				"role": "user",
 				"content": []any{
-					map[string]any{"type": "text", "text": "Transcribe all text from this image. Return only plain text."},
+					map[string]any{"type": "text", "text": "Analyze this image and return only the JSON described above."},
 					map[string]any{"type": "image_url", "image_url": map[string]any{"url": dataURL, "detail": "high"}},
 				},
 			},
@@ -63,12 +73,12 @@ func (e *Engine) Recognize(ctx context.Context, image []byte, opt ocr.Options) (
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return "", err
+		return ocr.Result{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("openai %d: %s", resp.StatusCode, string(x))
+		return ocr.Result{}, fmt.Errorf("openai %d: %s", resp.StatusCode, string(x))
 	}
 	var out struct {
 		Choices []struct {
@@ -78,10 +88,23 @@ func (e *Engine) Recognize(ctx context.Context, image []byte, opt ocr.Options) (
 		} `json:"choices"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return "", err
+		return ocr.Result{}, err
 	}
-	if len(out.Choices) > 0 {
-		return strings.TrimSpace(out.Choices[0].Message.Content), nil
+	if len(out.Choices) == 0 {
+		return ocr.Result{}, nil
 	}
-	return "", nil
+
+	outJSON := strings.TrimSpace(out.Choices[0].Message.Content)
+
+	var r ocr.Result
+	if err := json.Unmarshal([]byte(outJSON), &r); err != nil {
+		r = ocr.Result{Text: outJSON}
+	}
+	if len(r.Hints) > 3 {
+		r.Hints = r.Hints[:3]
+	}
+	if r.Hints == nil {
+		r.Hints = []string{}
+	}
+	return r, nil
 }

@@ -7,7 +7,10 @@ import (
 
 type Engine interface {
 	Name() string
-	Recognize(ctx context.Context, image []byte, opt Options) (string, error)
+	// Analyze
+	// для Yandex — может вернуть только Text,
+	// для Gemini/GPT — выполняет полную логику (поиск решения, проверка, подсказки).
+	Analyze(ctx context.Context, image []byte, opt Options) (Result, error)
 }
 
 type Manager struct {

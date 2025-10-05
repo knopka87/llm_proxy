@@ -1,18 +1,12 @@
 package deepseek
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"child-bot/api/internal/ocr"
-	"child-bot/api/internal/util"
 )
 
 type Engine struct {
@@ -31,58 +25,6 @@ func New(key, model string) *Engine {
 
 func (e *Engine) Name() string { return "deepseek" }
 
-func (e *Engine) Recognize(ctx context.Context, image []byte, opt ocr.Options) (string, error) {
-	if e.APIKey == "" {
-		return "", fmt.Errorf("DEEPSEEK_API_KEY is empty")
-	}
-	if opt.Model != "" {
-		e.Model = opt.Model
-	}
-	mime := util.SniffMimeHTTP(image)
-	b64 := base64.StdEncoding.EncodeToString(image)
-	dataURL := util.MakeDataURL(mime, b64)
-
-	body := map[string]any{
-		"model": e.Model, // напр., "deepseek-vl"
-		"messages": []any{
-			map[string]any{
-				"role": "user",
-				"content": []any{
-					map[string]any{"type": "text", "text": "Transcribe all legible text from this image. Return only plain text."},
-					map[string]any{"type": "image_url", "image_url": map[string]any{"url": dataURL}},
-				},
-			},
-		},
-		"temperature": 0,
-	}
-	payload, _ := json.Marshal(body)
-
-	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.deepseek.com/v1/chat/completions", bytes.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+e.APIKey)
-
-	resp, err := e.httpc.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		x, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("deepseek %d: %s", resp.StatusCode, string(x))
-	}
-
-	var out struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return "", err
-	}
-	if len(out.Choices) > 0 {
-		return strings.TrimSpace(out.Choices[0].Message.Content), nil
-	}
-	return "", nil
+func (e *Engine) Analyze(_ context.Context, _ []byte, _ ocr.Options) (ocr.Result, error) {
+	return ocr.Result{}, fmt.Errorf("DeepSeek Chat API не поддерживает анализ изображений. Используйте /engine yandex | gemini | gpt")
 }

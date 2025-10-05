@@ -51,10 +51,10 @@ type response struct {
 	} `json:"result,omitempty"`
 }
 
-func (e *Engine) Recognize(ctx context.Context, image []byte, opt ocr.Options) (string, error) {
+func (e *Engine) Analyze(ctx context.Context, image []byte, opt ocr.Options) (ocr.Result, error) {
 	iamToken, err := e.iamc.Token(ctx)
 	if err != nil {
-		return "", err
+		return ocr.Result{}, err
 	}
 	b64 := base64.StdEncoding.EncodeToString(image)
 	reqBody := request{
@@ -80,38 +80,42 @@ func (e *Engine) Recognize(ctx context.Context, image []byte, opt ocr.Options) (
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return "", err
+		return ocr.Result{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		// один ретрай
 		if iamToken, err = e.iamc.Token(ctx); err != nil {
-			return "", err
+			return ocr.Result{}, err
 		}
 		req.Header.Set("Authorization", "Bearer "+iamToken)
 		resp, err = e.httpc.Do(req)
 		if err != nil {
-			return "", err
+			return ocr.Result{}, err
 		}
 		defer resp.Body.Close()
 	}
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("yandex ocr %d: %s", resp.StatusCode, string(x))
+		return ocr.Result{}, fmt.Errorf("yandex ocr %d: %s", resp.StatusCode, string(x))
 	}
 
 	var out response
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return "", err
+		return ocr.Result{}, err
 	}
 	ta := out.GetTextAnnotation()
 	if ta == nil {
-		return "", nil
+		return ocr.Result{}, nil
 	}
 	if t := strings.TrimSpace(ta.FullText); t != "" {
-		return t, nil
+		return ocr.Result{
+			Text:      t,
+			FoundTask: t != "",
+		}, nil
 	}
+
 	// fallback: lines
 	var lines []string
 	for _, b := range ta.Blocks {
@@ -121,7 +125,10 @@ func (e *Engine) Recognize(ctx context.Context, image []byte, opt ocr.Options) (
 			}
 		}
 	}
-	return strings.Join(lines, "\n"), nil
+	return ocr.Result{
+		Text:      strings.Join(lines, "\n"),
+		FoundTask: len(lines) > 0,
+	}, nil
 }
 
 func (r *response) GetTextAnnotation() *struct {

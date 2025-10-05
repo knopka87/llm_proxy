@@ -91,7 +91,7 @@ func (r *Router) HandleUpdate(upd tgbotapi.Update, engines Engines) {
 		}
 
 		eng := r.EngManager.Get(cid)
-		txt, err := eng.Recognize(context.Background(), img, ocr.Options{
+		res, err := eng.Analyze(context.Background(), img, ocr.Options{
 			Langs: []string{"ru", "en"},
 			// Model: можно настроить по /engine <name> <model>
 		})
@@ -99,10 +99,53 @@ func (r *Router) HandleUpdate(upd tgbotapi.Update, engines Engines) {
 			r.SendError(cid, err)
 			return
 		}
-		if strings.TrimSpace(txt) == "" {
-			txt = "(пусто)"
+		switch eng.Name() {
+		case "yandex":
+			// Только транскрипт
+			txt := strings.TrimSpace(res.Text)
+			if txt == "" {
+				txt = "(пусто)"
+			}
+			r.SendResult(cid, txt)
+		default:
+			// Аналитический ответ
+			var b strings.Builder
+			if strings.TrimSpace(res.Text) != "" {
+				b.WriteString("📄 *Текст задачи:*\n")
+				b.WriteString("```\n")
+				b.WriteString(res.Text)
+				b.WriteString("\n```\n\n")
+			}
+			if res.FoundSolution {
+				switch res.SolutionVerdict {
+				case "correct":
+					b.WriteString("✅ Задача решена верно.\n\n")
+				case "incorrect":
+					b.WriteString("⚠️ В решении есть ошибка.\n")
+					if strings.TrimSpace(res.SolutionNote) != "" {
+						b.WriteString("Подсказка где/какого рода: ")
+						b.WriteString(res.SolutionNote)
+						b.WriteString("\n\n")
+					} else {
+						b.WriteString("\n")
+					}
+				default:
+					b.WriteString("ℹ️ Решение обнаружено, но проверка неуверенна.\n\n")
+				}
+			} else {
+				b.WriteString("ℹ️ На изображении нет готового решения.\n\n")
+			}
+			if len(res.Hints) > 0 {
+				b.WriteString("💡 *Подсказки (L1→L3):*\n")
+				for i, h := range res.Hints {
+					fmt.Fprintf(&b, "%d) %s\n", i+1, h)
+				}
+			}
+
+			msg := tgbotapi.NewMessage(cid, b.String())
+			msg.ParseMode = "Markdown"
+			_, _ = r.Bot.Send(msg)
 		}
-		r.SendResult(cid, txt)
 	}
 }
 
