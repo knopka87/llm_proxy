@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"child-bot/api/internal/ocr"
@@ -49,7 +48,7 @@ func (e *Engine) Analyze(ctx context.Context, image []byte, opt ocr.Options) (oc
 4) If there IS a solution -> check it. If correct -> verdict "correct".
    Otherwise -> verdict "incorrect" and explain WHERE or WHAT KIND OF error (without giving the actual fix or final result).
    In both cases produce 3 hints as above (no final answer).
-Return STRICT JSON with the following fields:
+Return STRICT JSON with the following fields (text and solutionNote on russian language):
 {
   "text": string,                 // extracted readable text from the photo (may be empty)
   "foundTask": boolean,
@@ -87,30 +86,12 @@ Return STRICT JSON with the following fields:
 		x, _ := io.ReadAll(resp.Body)
 		return ocr.Result{}, fmt.Errorf("gemini %d: %s", resp.StatusCode, string(x))
 	}
-	var out struct {
-		Candidates []struct {
-			Content struct {
-				Parts []struct {
-					Text string `json:"text"`
-				} `json:"parts"`
-			} `json:"content"`
-		} `json:"candidates"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+
+	var r ocr.Result
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return ocr.Result{}, err
 	}
-	if len(out.Candidates) > 0 && len(out.Candidates[0].Content.Parts) == 0 {
-		return ocr.Result{}, nil
-	}
 
-	outJSON := strings.TrimSpace(out.Candidates[0].Content.Parts[0].Text)
-	var r ocr.Result
-	if err := json.Unmarshal([]byte(outJSON), &r); err != nil {
-		// если модель прислала текст вместо JSON — сделаем мягкий фоллбэк
-		r = ocr.Result{
-			Text: outJSON,
-		}
-	}
 	// нормализуем длину hints (до 3)
 	if len(r.Hints) > 3 {
 		r.Hints = r.Hints[:3]
