@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"child-bot/api/internal/ocr"
@@ -87,11 +88,30 @@ Return STRICT JSON with the following fields (text and solutionNote on russian l
 		return ocr.Result{}, fmt.Errorf("gemini %d: %s", resp.StatusCode, string(x))
 	}
 
-	var r ocr.Result
-	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+	var out struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					Text string `json:"text"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		return ocr.Result{}, err
 	}
+	if len(out.Candidates) > 0 && len(out.Candidates[0].Content.Parts) == 0 {
+		return ocr.Result{}, nil
+	}
 
+	outJSON := strings.TrimSpace(out.Candidates[0].Content.Parts[0].Text)
+	var r ocr.Result
+	if err := json.Unmarshal([]byte(outJSON), &r); err != nil {
+		// если модель прислала текст вместо JSON — сделаем мягкий фоллбэк
+		r = ocr.Result{
+			Text: outJSON,
+		}
+	}
 	// нормализуем длину hints (до 3)
 	if len(r.Hints) > 3 {
 		r.Hints = r.Hints[:3]
