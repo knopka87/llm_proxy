@@ -45,7 +45,7 @@ func main() {
 	// Engines
 	engines := telegram.Engines{
 		Yandex:   yandex.New(cfg.YCOAuthToken, cfg.YCFolderID),
-		Gemini:   gemini.New(cfg.GeminiAPIKey, cfg.GeminiModel),
+		Gemini:   gemini.New(cfg.GeminiAPIKey, cfg.GeminiModel, cfg.GeminiBase),
 		OpenAI:   openai.New(cfg.OpenAIAPIKey, cfg.OpenAIModel),
 		Deepseek: deepseek.New(cfg.DeepseekAPIKey, cfg.DeepseekModel),
 	}

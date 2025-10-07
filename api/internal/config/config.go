@@ -18,6 +18,7 @@ type Config struct {
 	// Alt engines
 	GeminiAPIKey   string
 	GeminiModel    string
+	GeminiBase     string
 	OpenAIAPIKey   string
 	OpenAIModel    string
 	DeepseekAPIKey string
@@ -50,6 +51,7 @@ func Load() *Config {
 
 		GeminiAPIKey:   os.Getenv("GEMINI_API_KEY"),
 		GeminiModel:    getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+		GeminiBase:     getenv("GEMINI_BASE", "https://generativelanguage.googleapis.com/v1"),
 		OpenAIAPIKey:   os.Getenv("OPENAI_API_KEY"),
 		OpenAIModel:    getenv("OPENAI_MODEL", "gpt-4o-mini"),
 		DeepseekAPIKey: os.Getenv("DEEPSEEK_API_KEY"),
