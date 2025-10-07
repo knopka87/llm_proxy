@@ -1,0 +1,164 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "parse.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "final_state",
+    "raw_text",
+    "question",
+    "entities",
+    "confidence",
+    "needs_rescan",
+    "rescan_reason",
+    "subject",
+    "task_type",
+    "solution_shape",
+    "meaning_change_risk",
+    "bracketed_spans_count",
+    "confirmation_needed",
+    "confirmation_reason",
+    "grade",
+    "grade_alignment"
+  ],
+  "properties": {
+    "final_state": {
+      "type": "string",
+      "enum": [
+        "recognized_task",
+        "needs_clarification"
+      ]
+    },
+    "raw_text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "entities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "numbers": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 50
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "maxItems": 50
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "maxItems": 20
+        }
+      }
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "needs_rescan": {
+      "type": "boolean"
+    },
+    "rescan_reason": {
+      "type": "string",
+      "maxLength": 140
+    },
+    "subject": {
+      "type": "string",
+      "enum": [
+        "math",
+        "russian",
+        "world",
+        "reading",
+        "logic",
+        "other"
+      ]
+    },
+    "task_type": {
+      "type": "string",
+      "enum": [
+        "арифметика",
+        "текстовая_задача",
+        "геометрия",
+        "сравнение",
+        "таблица",
+        "орфография",
+        "пунктуация",
+        "разбор_слова",
+        "лексика",
+        "логика",
+        "кроссворд",
+        "ребус",
+        "последовательность",
+        "сопоставление",
+        "чтение_понимание",
+        "вопросы_по_тексту",
+        "окружающий_мир",
+        "другое"
+      ]
+    },
+    "solution_shape": {
+      "type": "string",
+      "enum": [
+        "number",
+        "string",
+        "steps",
+        "list"
+      ]
+    },
+    "meaning_change_risk": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "bracketed_spans_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 50
+    },
+    "confirmation_needed": {
+      "type": "boolean"
+    },
+    "confirmation_reason": {
+      "type": "string",
+      "enum": [
+        "low_confidence",
+        "bracketed_spans_present",
+        "meaning_change_risk_high",
+        "has_diagrams_or_low_quality",
+        "none"
+      ]
+    },
+    "grade": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "grade_alignment": {
+      "type": "string",
+      "enum": [
+        "aligned",
+        "maybe_lower",
+        "maybe_higher",
+        "unknown"
+      ]
+    }
+  }
+}

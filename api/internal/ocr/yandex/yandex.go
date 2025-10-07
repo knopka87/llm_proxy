@@ -131,6 +131,14 @@ func (e *Engine) Analyze(ctx context.Context, image []byte, opt ocr.Options) (oc
 	}, nil
 }
 
+func (e *Engine) Detect(_ context.Context, _ []byte, _ string, _ int) (ocr.DetectResult, error) {
+	return ocr.DetectResult{}, fmt.Errorf("Yandex не поддерживает анализ изображений. Используйте /engine gemini | gpt")
+}
+
+func (e *Engine) Parse(_ context.Context, _ []byte, _ int) (ocr.ParseResult, error) {
+	return ocr.ParseResult{}, fmt.Errorf("Yandex не поддерживает анализ изображений. Используйте /engine gemini | gpt")
+}
+
 func (r *response) GetTextAnnotation() *struct {
 	FullText string `json:"fullText,omitempty"`
 	Blocks   []struct {

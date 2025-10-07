@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "detect.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "final_state",
+    "confidence",
+    "needs_rescan",
+    "rescan_reason",
+    "multiple_tasks_detected",
+    "found_solution",
+    "has_diagrams_or_formulas",
+    "disambiguation_needed",
+    "disambiguation_reason"
+  ],
+  "properties": {
+    "final_state": {
+      "type": "string",
+      "enum": [
+        "recognized_ready_to_parse",
+        "multiple_tasks",
+        "needs_clarification",
+        "not_a_task",
+        "inappropriate_image"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "needs_rescan": {
+      "type": "boolean"
+    },
+    "rescan_reason": {
+      "type": "string",
+      "maxLength": 140
+    },
+    "rescan_code": {
+      "type": "string",
+      "enum": [
+        "blur",
+        "glare",
+        "cropped",
+        "low_contrast",
+        "too_far",
+        "shadows",
+        "none"
+      ]
+    },
+    "multiple_tasks_detected": {
+      "type": "boolean"
+    },
+    "tasks_brief": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 80
+      },
+      "maxItems": 6
+    },
+    "tasks_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "brief",
+          "confidence"
+        ],
+        "properties": {
+          "brief": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "maxItems": 6
+    },
+    "top_candidate_index": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5
+    },
+    "auto_choice_suggested": {
+      "type": "boolean"
+    },
+    "disambiguation_needed": {
+      "type": "boolean"
+    },
+    "disambiguation_reason": {
+      "type": "string",
+      "enum": [
+        "multiple_tasks",
+        "low_confidence_single",
+        "conflicting_regions",
+        "none"
+      ]
+    },
+    "disambiguation_question": {
+      "type": "string",
+      "maxLength": 140
+    },
+    "found_solution": {
+      "type": "boolean"
+    },
+    "solution_rough_quality": {
+      "type": "string",
+      "enum": [
+        "good",
+        "poor",
+        "uncertain"
+      ]
+    },
+    "has_diagrams_or_formulas": {
+      "type": "boolean"
+    },
+    "has_faces": {
+      "type": "boolean"
+    },
+    "pii_detected": {
+      "type": "boolean"
+    },
+    "subject_guess": {
+      "type": "string",
+      "enum": [
+        "math",
+        "russian",
+        "world",
+        "reading",
+        "logic",
+        "other"
+      ]
+    },
+    "subject_confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "alt_subjects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 3
+    }
+  }
+}

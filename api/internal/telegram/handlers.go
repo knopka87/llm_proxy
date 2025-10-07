@@ -12,6 +12,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -23,8 +24,10 @@ import (
 	"child-bot/api/internal/ocr/gemini"
 	"child-bot/api/internal/ocr/openai"
 	"child-bot/api/internal/ocr/yandex"
+	"child-bot/api/internal/util"
 )
 
+// Engines — конкретные реализации движков инжектятся из main.go
 type Engines struct {
 	Yandex   *yandex.Engine
 	Gemini   *gemini.Engine
@@ -35,7 +38,7 @@ type Engines struct {
 // ====== Aggregation of multiple photos ======
 
 const debounce = 1200 * time.Millisecond
-const maxPixels = 18000000 // Чуть ниже лимита API (20М) для запаса
+const maxPixels = 18000000 // ниже лимита 20Мп для запаса
 
 type photoBatch struct {
 	ChatID       int64
@@ -48,15 +51,29 @@ type photoBatch struct {
 	lastAt time.Time
 }
 
-var batches sync.Map // key string -> *photoBatch
+var batches sync.Map       // key string -> *photoBatch
+var pendingChoice sync.Map // chatID -> []string (tasks brief)
 
+// HandleUpdate — главный обработчик апдейтов
 func (r *Router) HandleUpdate(upd tgbotapi.Update, engines Engines) {
 	if upd.Message == nil {
 		return
 	}
 	cid := upd.Message.Chat.ID
 
-	// Команды (без изменений)
+	// ====== Обработка выбора номера, когда детектор нашёл несколько заданий ======
+	if v, ok := pendingChoice.Load(cid); ok && upd.Message.Text != "" {
+		briefs := v.([]string)
+		txt := strings.TrimSpace(upd.Message.Text)
+		if n, err := strconv.Atoi(txt); err == nil && n >= 1 && n <= len(briefs) {
+			pendingChoice.Delete(cid)
+			r.send(cid, fmt.Sprintf("Ок, беру задание: %s\nПришли, пожалуйста, фото ещё раз для обработки.", briefs[n-1]))
+			return
+		}
+		// если не число или вне диапазона — молча игнорируем и ждём корректного номера
+	}
+
+	// ====== Команды ======
 	if upd.Message.IsCommand() {
 		if strings.HasPrefix(upd.Message.Text, "/engine") {
 			// Переключение движка
@@ -91,18 +108,18 @@ func (r *Router) HandleUpdate(upd tgbotapi.Update, engines Engines) {
 					engines.Deepseek.Model = mdl
 				}
 				r.EngManager.Set(cid, engines.Deepseek)
-				r.send(cid, "⚠️ Внимание: DeepSeek Chat API не умеет анализировать изображения. Используйте /engine yandex | gemini | gpt.")
+				r.send(cid, "⚠️ Внимание: DeepSeek Chat API не умеет анализировать изображения. Для этого используйте /engine yandex | gemini | gpt.")
 			default:
 				r.send(cid, "Неизвестный движок. Доступны: yandex | gemini | gpt | deepseek")
 			}
 			return
 		}
-		// другие команды обрабатывает Router.HandleCommand
+		// прочие команды обрабатывает Router.HandleCommand
 		r.HandleCommand(upd)
 		return
 	}
 
-	// ====== ФОТО ======
+	// ====== ФОТО (поддержка альбомов и серии фото) ======
 	if len(upd.Message.Photo) > 0 {
 		// Скачиваем самое большое превью
 		ph := upd.Message.Photo[len(upd.Message.Photo)-1]
@@ -118,7 +135,7 @@ func (r *Router) HandleUpdate(upd tgbotapi.Update, engines Engines) {
 			return
 		}
 
-		// Определяем ключ пачки: альбом или серия
+		// Определяем ключ пачки: альбом (media_group) или серия сообщений по чату
 		key := ""
 		if upd.Message.MediaGroupID != "" {
 			key = "grp:" + upd.Message.MediaGroupID
@@ -143,8 +160,7 @@ func (r *Router) HandleUpdate(upd tgbotapi.Update, engines Engines) {
 			b.timer.Stop()
 		}
 		b.timer = time.AfterFunc(debounce, func() {
-			// По истечении дебаунса — склеиваем и обрабатываем
-			r.processBatch(key)
+			r.processBatch(key, engines)
 		})
 		b.mu.Unlock()
 
@@ -155,19 +171,19 @@ func (r *Router) HandleUpdate(upd tgbotapi.Update, engines Engines) {
 	}
 }
 
-// processBatch извлекает пачку, склеивает и отправляет в движок
-func (r *Router) processBatch(key string) {
+// processBatch извлекает пачку, склеивает и передаёт в детектор, затем — в выбранный движок
+func (r *Router) processBatch(key string, engines Engines) {
 	bi, ok := batches.Load(key)
 	if !ok {
 		return
 	}
 	b := bi.(*photoBatch)
 
+	// Копируем и очищаем пачку
 	b.mu.Lock()
 	images := make([][]byte, len(b.images))
 	copy(images, b.images)
 	chatID := b.ChatID
-	// очищаем пачку
 	batches.Delete(key)
 	b.mu.Unlock()
 
@@ -175,15 +191,104 @@ func (r *Router) processBatch(key string) {
 		return
 	}
 
-	// Склейка изображений в одно
+	// Склейка изображений в одно (вертикально)
 	merged, err := combineAsOne(images)
 	if err != nil {
 		r.SendError(chatID, fmt.Errorf("склейка изображений: %w", err))
 		return
 	}
 
-	// Отдаём в выбранный движок
+	// --- DETECT stage (PROMPT_DETECT) ---
+	mime := util.SniffMimeHTTP(merged)
+	var dres ocr.DetectResult
+	var derr error
+
+	// Предпочитаем детектор Gemini, иначе OpenAI; если ключей нет — детектор пропускаем
+	if engines.Gemini != nil && engines.Gemini.APIKey != "" {
+		dres, derr = engines.Gemini.Detect(context.Background(), merged, mime, 0)
+	} else if engines.OpenAI != nil && engines.OpenAI.APIKey != "" {
+		dres, derr = engines.OpenAI.Detect(context.Background(), merged, mime, 0)
+	}
+	if derr != nil {
+		// Детектор не обязателен: информируем и продолжаем
+		r.send(chatID, "⚠️ Не удалось оценить снимок, продолжаю распознавание.")
+	} else {
+		// Политика из PROMPT_DETECT
+		if dres.FinalState == "inappropriate_image" {
+			r.send(chatID, "⚠️ Похоже, это неприемлемое изображение. Пожалуйста, пришлите фото учебного задания без личных данных.")
+			return
+		}
+		if dres.NeedsRescan {
+			msg := "Пожалуйста, переснимите фото"
+			if dres.RescanReason != "" {
+				msg += ": " + dres.RescanReason
+			}
+			r.send(chatID, "📷 "+msg)
+			return
+		}
+		if dres.HasFaces {
+			r.send(chatID, "ℹ️ На фото видны лица. Лучше переснять без лиц, чтобы сохранить приватность.")
+		}
+		if dres.MultipleTasksDetected {
+			// Если есть явный лидер и высокая уверенность — не тревожим уточнениями
+			if dres.AutoChoiceSuggested && dres.TopCandidateIndex != nil &&
+				*dres.TopCandidateIndex >= 0 && *dres.TopCandidateIndex < len(dres.TasksBrief) &&
+				dres.Confidence >= 0.80 {
+				// продолжаем без уточнений
+			} else {
+				// Просим выбрать номер задания
+				if len(dres.TasksBrief) > 0 {
+					pendingChoice.Store(chatID, dres.TasksBrief)
+					var bld strings.Builder
+					bld.WriteString("Нашёл на фото несколько заданий. Выбери номер:\n")
+					for i, t := range dres.TasksBrief {
+						fmt.Fprintf(&bld, "%d) %s\n", i+1, t)
+					}
+					if dres.DisambiguationQuestion != "" {
+						bld.WriteString("\n")
+						bld.WriteString(dres.DisambiguationQuestion)
+					}
+					r.send(chatID, bld.String())
+					return
+				}
+			}
+		}
+	}
+
 	eng := r.EngManager.Get(chatID)
+
+	if eng.Name() == "gemini" || eng.Name() == "gpt" {
+		pr, pErr := eng.Parse(context.Background(), merged, 0)
+		if pErr == nil {
+			// если нужно подтверждение — спрашиваем один раз и ждём ответа
+			if pr.ConfirmationNeeded {
+				var b strings.Builder
+				b.WriteString("Я так прочитал задание. Всё верно?\n")
+				if strings.TrimSpace(pr.RawText) != "" {
+					b.WriteString("```\n")
+					b.WriteString(pr.RawText)
+					b.WriteString("\n```\n")
+				}
+				if strings.TrimSpace(pr.Question) != "" {
+					b.WriteString("\nВопрос: ")
+					b.WriteString(pr.Question)
+					b.WriteString("\n")
+				}
+				b.WriteString("\nОтветьте: да / нет")
+				r.send(chatID, b.String())
+
+				// тут можно сохранить pr в pending map, чтобы на "да" продолжить без повторного парсинга
+				// (по желанию)
+				// parsePending.Store(chatID, pr)
+				// return
+			}
+			// при автоподтверждении просто продолжаем к Analyze
+		} else {
+			r.send(chatID, "⚠️ Не удалось чётко переписать задание, продолжаю анализ.")
+		}
+	}
+
+	// --- Основной анализ выбранным движком ---
 	res, err := eng.Analyze(context.Background(), merged, ocr.Options{
 		Langs: []string{"ru", "en"},
 	})
@@ -194,14 +299,14 @@ func (r *Router) processBatch(key string) {
 
 	switch eng.Name() {
 	case "yandex":
-		// Только транскрипт
+		// Только транскрипт (OCR)
 		txt := strings.TrimSpace(res.Text)
 		if txt == "" {
 			txt = "(пусто)"
 		}
 		r.SendResult(chatID, txt)
 	default:
-		// Аналитический ответ
+		// Аналитический ответ (текст задачи / вердикт / 3 подсказки)
 		var bld strings.Builder
 		if strings.TrimSpace(res.Text) != "" {
 			bld.WriteString("📄 *Текст задачи:*\n```\n")
@@ -334,7 +439,7 @@ func combineAsOne(images [][]byte) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-// tryDecodeStrict — пробуем строго PNG/JPEG
+// tryDecodeStrict — пробуем строго PNG/JPEG, иначе стандартный Decode
 func tryDecodeStrict(b []byte) (image.Image, error) {
 	if len(b) >= 2 && b[0] == 0xFF && b[1] == 0xD8 {
 		return jpeg.Decode(bytes.NewReader(b))
