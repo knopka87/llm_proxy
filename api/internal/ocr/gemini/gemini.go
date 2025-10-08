@@ -206,77 +206,100 @@ func (e *Engine) Parse(ctx context.Context, image []byte, opt ocr.ParseOptions) 
 	return pr, nil
 }
 
+// Hint генерирует подсказку L1/L2/L3 (JSON) по PROMPT_HINT.
+// Делает 3 ретрая на 5xx и НЕ использует inline_data.
 func (e *Engine) Hint(ctx context.Context, in ocr.HintInput) (ocr.HintResult, error) {
-	if e.APIKey == "" {
+	if strings.TrimSpace(e.APIKey) == "" {
 		return ocr.HintResult{}, fmt.Errorf("GEMINI_API_KEY is empty")
 	}
 	model := e.Model
-	mime := "application/json"
+	// на случай если кто-то передал "models/<id>"
+	model = strings.TrimPrefix(model, "models/")
 
-	// system-инструкция кратко фиксирует правила «No Final Answer» и JSON-вывод
-	system := `Ты — помощник для 1–4 классов. Сформируй РОВНО ОДИН блок подсказки уровня ` + string(in.Level) + `.
-Не решай задачу и не подставляй числа/слова из условия. Вывод — строго JSON по hint.schema.json.`
+	system := "Ты — помощник для 1–4 классов. Сформируй РОВНО ОДИН блок подсказки уровня " + string(in.Level) + ".\n" +
+		"Не решай задачу и не подставляй числа/слова из условия. Вывод — строго JSON по hint.schema.json."
 
-	// Тело «user»: прикладываем схему и входные данные как JSON
 	userObj := map[string]any{
-		"task":  "Сгенерируй подсказку согласно PROMPT_HINT v1.4 и верни JSON по hint.schema.json.",
+		"task":  "Сгенерируй подсказку по PROMPT_HINT и верни JSON по hint.schema.json.",
 		"input": in,
 	}
 	userJSON, _ := json.Marshal(userObj)
+
+	// Составим один текстовый промпт: system + схема + JSON входа.
+	promptText := strings.Join([]string{
+		system,
+		"",
+		"hint.schema.json:",
+		prompt.HintSchema,
+		"",
+		"INPUT_JSON:",
+		string(userJSON),
+	}, "\n")
 
 	body := map[string]any{
 		"contents": []any{
 			map[string]any{
 				"parts": []any{
-					map[string]any{"text": system},
-					map[string]any{"text": "hint.schema.json:\n" + prompt.HintSchema},
-					map[string]any{"inline_data": map[string]any{
-						"mime_type": mime,
-						"data":      base64.StdEncoding.EncodeToString(userJSON),
-					}},
+					map[string]any{"text": promptText},
 				},
 			},
 		},
-		"generationConfig": map[string]any{"temperature": 0},
+		"generationConfig": map[string]any{
+			"temperature":        0,
+			"response_mime_type": "application/json", // ← JSON mode
+		},
 	}
+
 	payload, _ := json.Marshal(body)
-
 	url := fmt.Sprintf("%s/models/%s:generateContent?key=%s", e.Base, model, e.APIKey)
-	req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := e.httpc.Do(req)
-	if err != nil {
-		return ocr.HintResult{}, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		x, _ := io.ReadAll(resp.Body)
-		return ocr.HintResult{}, fmt.Errorf("gemini hint %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
-	}
+	var lastErr error
+	for attempt := 1; attempt <= 3; attempt++ {
+		req, _ := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(payload))
+		req.Header.Set("Content-Type", "application/json")
 
-	var raw struct {
-		Candidates []struct {
-			Content struct {
-				Parts []struct {
-					Text string `json:"text"`
-				} `json:"parts"`
-			} `json:"content"`
-		} `json:"candidates"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return ocr.HintResult{}, err
-	}
-	if len(raw.Candidates) == 0 || len(raw.Candidates[0].Content.Parts) == 0 {
-		return ocr.HintResult{}, fmt.Errorf("gemini hint: empty response")
-	}
-	out := util.StripCodeFences(strings.TrimSpace(raw.Candidates[0].Content.Parts[0].Text))
+		resp, err := e.httpc.Do(req)
+		if err != nil {
+			lastErr = err
+			time.Sleep(time.Duration(attempt) * 300 * time.Millisecond)
+			continue
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
 
-	var hr ocr.HintResult
-	if err := json.Unmarshal([]byte(out), &hr); err != nil {
-		return ocr.HintResult{}, fmt.Errorf("gemini hint: bad JSON: %w", err)
+		if resp.StatusCode >= 500 { // retryable
+			lastErr = fmt.Errorf("gemini hint %d: %s", resp.StatusCode, strings.TrimSpace(string(b)))
+			time.Sleep(time.Duration(attempt) * 300 * time.Millisecond)
+			continue
+		}
+		if resp.StatusCode != http.StatusOK {
+			return ocr.HintResult{}, fmt.Errorf("gemini hint %d: %s", resp.StatusCode, strings.TrimSpace(string(b)))
+		}
+
+		var raw struct {
+			Candidates []struct {
+				Content struct {
+					Parts []struct {
+						Text string `json:"text"`
+					} `json:"parts"`
+				} `json:"content"`
+			} `json:"candidates"`
+		}
+		if err := json.Unmarshal(b, &raw); err != nil {
+			return ocr.HintResult{}, err
+		}
+		if len(raw.Candidates) == 0 || len(raw.Candidates[0].Content.Parts) == 0 {
+			return ocr.HintResult{}, fmt.Errorf("gemini hint: empty response")
+		}
+		out := strings.TrimSpace(raw.Candidates[0].Content.Parts[0].Text)
+		out = util.StripCodeFences(out)
+
+		var hr ocr.HintResult
+		if err := json.Unmarshal([]byte(out), &hr); err != nil {
+			return ocr.HintResult{}, fmt.Errorf("gemini hint: bad JSON: %w", err)
+		}
+		hr.NoFinalAnswer = true
+		return hr, nil
 	}
-	// Страховка: no_final_answer должен быть true
-	hr.NoFinalAnswer = true
-	return hr, nil
+	return ocr.HintResult{}, lastErr
 }
