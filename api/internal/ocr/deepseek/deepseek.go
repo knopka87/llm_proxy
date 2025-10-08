@@ -25,14 +25,16 @@ func New(key, model string) *Engine {
 
 func (e *Engine) Name() string { return "deepseek" }
 
+func (e *Engine) GetModel() string { return e.Model }
+
 func (e *Engine) Detect(_ context.Context, _ []byte, _ string, _ int) (ocr.DetectResult, error) {
 	return ocr.DetectResult{}, fmt.Errorf("DeepSeek Chat API не поддерживает анализ изображений. Используйте /engine yandex | gemini | gpt")
 }
 
-func (e *Engine) Parse(_ context.Context, _ []byte, _ int) (ocr.ParseResult, error) {
+func (e *Engine) Parse(_ context.Context, _ []byte, _ ocr.ParseOptions) (ocr.ParseResult, error) {
 	return ocr.ParseResult{}, fmt.Errorf("DeepSeek Chat API не поддерживает анализ изображений. Используйте /engine yandex | gemini | gpt")
 }
 
-func (e *Engine) Analyze(_ context.Context, _ []byte, _ ocr.Options) (ocr.Result, error) {
-	return ocr.Result{}, fmt.Errorf("DeepSeek Chat API не поддерживает анализ изображений. Используйте /engine yandex | gemini | gpt")
+func (e *Engine) Hint(_ context.Context, _ ocr.HintInput) (ocr.HintResult, error) {
+	return ocr.HintResult{}, fmt.Errorf("DeepSeek Chat API не поддерживает анализ изображений. Используйте /engine gemini | gpt")
 }

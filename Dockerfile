@@ -1,25 +1,49 @@
+# syntax=docker/dockerfile:1.6
+
 # ---------- build ----------
 FROM golang:1.24-alpine AS build
 WORKDIR /src
+RUN apk add --no-cache ca-certificates tzdata
 
-# модульные файлы из корня
-COPY go.mod ./
-COPY go.sum ./
+# go.mod / go.sum из корня
+COPY go.mod go.sum ./
 RUN go mod download
 
 # исходники
 COPY api ./api
 
-# сборка бинарника из api/
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/server ./api/cmd/bot
+# билд бота (main в api/cmd/bot)
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -trimpath -ldflags="-s -w" -o /out/server ./api/cmd/bot
 
-# -------- runtime stage --------
-FROM gcr.io/distroless/base-debian12
+# ставим CLI для миграций (postgres)
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    GOBIN=/out go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.17.0
+
+# миграции и entrypoint
+COPY api/migrations /out/migrations
+COPY api/docker/entrypoint.sh /out/entrypoint.sh
+RUN chmod +x /out/entrypoint.sh
+
+# ---------- runtime ----------
+FROM alpine:3.20
 WORKDIR /app
-COPY --from=build /out/server /app/server
+RUN apk add --no-cache ca-certificates tzdata bash
 
-ENV PORT=8080
+COPY --from=build /out/server /app/server
+COPY --from=build /out/migrate /usr/local/bin/migrate
+COPY --from=build /out/migrations /app/migrations
+COPY --from=build /out/entrypoint.sh /app/entrypoint.sh
+
+ENV PORT=8080 \
+    MIGRATIONS_DIR=/app/migrations
 EXPOSE 8080
 
+# неб привилегированный пользователь
+RUN adduser -D -u 65532 appuser
 USER 65532:65532
-ENTRYPOINT ["/app/server"]
+
+ENTRYPOINT ["/app/entrypoint.sh"]

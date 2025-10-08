@@ -1,0 +1,195 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "hint.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "hint_title",
+    "hint_steps",
+    "control_question",
+    "no_final_answer",
+    "meta"
+  ],
+  "properties": {
+    "hint_title": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "hint_steps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 260
+      },
+      "minItems": 1,
+      "maxItems": 5
+    },
+    "control_question": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "no_final_answer": {
+      "type": "boolean",
+      "const": true
+    },
+    "analogy_context": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "transfer_prompt": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "checklist": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 100
+      },
+      "minItems": 0,
+      "maxItems": 3
+    },
+    "rule_hint": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "subject",
+        "task_type",
+        "grade",
+        "terminology_level",
+        "length_policy",
+        "control_type",
+        "complexity_band"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "L1",
+            "L2",
+            "L3"
+          ]
+        },
+        "subject": {
+          "type": "string",
+          "enum": [
+            "math",
+            "russian",
+            "world",
+            "reading",
+            "logic",
+            "other"
+          ]
+        },
+        "task_type": {
+          "type": "string"
+        },
+        "grade": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "terminology_level": {
+          "type": "string",
+          "enum": [
+            "none",
+            "light",
+            "teacher"
+          ]
+        },
+        "control_type": {
+          "type": "string",
+          "enum": [
+            "plan",
+            "checklist",
+            "self_explain"
+          ]
+        },
+        "complexity_band": {
+          "type": "string",
+          "enum": [
+            "low",
+            "mid",
+            "high"
+          ]
+        },
+        "method_tag": {
+          "type": "string"
+        },
+        "analogy_alignment": {
+          "type": "string",
+          "enum": [
+            "matched",
+            "generic"
+          ],
+          "default": "generic"
+        },
+        "math_flags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "check_units",
+              "order_of_operations",
+              "place_value",
+              "algorithmic_column"
+            ]
+          },
+          "maxItems": 4
+        },
+        "rule_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "maxItems": 5
+        },
+        "length_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "soft_caps_used",
+            "any_overflow"
+          ],
+          "properties": {
+            "soft_caps_used": {
+              "type": "boolean"
+            },
+            "any_overflow": {
+              "type": "boolean"
+            },
+            "overflow_fields": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 6
+            },
+            "overflow_reason": {
+              "type": "string",
+              "enum": [
+                "none",
+                "clarity",
+                "domain_specific",
+                "grade_support"
+              ]
+            },
+            "length_used": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

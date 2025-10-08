@@ -7,12 +7,10 @@ import (
 
 type Engine interface {
 	Name() string
+	GetModel() string
 	Detect(ctx context.Context, img []byte, mime string, gradeHint int) (DetectResult, error)
-	Parse(ctx context.Context, image []byte, gradeHint int) (ParseResult, error)
-	// Analyze
-	// для Yandex — может вернуть только Text,
-	// для Gemini/GPT — выполняет полную логику (поиск решения, проверка, подсказки).
-	Analyze(ctx context.Context, image []byte, opt Options) (Result, error)
+	Parse(ctx context.Context, image []byte, options ParseOptions) (ParseResult, error)
+	Hint(ctx context.Context, in HintInput) (HintResult, error)
 }
 
 type Manager struct {

@@ -1,24 +1,5 @@
 package ocr
 
-// Result — единый результат для всех движков.
-// Для Yandex используются только Text (и, опционально, FoundTask).
-type Result struct {
-	// Всегда полезно иметь сырой текст, если удаётся его достать
-	Text string
-
-	// Детекция сути задачи
-	FoundTask     bool
-	FoundSolution bool
-
-	// Если FoundSolution == true
-	SolutionVerdict string // "correct" | "incorrect" | "uncertain"
-	SolutionNote    string // краткое пояснение "где/какого рода" ошибка (без решения)
-
-	// Подсказки L1→L3: от лёгкой наводки до подробного плана решения,
-	// но без самого ответа/итогового вычисления.
-	Hints []string // len=0 или 3 (предпочтительно)
-}
-
 type DetectResult struct {
 	FinalState             string   `json:"final_state"`
 	Confidence             float64  `json:"confidence"`
@@ -59,6 +40,80 @@ type ParseResult struct {
 	ConfirmationReason  string   `json:"confirmation_reason"` // "low_confidence" | ... | "none"
 	Grade               int      `json:"grade"`
 	GradeAlignment      string   `json:"grade_alignment"` // "aligned" | "maybe_lower" | ...
+}
+
+// ParseOptions — опции для этапа Parse (подсказки модели и служебные метаданные).
+type ParseOptions struct {
+	// Подсказки для модели
+	GradeHint   int    // Предполагаемый класс (1–4), 0 если неизвестно
+	SubjectHint string // "math" | "russian" | "" — если известно из DETECT
+
+	// Метаданные для кэша/аудита
+	ChatID       int64  // Идентификатор чата
+	MediaGroupID string // Telegram MediaGroupID, пусто если одиночное фото
+	ImageHash    string // SHA-256 объединённого изображения (util.SHA256Hex)
+
+	// Дизамбигуация по выбору пользователя (если на фото несколько заданий)
+	SelectedTaskIndex int    // Индекс выбранного задания (0-based), -1 если не выбран
+	SelectedTaskBrief string // Краткое описание выбранного пункта (из DETECT), может быть пустым
+
+	// Необязательная модель (перекрывает e.Model при вызове движка)
+	ModelOverride string
+}
+
+type HintLevel string // Уровень подсказки
+
+const (
+	HintL1 HintLevel = "L1"
+	HintL2 HintLevel = "L2"
+	HintL3 HintLevel = "L3"
+)
+
+// HintInput Вход для генерации подсказки (User input из PROMPT_HINT v1.4)
+type HintInput struct {
+	Level                   HintLevel `json:"level"` // "L1" | "L2" | "L3"
+	RawText                 string    `json:"raw_text"`
+	Subject                 string    `json:"subject"` // "math" | "russian" | ...
+	TaskType                string    `json:"task_type"`
+	Grade                   int       `json:"grade"`          // 1..4
+	SolutionShape           string    `json:"solution_shape"` // "number" | "string" | "steps" | "list"
+	SubjectConfidence       float64   `json:"subject_confidence"`
+	TaskTypeConfidence      float64   `json:"task_type_confidence"`
+	TerminologyLevel        string    `json:"terminology_level"`    // "none" | "light" | "teacher"
+	MethodTag               string    `json:"method_tag"`           // напр. "порядок_действий" и т.п.
+	MathFlags               []string  `json:"math_flags,omitempty"` // ["check_units","order_of_operations","place_value","algorithmic_column"]
+	RequiresContextFromText bool      `json:"requires_context_from_text"`
+}
+
+type HintResult struct {
+	HintTitle       string   `json:"hint_title"`
+	HintSteps       []string `json:"hint_steps"`
+	ControlQuestion string   `json:"control_question"`
+	NoFinalAnswer   bool     `json:"no_final_answer"` // Должно быть true
+	AnalogyContext  string   `json:"analogy_context,omitempty"`
+	TransferPrompt  string   `json:"transfer_prompt,omitempty"`
+	Checklist       []string `json:"checklist,omitempty"`
+	RuleHint        string   `json:"rule_hint,omitempty"`
+	Meta            struct {
+		Level            string   `json:"level"` // "L1"|"L2"|"L3"
+		Subject          string   `json:"subject"`
+		TaskType         string   `json:"task_type"`
+		Grade            int      `json:"grade"`
+		TerminologyLevel string   `json:"terminology_level"` // "none"|"light"|"teacher"
+		ControlType      string   `json:"control_type"`      // "plan"|"checklist"|"self_explain"
+		ComplexityBand   string   `json:"complexity_band"`   // "low"|"mid"|"high"
+		MethodTag        string   `json:"method_tag,omitempty"`
+		AnalogyAlignment string   `json:"analogy_alignment,omitempty"` // "matched"|"generic"
+		MathFlags        []string `json:"math_flags,omitempty"`
+		RuleRefs         []string `json:"rule_refs,omitempty"`
+		LengthPolicy     struct {
+			SoftCapsUsed   bool           `json:"soft_caps_used"`
+			AnyOverflow    bool           `json:"any_overflow"`
+			OverflowFields []string       `json:"overflow_fields,omitempty"`
+			OverflowReason string         `json:"overflow_reason,omitempty"` // "none"|"clarity"|"domain_specific"|"grade_support"
+			LengthUsed     map[string]int `json:"length_used,omitempty"`
+		} `json:"length_policy"`
+	} `json:"meta"`
 }
 
 type Entities struct {

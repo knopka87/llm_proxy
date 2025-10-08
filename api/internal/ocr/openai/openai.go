@@ -32,83 +32,7 @@ func New(key, model string) *Engine {
 
 func (e *Engine) Name() string { return "gpt" }
 
-func (e *Engine) Analyze(ctx context.Context, image []byte, opt ocr.Options) (ocr.Result, error) {
-	if e.APIKey == "" {
-		return ocr.Result{}, fmt.Errorf("OPENAI_API_KEY is empty")
-	}
-	model := e.Model
-	if opt.Model != "" {
-		model = opt.Model
-	}
-	mime := util.SniffMimeHTTP(image)
-	b64 := base64.StdEncoding.EncodeToString(image)
-	dataURL := util.MakeDataURL(mime, b64)
-
-	system := `You analyze a PHOTO of a school task. Do:
-1) Extract readable task text.
-2) Detect whether there is a written solution on the photo.
-3) If no solution: produce exactly 3 hints (L1..L3) guiding to solving, without final answer.
-4) If a solution exists: check it and set verdict "correct" or "incorrect" (or "uncertain"); if incorrect, tell WHERE/WHAT KIND OF error (no final result); and produce 3 hints as above.
-Respond with STRICT JSON:
-{"text":string,"foundTask":bool,"foundSolution":bool,"solutionVerdict":"correct"|"incorrect"|"uncertain"|"","solutionNote":string,"hints":[string,string,string]}`
-
-	body := map[string]any{
-		"model": model,
-		"messages": []any{
-			map[string]any{"role": "system", "content": system},
-			map[string]any{
-				"role": "user",
-				"content": []any{
-					map[string]any{"type": "text", "text": "Analyze this image and return only the JSON described above."},
-					map[string]any{"type": "image_url", "image_url": map[string]any{"url": dataURL, "detail": "high"}},
-				},
-			},
-		},
-		"temperature": 0,
-	}
-	payload, _ := json.Marshal(body)
-
-	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+e.APIKey)
-
-	resp, err := e.httpc.Do(req)
-	if err != nil {
-		return ocr.Result{}, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		x, _ := io.ReadAll(resp.Body)
-		return ocr.Result{}, fmt.Errorf("openai %d: %s", resp.StatusCode, string(x))
-	}
-	var out struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return ocr.Result{}, err
-	}
-	if len(out.Choices) == 0 {
-		return ocr.Result{}, nil
-	}
-
-	outJSON := strings.TrimSpace(out.Choices[0].Message.Content)
-
-	var r ocr.Result
-	if err := json.Unmarshal([]byte(outJSON), &r); err != nil {
-		r = ocr.Result{Text: outJSON}
-	}
-	if len(r.Hints) > 3 {
-		r.Hints = r.Hints[:3]
-	}
-	if r.Hints == nil {
-		r.Hints = []string{}
-	}
-	return r, nil
-}
+func (e *Engine) GetModel() string { return e.Model }
 
 func (e *Engine) Detect(ctx context.Context, img []byte, mime string, gradeHint int) (ocr.DetectResult, error) {
 	if e.APIKey == "" {
@@ -183,33 +107,43 @@ func (e *Engine) Detect(ctx context.Context, img []byte, mime string, gradeHint 
 	return r, nil
 }
 
-func (e *Engine) Parse(ctx context.Context, image []byte, gradeHint int) (ocr.ParseResult, error) {
+func (e *Engine) Parse(ctx context.Context, image []byte, opt ocr.ParseOptions) (ocr.ParseResult, error) {
 	if e.APIKey == "" {
 		return ocr.ParseResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.Model
-	if model == "" {
-		model = "gpt-4o-mini"
+	if opt.ModelOverride != "" {
+		model = opt.ModelOverride
 	}
+
 	mime := util.SniffMimeHTTP(image)
 	b64 := base64.StdEncoding.EncodeToString(image)
-	dataURL := util.MakeDataURL(mime, b64)
+	dataURL := "data:" + mime + ";base64," + b64
+
+	// Подсказки из DETECT/выбора пользователя
+	var hints strings.Builder
+	if opt.GradeHint >= 1 && opt.GradeHint <= 4 {
+		fmt.Fprintf(&hints, " grade_hint=%d.", opt.GradeHint)
+	}
+	if s := strings.TrimSpace(opt.SubjectHint); s != "" {
+		fmt.Fprintf(&hints, " subject_hint=%q.", s)
+	}
+	// если пользователь выбрал один из нескольких пунктов — добавим это как ориентир
+	if opt.SelectedTaskIndex >= 0 || strings.TrimSpace(opt.SelectedTaskBrief) != "" {
+		fmt.Fprintf(&hints, " selected_task=[index:%d, brief:%q].", opt.SelectedTaskIndex, opt.SelectedTaskBrief)
+	}
 
 	system := `Ты — школьный ассистент 1–4 классов. Перепиши выбранное задание полностью текстом, не додумывай.
 Выдели вопрос задачи. Нечитаемые места помечай в квадратных скобках.
-Соблюдай политику подтверждения (см. ниже) и верни только JSON по parse.schema.json. Любой текст вне JSON — ошибка.
+Соблюдай политику подтверждения:
+- Автоподтверждение, если: confidence ≥ 0.80, meaning_change_risk ≤ 0.20, bracketed_spans_count = 0, needs_rescan=false.
+- Иначе запрашивай подтверждение.
+Верни только JSON по parse.schema.json. Любой текст вне JSON — ошибка.
 
 parse.schema.json:
-` + prompt.ParseSchema + `
+` + prompt.ParseSchema
 
-Политика подтверждения:
-- Автоподтверждение, если: confidence ≥ 0.80, meaning_change_risk ≤ 0.20, bracketed_spans_count = 0, нет low-quality/сложных формул.
-- Иначе запрашивай подтверждение.`
-
-	user := "Ответ строго JSON по parse.schema.json. Без комментариев."
-	if gradeHint >= 1 && gradeHint <= 4 {
-		user += fmt.Sprintf(" grade_hint=%d", gradeHint)
-	}
+	user := "Ответ строго JSON по parse.schema.json. Без комментариев." + hints.String()
 
 	body := map[string]any{
 		"model": model,
@@ -223,12 +157,11 @@ parse.schema.json:
 				},
 			},
 		},
-		"temperature": 0,
-		// Для OpenAI можно включить строгий JSON режим:
+		"temperature":     0,
 		"response_format": map[string]any{"type": "json_object"},
 	}
-	payload, _ := json.Marshal(body)
 
+	payload, _ := json.Marshal(body)
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
@@ -238,7 +171,7 @@ parse.schema.json:
 		return ocr.ParseResult{}, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
 		return ocr.ParseResult{}, fmt.Errorf("openai parse %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
@@ -256,12 +189,80 @@ parse.schema.json:
 	if len(raw.Choices) == 0 {
 		return ocr.ParseResult{}, fmt.Errorf("openai parse: empty response")
 	}
-	out := strings.TrimSpace(raw.Choices[0].Message.Content)
-	out = util.StripCodeFences(out)
+	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
 
 	var pr ocr.ParseResult
 	if err := json.Unmarshal([]byte(out), &pr); err != nil {
 		return ocr.ParseResult{}, fmt.Errorf("openai parse: bad JSON: %w", err)
 	}
+
+	// Серверный гард (политика подтверждения из PROMPT_PARSE)
+	ocr.ApplyParsePolicy(&pr)
 	return pr, nil
+}
+
+func (e *Engine) Hint(ctx context.Context, in ocr.HintInput) (ocr.HintResult, error) {
+	if e.APIKey == "" {
+		return ocr.HintResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+	}
+	model := e.Model
+
+	system := `Ты — помощник для 1–4 классов. Сформируй РОВНО ОДИН блок подсказки уровня ` + string(in.Level) + `.
+Не решай задачу и не подставляй числа/слова из условия. Вывод — строго JSON по hint.schema.json.
+
+hint.schema.json:
+` + prompt.HintSchema
+
+	userObj := map[string]any{
+		"task":  "Сгенерируй подсказку согласно PROMPT_HINT v1.4 и верни JSON по hint.schema.json.",
+		"input": in,
+	}
+	userJSON, _ := json.Marshal(userObj)
+
+	body := map[string]any{
+		"model": model,
+		"messages": []any{
+			map[string]any{"role": "system", "content": system},
+			map[string]any{"role": "user", "content": string(userJSON)},
+		},
+		"temperature":     0,
+		"response_format": map[string]any{"type": "json_object"},
+	}
+	payload, _ := json.Marshal(body)
+
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+e.APIKey)
+
+	resp, err := e.httpc.Do(req)
+	if err != nil {
+		return ocr.HintResult{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		x, _ := io.ReadAll(resp.Body)
+		return ocr.HintResult{}, fmt.Errorf("openai hint %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+	}
+
+	var raw struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		return ocr.HintResult{}, err
+	}
+	if len(raw.Choices) == 0 {
+		return ocr.HintResult{}, fmt.Errorf("openai hint: empty response")
+	}
+	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
+
+	var hr ocr.HintResult
+	if err := json.Unmarshal([]byte(out), &hr); err != nil {
+		return ocr.HintResult{}, fmt.Errorf("openai hint: bad JSON: %w", err)
+	}
+	hr.NoFinalAnswer = true
+	return hr, nil
 }

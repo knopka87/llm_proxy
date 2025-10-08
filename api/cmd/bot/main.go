@@ -1,10 +1,15 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"log"
+	"os"
 	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	_ "github.com/jackc/pgx/v5/stdlib" // pgx driver
 
 	"child-bot/api/internal/config"
 	"child-bot/api/internal/httpserver"
@@ -13,13 +18,41 @@ import (
 	"child-bot/api/internal/ocr/gemini"
 	"child-bot/api/internal/ocr/openai"
 	"child-bot/api/internal/ocr/yandex"
+	"child-bot/api/internal/store"
 	"child-bot/api/internal/telegram"
 )
 
 func main() {
 	cfg := config.Load()
 
-	// Telegram bot
+	// --- Postgres ---
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("DATABASE_URL is empty (expected DSN like postgres://user:pass@host:5432/dbname?sslmode=disable)")
+	}
+
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		log.Fatalf("sql.Open: %v", err)
+	}
+	// connection pool tune (нагрузка до ~20 rps)
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(1 * time.Hour)
+
+	// health check
+	{
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := db.PingContext(ctx); err != nil {
+			log.Fatalf("db.Ping: %v", err)
+		}
+	}
+
+	parseRepo := store.NewParseRepo(db)
+	hintRepo := store.NewHintRepo(db)
+
+	// --- Telegram bot ---
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramBotToken)
 	if err != nil {
 		log.Fatal(err)
@@ -50,6 +83,7 @@ func main() {
 		Deepseek: deepseek.New(cfg.DeepseekAPIKey, cfg.DeepseekModel),
 	}
 
+	// Менеджер движков (дефолт — Gemini; тип должен удовлетворять объединённому интерфейсу EngineFull/ocr.Engine)
 	manager := ocr.NewManager(engines.Gemini)
 
 	r := &telegram.Router{
@@ -58,6 +92,10 @@ func main() {
 		GeminiModel:   cfg.GeminiModel,
 		OpenAIModel:   cfg.OpenAIModel,
 		DeepseekModel: cfg.DeepseekModel,
+
+		// репозитории для кэша PARSE/подсказок
+		ParseRepo: parseRepo,
+		HintRepo:  hintRepo,
 	}
 
 	// Process updates
