@@ -1,5 +1,7 @@
 package ocr
 
+import "encoding/json"
+
 type DetectResult struct {
 	FinalState             string   `json:"final_state"`
 	Confidence             float64  `json:"confidence"`
@@ -107,11 +109,11 @@ type HintResult struct {
 		MathFlags        []string `json:"math_flags,omitempty"`
 		RuleRefs         []string `json:"rule_refs,omitempty"`
 		LengthPolicy     struct {
-			SoftCapsUsed   bool           `json:"soft_caps_used"`
-			AnyOverflow    bool           `json:"any_overflow"`
-			OverflowFields []string       `json:"overflow_fields,omitempty"`
-			OverflowReason string         `json:"overflow_reason,omitempty"` // "none"|"clarity"|"domain_specific"|"grade_support"
-			LengthUsed     map[string]int `json:"length_used,omitempty"`
+			SoftCapsUsed   bool     `json:"soft_caps_used"`
+			AnyOverflow    bool     `json:"any_overflow"`
+			OverflowFields []string `json:"overflow_fields,omitempty"`
+			OverflowReason string   `json:"overflow_reason,omitempty"` // "none"|"clarity"|"domain_specific"|"grade_support"
+			LengthUsed     FlexMap  `json:"length_used,omitempty"`
 		} `json:"length_policy"`
 	} `json:"meta"`
 }
@@ -120,4 +122,65 @@ type Entities struct {
 	Numbers []float64 `json:"numbers"`
 	Units   []string  `json:"units"`
 	Names   []string  `json:"names"`
+}
+
+// FlexMap — гибкий парсер для length_used: допускает
+// 1) объект { "field": 123 }, 2) числа как float, 3) массив пар [{field,len}|{k,v}|{name,value}]
+type FlexMap map[string]int
+
+func (m *FlexMap) UnmarshalJSON(b []byte) error {
+	// Попробуем как map[string]int
+	var mi map[string]int
+	if err := json.Unmarshal(b, &mi); err == nil {
+		*m = mi
+		return nil
+	}
+	// Попробуем как map[string]float64
+	var mf map[string]float64
+	if err := json.Unmarshal(b, &mf); err == nil {
+		res := make(map[string]int, len(mf))
+		for k, v := range mf {
+			res[k] = int(v + 0.5)
+		}
+		*m = res
+		return nil
+	}
+	// Попробуем как массив пар
+	var arr []map[string]any
+	if err := json.Unmarshal(b, &arr); err == nil {
+		res := map[string]int{}
+		for _, p := range arr {
+			var key string
+			if s, ok := p["field"].(string); ok {
+				key = s
+			} else if s, ok := p["k"].(string); ok {
+				key = s
+			} else if s, ok := p["name"].(string); ok {
+				key = s
+			}
+			var val int
+			switch {
+			case p["len"] != nil:
+				if f, ok := p["len"].(float64); ok {
+					val = int(f + 0.5)
+				}
+			case p["v"] != nil:
+				if f, ok := p["v"].(float64); ok {
+					val = int(f + 0.5)
+				}
+			case p["value"] != nil:
+				if f, ok := p["value"].(float64); ok {
+					val = int(f + 0.5)
+				}
+			}
+			if key != "" {
+				res[key] = val
+			}
+		}
+		*m = res
+		return nil
+	}
+	// Если вообще что-то странное — молча игнорируем
+	*m = nil
+	return nil
 }
