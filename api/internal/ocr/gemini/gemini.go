@@ -245,8 +245,8 @@ func (e *Engine) Hint(ctx context.Context, in ocr.HintInput) (ocr.HintResult, er
 			},
 		},
 		"generationConfig": map[string]any{
-			"temperature":        0,
-			"response_mime_type": "application/json", // ← JSON mode
+			"temperature":      0,
+			"responseMimeType": "application/json", // ← JSON mode
 		},
 	}
 
