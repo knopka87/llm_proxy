@@ -37,8 +37,11 @@ func (r *Router) showTaskAndPrepareHints(chatID int64, sc *selectionContext, pr 
 
 	msg := tgbotapi.NewMessage(chatID, b.String())
 	msg.ParseMode = "Markdown"
-	msg.ReplyMarkup = makeHintKeyboard()
+	msg.ReplyMarkup = makeActionsKeyboard()
 	_, _ = r.Bot.Send(msg)
+
+	// в этом месте бот ждёт дальнейших действий — снимем любые «узкие» режимы
+	clearMode(chatID)
 
 	hs := &hintSession{
 		Image: sc.Image, Mime: sc.Mime, MediaGroupID: sc.MediaGroupID,

@@ -28,57 +28,57 @@ func (r *Router) HandleCommand(upd tgbotapi.Update) {
 	cid := upd.Message.Chat.ID
 	switch upd.Message.Command() {
 	case "start":
-		r.send(cid, "Пришли фото задачи — верну распознанный текст.\nКоманды: /health, /engine")
+		r.send(cid, "Пришли фото задачи — верну распознанный текст и подскажу, с чего начать.\nКоманды: /health, /engine")
 	case "health":
 		r.send(cid, "✅ OK")
 	case "engine":
+		// До сюда обычно не дойдём — /engine обрабатывается раньше в HandleUpdate.
 		args := strings.Fields(strings.TrimSpace(strings.TrimPrefix(upd.Message.Text, "/engine")))
 		if len(args) == 0 {
 			cur := r.EngManager.Get(cid).Name()
 			r.send(cid, "Текущий движок: "+cur+
-				"\nИспользование:\n/engine yandex\n/engine gemini [model]\n/engine gpt [model]\n/engine deepseek [model]")
+				"\nИспользование:\n/engine yandex\n/engine gemini [model]\n/engine gpt [model]\n/engine deepseek")
 			return
 		}
-		name := strings.ToLower(args[0])
-		var mdl string
-		if len(args) > 1 {
-			mdl = args[1]
-		}
-		switch name {
-		case "yandex", "gemini", "gpt", "deepseek":
-			r.send(cid, "Ок, переключаю на: "+name+func() string {
-				if mdl != "" {
-					return " (" + mdl + ")"
-				}
-				return ""
-			}())
-			// фактическое переключение делается в handlers.go (по /engine ...), там есть привязка к конкретным инстансам
-		default:
-			r.send(cid, "Неизвестный движок. Доступны: yandex | gemini | gpt | deepseek")
-		}
+		r.send(cid, "Ок, переключаю…")
 	default:
 		r.send(cid, "Неизвестная команда")
 	}
 }
 
 func (r *Router) HandleUpdate(upd tgbotapi.Update, engines Engines) {
-	// callback-кнопки
+	// 1) Callback-кнопки
 	if upd.CallbackQuery != nil {
 		r.handleCallback(*upd.CallbackQuery, engines)
 		return
 	}
+
+	// 2) Сообщений нет — выходим
 	if upd.Message == nil {
 		return
 	}
 	cid := upd.Message.Chat.ID
 
-	// если ждём текстовую правку после "Нет"
+	// 3) Если ждём текстовую правку после «Нет» — приоритетно принимаем её
 	if r.hasPendingCorrection(cid) && upd.Message.Text != "" {
 		r.applyTextCorrectionThenShowHints(cid, upd.Message.Text, engines)
 		return
 	}
 
-	// выбор пункта при multiple tasks (1..N)
+	// 4) «Жёсткий» режим: если ждём фото (решение/новая задача) и пришёл произвольный ТЕКСТ — мягко игнорируем.
+	// Команды разрешаем, чтобы можно было переключать движки/проверять health.
+	if upd.Message.Text != "" && !upd.Message.IsCommand() {
+		switch getMode(cid) {
+		case "await_solution":
+			r.send(cid, "Я жду фото с вашим решением. Пожалуйста, пришлите фото.")
+			return
+		case "await_new_task":
+			r.send(cid, "Я жду фото новой задачи. Пожалуйста, пришлите фото.")
+			return
+		}
+	}
+
+	// 5) Ветвь выбора пункта при multiple tasks (ожидаем число 1..N)
 	if v, ok := pendingChoice.Load(cid); ok && upd.Message.Text != "" {
 		briefs := v.([]string)
 		if n, err := strconv.Atoi(strings.TrimSpace(upd.Message.Text)); err == nil && n >= 1 && n <= len(briefs) {
@@ -94,22 +94,27 @@ func (r *Router) HandleUpdate(upd tgbotapi.Update, engines Engines) {
 			r.send(cid, "Не нашёл предыдущее изображение. Пришлите фото ещё раз.")
 			return
 		}
+		// иначе ждём корректный номер
 	}
 
-	// переключение движка (если было)
+	// 6) Команды (в т.ч. /engine)
 	if upd.Message.IsCommand() && strings.HasPrefix(upd.Message.Text, "/engine") {
-		r.handleEngineCommand(cid, upd.Message.Text, engines) // реализуйте как у вас
+		r.handleEngineCommand(cid, upd.Message.Text, engines)
 		return
 	}
 	if upd.Message.IsCommand() {
-		r.HandleCommand(upd) // ваше
+		r.HandleCommand(upd)
 		return
 	}
 
-	// фото
+	// 7) Фото/альбом — это снимает «режим ожидания фото»
 	if len(upd.Message.Photo) > 0 {
+		clearMode(cid) // получили фото — разблокируем пайплайн
 		r.acceptPhoto(*upd.Message, engines)
+		return
 	}
+
+	// 8) Остальное — игнорируем
 }
 
 func (r *Router) send(chatID int64, text string) {
@@ -147,7 +152,7 @@ func (r *Router) handleEngineCommand(chatID int64, cmd string, engines Engines) 
 		modelArg = strings.TrimSpace(args[1])
 	}
 
-	// Вспомогательный интерфейс: некоторые движки могут уметь переключать дефолтную модель.
+	// Некоторым движкам можно менять модель «на лету»
 	type modelSetter interface{ SetModel(string) }
 
 	switch name {

@@ -13,11 +13,15 @@ func makeParseConfirmKeyboard() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(yes, no))
 }
 
-// Кнопка для поэтапной выдачи L1→L2→L3
-func makeHintKeyboard() tgbotapi.InlineKeyboardMarkup {
-	btn := tgbotapi.NewInlineKeyboardButtonData("Получить подсказку", "hint_next")
+// Три кнопки действий после подсказки/парсинга
+func makeActionsKeyboard() tgbotapi.InlineKeyboardMarkup {
+	btnHint := tgbotapi.NewInlineKeyboardButtonData("Показать подсказку", "hint_next")
+	btnReady := tgbotapi.NewInlineKeyboardButtonData("Готов дать решение", "ready_solution")
+	btnNew := tgbotapi.NewInlineKeyboardButtonData("Перейти к новой задаче", "new_task")
 	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(btn),
+		tgbotapi.NewInlineKeyboardRow(btnHint),
+		tgbotapi.NewInlineKeyboardRow(btnReady),
+		tgbotapi.NewInlineKeyboardRow(btnNew),
 	)
 }
 

@@ -10,6 +10,20 @@ const (
 	maxPixels = 18_000_000
 )
 
+var chatMode sync.Map // chatID -> string: "", "await_solution", "await_new_task"
+
+// хелперы
+func setMode(chatID int64, mode string) { chatMode.Store(chatID, mode) }
+func getMode(chatID int64) string {
+	if v, ok := chatMode.Load(chatID); ok {
+		if s, _ := v.(string); s != "" {
+			return s
+		}
+	}
+	return ""
+}
+func clearMode(chatID int64) { chatMode.Delete(chatID) }
+
 type photoBatch struct {
 	ChatID       int64
 	Key          string // "grp:<mediaGroupID>" | "chat:<chatID>"

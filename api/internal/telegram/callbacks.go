@@ -23,6 +23,20 @@ func (r *Router) handleCallback(cb tgbotapi.CallbackQuery, engines Engines) {
 		r.onParseYes(cid, engines, cb.Message.MessageID)
 	case "parse_no":
 		r.onParseNo(cid, cb.Message.MessageID)
+	case "ready_solution":
+		// Скрыть старые кнопки у сообщения с колбэком
+		_ = hideKeyboard(cid, cb.Message.MessageID, r)
+		setMode(cid, "await_solution")
+		r.send(cid, "Отлично! Жду фото с вашим решением. Пришлите, пожалуйста, снимок решения — я проверю без раскрытия ответа.")
+	case "new_task":
+		_ = hideKeyboard(cid, cb.Message.MessageID, r)
+		// Сброс контекстов
+		hintState.Delete(cid)
+		pendingChoice.Delete(cid)
+		pendingCtx.Delete(cid)
+		parseWait.Delete(cid)
+		setMode(cid, "await_new_task")
+		r.send(cid, "Хорошо! Жду фото новой задачи.")
 	}
 }
 
@@ -76,6 +90,8 @@ func (r *Router) onHintNext(chatID int64, msgID int, engines Engines) {
 		return
 	}
 
+	_ = hideKeyboard(chatID, msgID, r)
+
 	imgHash := util.SHA256Hex(hs.Image)
 	level := hs.NextLevel
 
@@ -101,6 +117,12 @@ func (r *Router) onHintNext(chatID int64, msgID int, engines Engines) {
 		_ = r.HintRepo.Upsert(context.Background(), imgHash, hs.EngineName, hs.Model, level, hrNew)
 		r.send(chatID, formatHint(level, hrNew))
 	}
+
+	// После того, как отправили подсказку текстом:
+	// Отправляем новую клавиатуру с тремя кнопками под НОВЫМ сообщением
+	reply := tgbotapi.NewMessage(chatID, "Выберите дальнейшее действие:")
+	reply.ReplyMarkup = makeActionsKeyboard()
+	_, _ = r.Bot.Send(reply)
 
 	hs.NextLevel++
 	if hs.NextLevel > 3 {
@@ -129,4 +151,10 @@ func levelTerminology(n int) string {
 	default:
 		return "teacher"
 	}
+}
+
+func hideKeyboard(chatID int64, msgID int, r *Router) error {
+	edit := tgbotapi.NewEditMessageReplyMarkup(chatID, msgID, tgbotapi.InlineKeyboardMarkup{})
+	_, err := r.Bot.Send(edit)
+	return err
 }
