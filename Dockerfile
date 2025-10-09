@@ -31,19 +31,36 @@ RUN chmod +x /out/entrypoint.sh
 # ---------- runtime ----------
 FROM alpine:3.20
 WORKDIR /app
-RUN apk add --no-cache ca-certificates tzdata bash
 
+# Постгресс + утилиты
+RUN apk add --no-cache ca-certificates tzdata bash \
+    postgresql16 postgresql16-client su-exec
+
+# Бинарники и миграции
 COPY --from=build /out/server /app/server
 COPY --from=build /out/migrate /usr/local/bin/migrate
 COPY --from=build /out/migrations /app/migrations
 COPY --from=build /out/entrypoint.sh /app/entrypoint.sh
 
+# Конфиг и дефолты
 ENV PORT=8080 \
-    MIGRATIONS_DIR=/app/migrations
+    MIGRATIONS_DIR=/app/migrations \
+    PGDATA=/var/lib/postgresql/data \
+    PGPORT=5432 \
+    POSTGRES_USER=childbot \
+    POSTGRES_PASSWORD=childbot \
+    POSTGRES_DB=childbot
+# Если DATABASE_URL не задан извне — соберём его в entrypoint по localhost
+
+# Порты
 EXPOSE 8080
 
-# неб привилегированный пользователь
-RUN adduser -D -u 65532 appuser
-USER 65532:65532
+# Подготовим каталог данных Postgres
+RUN mkdir -p /var/lib/postgresql /var/lib/postgresql/data && \
+    chown -R postgres:postgres /var/lib/postgresql && \
+    chmod 700 /var/lib/postgresql/data
+
+# Запуск под пользователем postgres (и Postgres, и ваше приложение)
+USER postgres:postgres
 
 ENTRYPOINT ["/app/entrypoint.sh"]
