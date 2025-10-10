@@ -20,11 +20,8 @@ services:
     networks: [appnet]
 
   app:
-    # Сборка из Git-репо (Portainer сам сделает docker build)
-    build:
-      context: ..
-      dockerfile: Dockerfile
-    image: child-bot:git
+    image: ghcr.io/knopka87/child-bot:main
+    pull_policy: always
     restart: unless-stopped
     depends_on:
       - db
