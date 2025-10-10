@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -14,7 +15,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib" // pgx driver
 
 	"child-bot/api/internal/config"
-	"child-bot/api/internal/httpserver"
 	"child-bot/api/internal/ocr"
 	"child-bot/api/internal/ocr/deepseek"
 	"child-bot/api/internal/ocr/gemini"
@@ -26,6 +26,15 @@ import (
 
 func main() {
 	cfg := config.Load()
+
+	// Ensure we respect platform PORT (Koyeb uses 8000 by default)
+	if strings.TrimSpace(cfg.Port) == "" {
+		if p := strings.TrimSpace(os.Getenv("PORT")); p != "" {
+			cfg.Port = p
+		} else {
+			cfg.Port = "8000"
+		}
+	}
 
 	// --- Postgres ---
 	dsn := resolveDSN()
@@ -107,11 +116,19 @@ func main() {
 		}
 	}()
 
-	// HTTP server (healthz)
+	// HTTP server (healthz on /healthz)
 	addr := "0.0.0.0:" + cfg.Port
-	if err := httpserver.StartHTTP(addr, "ok"); err != nil {
-		log.Fatal(err)
-	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte("ok"))
+	})
+	go func() {
+		if err := http.ListenAndServe(addr, mux); err != nil {
+			log.Fatal(err)
+		}
+	}()
 }
 
 func resolveDSN() string {
