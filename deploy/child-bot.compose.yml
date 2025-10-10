@@ -27,7 +27,7 @@ services:
       - db
     environment:
       PORT: "8080"
-      DATABASE_URL: "postgres://childbot:${POSTGRES_PASSWORD}@db:5432/childbot?sslmode=disable"
+      DATABASE_URL: "host=db port=5432 user=childbot password=${POSTGRES_PASSWORD} dbname=childbot sslmode=disable"
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       WEBHOOK_URL: ${WEBHOOK_URL}         # можно оставить пустым, если пока polling
       GEMINI_API_KEY: ${GEMINI_API_KEY}
