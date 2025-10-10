@@ -51,20 +51,17 @@ pg_ctl -D "${PGDATA}" \
 trap 'echo "[postgres] stopping"; pg_ctl -D "${PGDATA}" -m fast -w stop' TERM INT EXIT
 
 # -------- ensure user/db ----------
-# NB: ВСЕ psql/createdb — ТОЛЬКО TCP (-h 127.0.0.1), чтобы не зависеть от пути сокетов
-if ! psql -h 127.0.0.1 -p "${PGPORT}" -U postgres -tAc \
-  "SELECT 1 FROM pg_roles WHERE rolname='${POSTGRES_USER}'" 2>/dev/null | grep -q 1; then
-  echo "[postgres] creating role ${POSTGRES_USER}"
-  psql -h 127.0.0.1 -p "${PGPORT}" -U postgres -v ON_ERROR_STOP=1 <<SQL
-CREATE ROLE ${POSTGRES_USER} LOGIN PASSWORD '${POSTGRES_PASSWORD}';
-ALTER ROLE ${POSTGRES_USER} CREATEDB;
-SQL
+until psql -h /tmp -p "${PGPORT}" -U postgres -c '\q'; do
+  >&2 echo "Postgres is unavailable - sleeping"
+  sleep 1
+done
+
+if ! psql -h /tmp -p "${PGPORT}" -U postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${POSTGRES_USER}'" | grep -q 1; then
+  psql -h /tmp -p "${PGPORT}" -U postgres -c "CREATE USER ${POSTGRES_USER} WITH PASSWORD '${POSTGRES_PASSWORD}';"
 fi
 
-if ! psql -h 127.0.0.1 -p "${PGPORT}" -U postgres -tAc \
-  "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'" 2>/dev/null | grep -q 1; then
-  echo "[postgres] creating database ${POSTGRES_DB}"
-  createdb -h 127.0.0.1 -p "${PGPORT}" -U postgres -O "${POSTGRES_USER}" "${POSTGRES_DB}"
+if ! psql -h /tmp -p "${PGPORT}" -U postgres -lqt | cut -d \| -f 1 | grep -qw "${POSTGRES_DB}"; then
+  createdb -h /tmp -p "${PGPORT}" -U postgres -O "${POSTGRES_USER}" "${POSTGRES_DB}"
 fi
 
 # -------- migrations ----------
