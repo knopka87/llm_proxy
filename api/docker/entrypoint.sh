@@ -51,10 +51,11 @@ pg_ctl -D "${PGDATA}" \
 trap 'echo "[postgres] stopping"; pg_ctl -D "${PGDATA}" -m fast -w stop' TERM INT EXIT
 
 # -------- ensure user/db ----------
-until psql -h /tmp -p "${PGPORT}" -U postgres -c '\q'; do
-  >&2 echo "Postgres is unavailable - sleeping"
+# wait until Postgres accepts connections over the UNIX socket
+until psql -h /tmp -p "${PGPORT}" -U postgres -d postgres -tAc "SELECT 1" >/dev/null 2>&1; do
+  >&2 echo "[postgres] not ready yet - sleeping"
   sleep 1
-done
+ done
 
 if ! psql -h /tmp -p "${PGPORT}" -U postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${POSTGRES_USER}'" | grep -q 1; then
   psql -h /tmp -p "${PGPORT}" -U postgres -c "CREATE USER ${POSTGRES_USER} WITH PASSWORD '${POSTGRES_PASSWORD}';"
