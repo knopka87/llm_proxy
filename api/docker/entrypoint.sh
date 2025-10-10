@@ -8,16 +8,27 @@ echo "[entrypoint] starting app…"
 : "${DATABASE_URL:?DATABASE_URL is required}"
 
 # ждём БД
-until /usr/local/bin/migrate -path "${MIGRATIONS_DIR}" -database "${DATABASE_URL}" version >/dev/null 2>&1; do
-  echo "[migrate] db not ready yet…"
+# --- wait for DB socket to be reachable (TCP) ---
+ATTEMPTS=60
+for i in $(seq 1 ${ATTEMPTS}); do
+  if bash -c '>/dev/tcp/db/5432' 2>/dev/null; then
+    echo "[migrate] tcp to db:5432 is open"
+    break
+  fi
+  echo "[migrate] db not ready yet… (${i}/${ATTEMPTS})"
   sleep 1
+  if [ "$i" = "${ATTEMPTS}" ]; then
+    echo "[migrate] giving up waiting for db"
+    exit 1
+  fi
 done
 
-# миграции (0|1 = успех)
+# --- run migrations (idempotent) ---
 set +e
 /usr/local/bin/migrate -path "${MIGRATIONS_DIR}" -database "${DATABASE_URL}" up
 code=$?
 set -e
+# migrate exit codes: 0=applied, 1=no change
 if [ $code -ne 0 ] && [ $code -ne 1 ]; then
   echo "[migrate] failed with code ${code}"
   exit $code
