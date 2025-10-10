@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"net"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -26,9 +28,9 @@ func main() {
 	cfg := config.Load()
 
 	// --- Postgres ---
-	dsn := os.Getenv("DATABASE_URL")
+	dsn := resolveDSN()
 	if dsn == "" {
-		log.Fatal("DATABASE_URL is empty (expected DSN like postgres://user:pass@host:5432/dbname?sslmode=disable)")
+		log.Fatal("database DSN is empty: set DATABASE_URL or POSTGRES_* env vars")
 	}
 
 	db, err := sql.Open("pgx", dsn)
@@ -110,6 +112,36 @@ func main() {
 	if err := httpserver.StartHTTP(addr, "ok"); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func resolveDSN() string {
+	// Prefer DATABASE_URL if provided
+	if v := strings.TrimSpace(os.Getenv("DATABASE_URL")); v != "" {
+		return v
+	}
+	// Build DSN from POSTGRES_* / PG* env vars (single-container default)
+	user := getenvDefault("POSTGRES_USER", "childbot")
+	pass := os.Getenv("POSTGRES_PASSWORD")
+	host := getenvDefault("PGHOST", "127.0.0.1")
+	port := getenvDefault("PGPORT", "5432")
+	db := getenvDefault("POSTGRES_DB", "childbot")
+
+	u := &url.URL{
+		Scheme:   "postgres",
+		User:     url.UserPassword(user, pass),
+		Host:     net.JoinHostPort(host, port),
+		Path:     "/" + db,
+		RawQuery: "sslmode=disable",
+	}
+	return u.String()
+}
+
+func getenvDefault(key, def string) string {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return def
+	}
+	return v
 }
 
 func shortHash(s string) string {
