@@ -43,7 +43,7 @@ COPY --from=build /out/migrations /app/migrations
 COPY --from=build /out/entrypoint.sh /app/entrypoint.sh
 
 # Конфиг и дефолты
-ENV PORT=8080 \
+ENV PORT=8000 \
     MIGRATIONS_DIR=/app/migrations \
     PGDATA=/var/lib/postgresql/data \
     PGPORT=5432 \
