@@ -24,8 +24,9 @@ for i in $(seq 1 ${ATTEMPTS}); do
 done
 
 # --- run migrations (idempotent) ---
+MURL="${MIGRATE_DATABASE_URL:-$DATABASE_URL}"
 set +e
-/usr/local/bin/migrate -path "${MIGRATIONS_DIR}" -database "${DATABASE_URL}" up
+/usr/local/bin/migrate -path "${MIGRATIONS_DIR}" -database "${MURL}" up
 code=$?
 set -e
 # migrate exit codes: 0=applied, 1=no change
