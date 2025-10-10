@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -27,13 +28,11 @@ import (
 func main() {
 	cfg := config.Load()
 
-	// Ensure we respect platform PORT (Koyeb uses 8000 by default)
-	if strings.TrimSpace(cfg.Port) == "" {
-		if p := strings.TrimSpace(os.Getenv("PORT")); p != "" {
-			cfg.Port = p
-		} else {
-			cfg.Port = "8000"
-		}
+	// Prefer platform PORT env var; fallback to cfg.Port; then to 8000
+	if p := strings.TrimSpace(os.Getenv("PORT")); p != "" {
+		cfg.Port = p
+	} else if strings.TrimSpace(cfg.Port) == "" {
+		cfg.Port = "8000"
 	}
 
 	// --- Postgres ---
@@ -58,6 +57,7 @@ func main() {
 		if err := db.PingContext(ctx); err != nil {
 			log.Fatalf("db.Ping: %v", err)
 		}
+		log.Printf("db connected: %s", safeDSNSummary(dsn))
 	}
 
 	parseRepo := store.NewParseRepo(db)
@@ -121,9 +121,17 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(200)
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
+		if err := db.PingContext(ctx); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte("db: not ok\n" + err.Error()))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
+	log.Printf("health server listening on %s/healthz", addr)
 	go func() {
 		if err := http.ListenAndServe(addr, mux); err != nil {
 			log.Fatal(err)
@@ -177,4 +185,22 @@ func shortHash(s string) string {
 		h >>= 4
 	}
 	return string(out)
+}
+
+func safeDSNSummary(dsn string) string {
+	u, err := url.Parse(dsn)
+	if err != nil {
+		return "dsn: parse error"
+	}
+	user := u.User.Username()
+	host := u.Host
+	port := ""
+	if h, p, err := net.SplitHostPort(u.Host); err == nil {
+		host, port = h, p
+	}
+	db := strings.TrimPrefix(u.Path, "/")
+	if port == "" {
+		return fmt.Sprintf("host=%s db=%s user=%s", host, db, user)
+	}
+	return fmt.Sprintf("host=%s port=%s db=%s user=%s", host, port, db, user)
 }
