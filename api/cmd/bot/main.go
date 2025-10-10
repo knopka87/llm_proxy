@@ -3,12 +3,15 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,7 +35,7 @@ func main() {
 	if p := strings.TrimSpace(os.Getenv("PORT")); p != "" {
 		cfg.Port = p
 	} else if strings.TrimSpace(cfg.Port) == "" {
-		cfg.Port = "8000"
+		cfg.Port = "8080"
 	}
 
 	// --- Postgres ---
@@ -70,22 +73,6 @@ func main() {
 	}
 	bot.Debug = false
 
-	// webhook path
-	path := "/webhook/" + shortHash(cfg.TelegramBotToken)
-	public := strings.TrimRight(cfg.WebhookURL, "/") + path
-
-	wh, err := tgbotapi.NewWebhook(public)
-	if err != nil {
-		log.Fatal(err)
-	}
-	wh.DropPendingUpdates = true
-
-	if _, err := bot.Request(wh); err != nil {
-		log.Fatal(err)
-	}
-
-	updates := bot.ListenForWebhook(path)
-
 	// Engines
 	engines := telegram.Engines{
 		Yandex:   yandex.New(cfg.YCOAuthToken, cfg.YCFolderID),
@@ -109,17 +96,9 @@ func main() {
 		HintRepo:  hintRepo,
 	}
 
-	// Process updates
-	go func() {
-		for upd := range updates {
-			r.HandleUpdate(upd, engines)
-		}
-	}()
-
-	// HTTP server (healthz on /healthz)
-	addr := "0.0.0.0:" + cfg.Port
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	// --- HTTP mux (DefaultServeMux) ---
+	// Используем DefaultServeMux, чтобы ListenForWebhook, который регистрирует обработчик на default mux, работал корректно.
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()
@@ -131,13 +110,137 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
-	log.Printf("health server listening on %s/healthz", addr)
+
+	addr := "0.0.0.0:" + cfg.Port
+
+	// --- Choose mode: Webhook vs Polling ---
+	webhookURL := strings.TrimSpace(cfg.WebhookURL)
+	if webhookURL != "" {
+		startWebhookMode(addr, bot, r, webhookURL, engines)
+	} else {
+		startPollingMode(addr, bot, r)
+	}
+}
+
+// ---------------- Modes -----------------
+
+func startWebhookMode(addr string, bot *tgbotapi.BotAPI, r *telegram.Router, baseURL string, engines telegram.Engines) {
+	// секретный путь вебхука
+	path := "/webhook/" + shortHash(r.Bot.Token)
+	public := strings.TrimRight(baseURL, "/") + path
+
+	wh, err := tgbotapi.NewWebhook(public)
+	if err != nil {
+		log.Fatal(err)
+	}
+	wh.DropPendingUpdates = true
+	if _, err := bot.Request(wh); err != nil {
+		log.Fatal(err)
+	}
+
+	// tgbotapi.ListenForWebhook регистрирует обработчик на DefaultServeMux
+	updates := bot.ListenForWebhook(path)
+
 	go func() {
-		if err := http.ListenAndServe(addr, mux); err != nil {
+		for upd := range updates {
+			r.HandleUpdate(upd, engines)
+		}
+		log.Printf("webhook updates channel closed")
+	}()
+
+	log.Printf("health server listening on %s/healthz", addr)
+	log.Printf("webhook listening on %s%s", addr, path)
+	if err := http.ListenAndServe(addr, nil); err != nil { // DefaultServeMux
+		log.Fatal(err)
+	}
+}
+
+func startPollingMode(addr string, bot *tgbotapi.BotAPI, r *telegram.Router) {
+	// Запускаем HTTP server (healthz), хотя для polling он не обязателен
+	go func() {
+		log.Printf("health server listening on %s/healthz", addr)
+		if err := http.ListenAndServe(addr, nil); err != nil { // DefaultServeMux
 			log.Fatal(err)
 		}
 	}()
+
+	// Устойчивый поллинг с backoff без log.Fatal/os.Exit
+	ctx := context.Background()
+	runPolling(ctx, bot, func(upd tgbotapi.Update) {
+		r.HandleUpdate(upd, telegram.Engines{}) // engines менеджер внутри роутера
+	})
 }
+
+// ---------------- Polling loop -----------------
+
+var reRetryAfter = regexp.MustCompile(`(?i)retry after\s+(\d+)`)
+
+func retryDelayFromError(err error) time.Duration {
+	if err == nil {
+		return 0
+	}
+	s := strings.ToLower(err.Error())
+	if strings.Contains(s, "too many requests") { // HTTP 429 от Telegram
+		if m := reRetryAfter.FindStringSubmatch(s); len(m) == 2 {
+			if n, _ := strconv.Atoi(m[1]); n > 0 {
+				return time.Duration(n) * time.Second
+			}
+		}
+		return 3 * time.Second
+	}
+	var ne net.Error
+	if errors.As(err, &ne) {
+		if ne.Timeout() {
+			return 2 * time.Second
+		}
+	}
+	return 1 * time.Second
+}
+
+func runPolling(ctx context.Context, bot *tgbotapi.BotAPI, handle func(tgbotapi.Update)) {
+	offset := 0
+	baseDelay := 1 * time.Second
+	maxDelay := 15 * time.Second
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Printf("polling: context cancelled")
+			return
+		default:
+		}
+
+		u := tgbotapi.NewUpdate(offset)
+		u.Timeout = 30 // long polling timeout (sec)
+
+		updates, err := bot.GetUpdates(u)
+		if err != nil {
+			d := retryDelayFromError(err)
+			if d < baseDelay {
+				d = baseDelay
+			}
+			if d > maxDelay {
+				d = maxDelay
+			}
+			log.Printf("polling error: %v; retry in %v", err, d)
+			time.Sleep(d)
+			continue
+		}
+
+		for _, upd := range updates {
+			if upd.UpdateID >= offset {
+				offset = upd.UpdateID + 1
+			}
+			handle(upd)
+		}
+
+		if len(updates) == 0 {
+			time.Sleep(200 * time.Millisecond)
+		}
+	}
+}
+
+// ---------------- Helpers -----------------
 
 func resolveDSN() string {
 	// Prefer DATABASE_URL if provided
@@ -147,7 +250,7 @@ func resolveDSN() string {
 	// Build DSN from POSTGRES_* / PG* env vars (single-container default)
 	user := getenvDefault("POSTGRES_USER", "childbot")
 	pass := os.Getenv("POSTGRES_PASSWORD")
-	host := getenvDefault("PGHOST", "127.0.0.1")
+	host := getenvDefault("PGHOST", "db")
 	port := getenvDefault("PGPORT", "5432")
 	db := getenvDefault("POSTGRES_DB", "childbot")
 
@@ -170,7 +273,7 @@ func getenvDefault(key, def string) string {
 }
 
 func shortHash(s string) string {
-	// лёгкий хэш для пути вебхука
+	// лёгкий хэш для пути вебхука (не крипто, но стабильно для токена)
 	h := uint64(1469598103934665603)
 	const prime = 1099511628211
 	for i := 0; i < len(s); i++ {
