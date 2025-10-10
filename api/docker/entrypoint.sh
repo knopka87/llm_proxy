@@ -25,8 +25,9 @@ done
 
 # --- run migrations (idempotent) ---
 MURL="${MIGRATE_DATABASE_URL:-$DATABASE_URL}"
+SRC_DIR="${MIGRATIONS_DIR:-/app/migrations}"
 set +e
-/usr/local/bin/migrate -path "${MIGRATIONS_DIR}" -database "${MURL}" up
+/usr/local/bin/migrate -source "file://${SRC_DIR}" -database "${MURL}" up
 code=$?
 set -e
 # migrate exit codes: 0=applied, 1=no change
