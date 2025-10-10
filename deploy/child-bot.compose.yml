@@ -6,6 +6,8 @@ networks:
 
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:
 
 services:
   db:
@@ -29,12 +31,27 @@ services:
       PORT: "8080"
       DATABASE_URL: "postgres://childbot:${POSTGRES_PASSWORD}@db:5432/childbot?sslmode=disable"
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      WEBHOOK_URL: ${WEBHOOK_URL}         # можно оставить пустым, если пока polling
+      WEBHOOK_URL: ${WEBHOOK_URL}         # для webhook укажи https://<домен>; для polling оставь пустым
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       YC_OAUTH_TOKEN: ${YC_OAUTH_TOKEN}
       YC_FOLDER_ID: ${YC_FOLDER_ID}
+    # ПОРТ НАРУЖУ БОЛЬШЕ НЕ ПУБЛИКУЕМ — доступ только через Caddy на 443
+    # ports:
+    #   - "8080:8080"
+    networks: [appnet]
+
+  reverse-proxy:
+    image: caddy:2.8
+    restart: unless-stopped
+    depends_on:
+      - app
     ports:
-      - "8080:8080"  # для проверки по IP; позже уберём и повесим HTTPS-прокси
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
     networks: [appnet]
