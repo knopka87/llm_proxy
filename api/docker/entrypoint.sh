@@ -15,15 +15,6 @@ echo "[entrypoint] starting…"
 
 export PGDATA PGPORT
 
-# -------- ensure runtime socket dir ----------
-# На Alpine Postgres по умолчанию использует /run/postgresql для Unix-сокета
-if [[ ! -d /run/postgresql ]]; then
-  echo "[postgres] creating /run/postgresql"
-  mkdir -p /run/postgresql
-fi
-chmod 775 /run/postgresql
-chown -R postgres:postgres /run/postgresql
-
 # -------- ensure PGDATA dir ----------
 if [[ ! -d "${PGDATA}" ]]; then
   echo "[postgres] creating PGDATA at ${PGDATA}"
@@ -40,11 +31,11 @@ if [[ ! -s "${PGDATA}/PG_VERSION" ]]; then
   echo "[postgres] initdb at ${PGDATA}"
   as_postgres /usr/libexec/postgresql16/initdb -D "${PGDATA}" --auth-local=trust --auth-host=md5 >/dev/null
 
-  # Слушаем только localhost
+  # Слушаем только localhost и кладём сокет в /tmp (в Koyeb /run может быть недоступен)
   as_postgres sh -c "printf '%s\n' \
-    "listen_addresses = '127.0.0.1'" \
-    "port = ${PGPORT}" \
-    "unix_socket_directories = '/run/postgresql'" \
+    \"listen_addresses = '127.0.0.1'\" \
+    \"port = ${PGPORT}\" \
+    \"unix_socket_directories = '/tmp'\" \
     >> '${PGDATA}/postgresql.conf'"
 
   # Разрешим md5 для TCP с localhost (локальное FORCE уже trust)
@@ -52,10 +43,10 @@ if [[ ! -s "${PGDATA}/PG_VERSION" ]]; then
 fi
 
 # -------- start postgres (foreground child) ----------
-# Явно укажем директорию сокета, чтобы не зависеть от конфигов
 echo "[postgres] starting…"
+# Явно укажем директорию сокета на /tmp, чтобы не зависеть от /run
 as_postgres pg_ctl -D "${PGDATA}" \
-  -o "-c listen_addresses=127.0.0.1 -p ${PGPORT} -c unix_socket_directories=/run/postgresql" \
+  -o "-c listen_addresses=127.0.0.1 -p ${PGPORT} -c unix_socket_directories=/tmp" \
   -w start
 
 # Остановим Postgres по завершению контейнера
