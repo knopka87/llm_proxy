@@ -4,7 +4,7 @@ set -euo pipefail
 echo "[entrypoint] starting…"
 
 # -------- ENV & defaults ----------
-: "${PGDATA:=/var/lib/postgresql/data}"
+: "${PGDATA:=/app/pgdata}"
 : "${PGPORT:=5432}"
 : "${POSTGRES_USER:=childbot}"
 : "${POSTGRES_PASSWORD:=childbot}"
@@ -20,51 +20,47 @@ if [[ ! -d "${PGDATA}" ]]; then
   echo "[postgres] creating PGDATA at ${PGDATA}"
   mkdir -p "${PGDATA}"
 fi
-chown -R postgres:postgres "${PGDATA}"
 chmod 700 "${PGDATA}"
-
-# helper to run commands as postgres user
-as_postgres() { su-exec postgres:postgres "$@"; }
 
 # -------- initdb (первый старт) ----------
 if [[ ! -s "${PGDATA}/PG_VERSION" ]]; then
   echo "[postgres] initdb at ${PGDATA}"
-  as_postgres /usr/libexec/postgresql16/initdb -D "${PGDATA}" --auth-local=trust --auth-host=md5 >/dev/null
+  /usr/libexec/postgresql16/initdb -D "${PGDATA}" --auth-local=trust --auth-host=md5 >/dev/null
 
-  # Слушаем только localhost и кладём сокет в /tmp (в Koyeb /run может быть недоступен)
-  as_postgres sh -c "printf '%s\n' \
-    \"listen_addresses = '127.0.0.1'\" \
-    \"port = ${PGPORT}\" \
-    \"unix_socket_directories = '/tmp'\" \
-    >> '${PGDATA}/postgresql.conf'"
+  # Слушаем только localhost и кладём сокет в /tmp (в некоторых средах /run недоступен)
+  printf "%s\n" \
+    "listen_addresses = '127.0.0.1'" \
+    "port = ${PGPORT}" \
+    "unix_socket_directories = '/tmp'" \
+    >> "${PGDATA}/postgresql.conf"
 
   # Разрешим md5 для TCP с localhost (локальное FORCE уже trust)
-  as_postgres sh -c "echo \"host all all 127.0.0.1/32 md5\" >> '${PGDATA}/pg_hba.conf'"
+  echo "host all all 127.0.0.1/32 md5" >> "${PGDATA}/pg_hba.conf"
 fi
 
 # -------- start postgres (foreground child) ----------
 echo "[postgres] starting…"
 # Явно укажем директорию сокета на /tmp, чтобы не зависеть от /run
-as_postgres pg_ctl -D "${PGDATA}" \
+pg_ctl -D "${PGDATA}" \
   -o "-c listen_addresses=127.0.0.1 -p ${PGPORT} -c unix_socket_directories=/tmp" \
   -w start
 
 # Остановим Postgres по завершению контейнера
-trap 'echo "[postgres] stopping"; su-exec postgres:postgres pg_ctl -D "${PGDATA}" -m fast -w stop' TERM INT EXIT
+trap 'echo "[postgres] stopping"; pg_ctl -D "${PGDATA}" -m fast -w stop' TERM INT EXIT
 
 # -------- ensure user/db ----------
-# superuser по умолчанию — 'postgres'
-if ! as_postgres psql -U postgres -h 127.0.0.1 -p "${PGPORT}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${POSTGRES_USER}'" | grep -q 1; then
+# superuser по умолчанию — 'postgres'; локальные соединения доверенные (trust), используем socket
+if ! psql -U postgres -p "${PGPORT}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${POSTGRES_USER}'" 2>/dev/null | grep -q 1; then
   echo "[postgres] creating role ${POSTGRES_USER}"
-  as_postgres psql -U postgres -h 127.0.0.1 -p "${PGPORT}" -v ON_ERROR_STOP=1 <<SQL
+  psql -U postgres -p "${PGPORT}" -v ON_ERROR_STOP=1 <<SQL
 CREATE ROLE ${POSTGRES_USER} LOGIN PASSWORD '${POSTGRES_PASSWORD}';
 ALTER ROLE ${POSTGRES_USER} CREATEDB;
 SQL
 fi
 
-if ! as_postgres psql -U postgres -h 127.0.0.1 -p "${PGPORT}" -tAc "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'" | grep -q 1; then
+if ! psql -U postgres -p "${PGPORT}" -tAc "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'" 2>/dev/null | grep -q 1; then
   echo "[postgres] creating database ${POSTGRES_DB}"
-  as_postgres createdb -U postgres -h 127.0.0.1 -p "${PGPORT}" -O "${POSTGRES_USER}" "${POSTGRES_DB}"
+  createdb -U postgres -p "${PGPORT}" -O "${POSTGRES_USER}" "${POSTGRES_DB}"
 fi
 
 # -------- migrations ----------
