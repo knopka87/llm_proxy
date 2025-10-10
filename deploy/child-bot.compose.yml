@@ -6,8 +6,6 @@ networks:
 
 volumes:
   pgdata:
-  caddy_data:
-  caddy_config:
 
 services:
   db:
@@ -37,21 +35,6 @@ services:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       YC_OAUTH_TOKEN: ${YC_OAUTH_TOKEN}
       YC_FOLDER_ID: ${YC_FOLDER_ID}
-    # ПОРТ НАРУЖУ БОЛЬШЕ НЕ ПУБЛИКУЕМ — доступ только через Caddy на 443
-    # ports:
-    #   - "8080:8080"
-    networks: [appnet]
-
-  reverse-proxy:
-    image: caddy:2.8
-    restart: unless-stopped
-    depends_on:
-      - app
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - caddy_data:/data
-      - caddy_config:/config
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - "8080:8080"
     networks: [appnet]
