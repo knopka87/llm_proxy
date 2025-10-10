@@ -43,7 +43,7 @@ func getenv(k, def string) string {
 func Load() *Config {
 	return &Config{
 		Port:             getenv("PORT", "8080"),
-		WebhookURL:       mustEnv("WEBHOOK_URL"),
+		WebhookURL:       getenv("WEBHOOK_URL", ""),
 		TelegramBotToken: mustEnv("TELEGRAM_BOT_TOKEN"),
 
 		YCOAuthToken: mustEnv("YC_OAUTH_TOKEN"),
