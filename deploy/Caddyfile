@@ -1,4 +1,0 @@
-77-222-60-149.swtest.ru {
-  encode gzip
-  reverse_proxy app:8080
-}

@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  app:
+    image: ghcr.io/knopka87/proxy-llm:main
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      PORT: "8000"
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL}
+      OPENAI_MODEL: ${OPENAI_MODEL}
+    ports:
+      - "8000:8000"

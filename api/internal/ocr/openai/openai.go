@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"child-bot/api/internal/ocr"
-	"child-bot/api/internal/prompt"
-	"child-bot/api/internal/util"
+	"llm-proxy/api/internal/ocr"
+	"llm-proxy/api/internal/prompt"
+	"llm-proxy/api/internal/util"
 )
 
 type Engine struct {
