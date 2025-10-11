@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "normalize.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "digit_number",
+              "word_number",
+              "time",
+              "range",
+              "operator",
+              "unit",
+              "strikethrough",
+              "overwritten",
+              "superscript",
+              "caret_insert",
+              null
+            ]
+          }
+        },
+        "required": [
+          "value",
+          "span_from",
+          "span_to"
+        ]
+      }
+    }
+  }
+}

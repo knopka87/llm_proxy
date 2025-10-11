@@ -37,6 +37,7 @@ func main() {
 	mux.HandleFunc("/v1/llm/detect", h.Detect)
 	mux.HandleFunc("/v1/llm/parse", h.Parse)
 	mux.HandleFunc("/v1/llm/hint", h.Hint)
+	mux.HandleFunc("/v1/llm/normalize", h.Normalize)
 
 	addr := ":" + cfg.Port
 	log.Printf("llm-proxy listening on %s", addr)

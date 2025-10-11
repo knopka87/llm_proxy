@@ -22,6 +22,110 @@ type Engine struct {
 	httpc  *http.Client
 }
 
+func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.NormalizeResult, error) {
+	if e.APIKey == "" {
+		return ocr.NormalizeResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+	}
+
+	model := e.Model
+	if strings.TrimSpace(model) == "" {
+		model = "gpt-4o-mini"
+	}
+
+	// System prompt + schema
+	system := `Ты — модуль нормализации ответа для 1–4 классов.
+Извлеки РОВНО то, что прислал ребёнок, и представь это в форме solution_shape.
+Строгие правила:
+1) Не додумывать и не исправлять «как должно быть».
+2) Не решать задачу и не выводить правильный ответ.
+3) Минимальная чистка: убрать «Ответ:», мусор, унифицировать регистр/разделители.
+4) Для shape=number число — в value, единицы — в units.detected/canonical.
+5) Для string: нижний регистр, «ё» сохранять, дефис допустим, орфографию не чинить.
+6) steps/list: 2–6 пунктов, не добавлять новых шагов.
+7) Фото: OCR только для извлечения ответа; при плохом качестве — success=false и needs_clarification=true.
+8) Несколько кандидатов — не выбирать; success=false, error="too_many_candidates" и короткое needs_user_action_message.
+9) Неоднозначные форматы (½, 1 1/2, 1:20, 5–7, ≈10, >5) не сводить к арифметике; заполнить number_kind.
+Верни СТРОГО JSON по normalize.schema.json.` + "\n\nnormalize.schema.json:\n" + prompt.NormalizeSchema
+
+	userObj := map[string]any{
+		"task":  "Нормализуй ответ ученика и верни только JSON по normalize.schema.json.",
+		"input": in,
+	}
+	userJSON, _ := json.Marshal(userObj)
+
+	// Подготовим контент для Chat Completions
+	var userContent any
+	if strings.EqualFold(in.Answer.Source, "photo") {
+		b64 := strings.TrimSpace(in.Answer.PhotoB64)
+		if b64 == "" {
+			return ocr.NormalizeResult{}, fmt.Errorf("openai normalize: answer.photo_b64 is empty")
+		}
+		mime := strings.TrimSpace(in.Answer.Mime)
+		if mime == "" {
+			mime = "image/jpeg"
+		}
+		dataURL := b64
+		if !strings.HasPrefix(strings.ToLower(dataURL), "data:") {
+			dataURL = "data:" + mime + ";base64," + b64
+		}
+		userContent = []any{
+			map[string]any{"type": "text", "text": "INPUT_JSON:\n" + string(userJSON)},
+			map[string]any{"type": "image_url", "image_url": map[string]any{"url": dataURL, "detail": "high"}},
+		}
+	} else { // text (по умолчанию)
+		if strings.TrimSpace(in.Answer.Text) == "" {
+			return ocr.NormalizeResult{}, fmt.Errorf("openai normalize: answer.text is empty")
+		}
+		userContent = string(userJSON)
+	}
+
+	body := map[string]any{
+		"model": model,
+		"messages": []any{
+			map[string]any{"role": "system", "content": system},
+			map[string]any{"role": "user", "content": userContent},
+		},
+		"temperature":     0,
+		"response_format": map[string]any{"type": "json_object"},
+	}
+	payload, _ := json.Marshal(body)
+
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+e.APIKey)
+
+	resp, err := e.httpc.Do(req)
+	if err != nil {
+		return ocr.NormalizeResult{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		x, _ := io.ReadAll(resp.Body)
+		return ocr.NormalizeResult{}, fmt.Errorf("openai normalize %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+	}
+
+	var raw struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		return ocr.NormalizeResult{}, err
+	}
+	if len(raw.Choices) == 0 {
+		return ocr.NormalizeResult{}, fmt.Errorf("openai normalize: empty response")
+	}
+	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
+
+	var nr ocr.NormalizeResult
+	if err := json.Unmarshal([]byte(out), &nr); err != nil {
+		return ocr.NormalizeResult{}, fmt.Errorf("openai normalize: bad JSON: %w", err)
+	}
+	return nr, nil
+}
+
 func New(key, model string) *Engine {
 	return &Engine{
 		APIKey: key,

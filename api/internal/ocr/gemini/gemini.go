@@ -250,6 +250,89 @@ func (e *Engine) Hint(ctx context.Context, in ocr.HintInput) (ocr.HintResult, er
 	return ocr.HintResult{}, lastErr
 }
 
+// Normalize приводит ответ ученика к однозначной форме без догадок и без решения задачи.
+// Строго возвращает JSON по normalize.schema.json (см. NORMALIZE_ANSWER v1.2).
+func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.NormalizeResult, error) {
+	if e.APIKey == "" {
+		return ocr.NormalizeResult{}, errors.New("GEMINI_API_KEY is empty")
+	}
+
+	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
+	if err != nil {
+		return ocr.NormalizeResult{}, err
+	}
+	defer cl.Close()
+
+	m := cl.GenerativeModel(strings.TrimSpace(e.Model))
+	if m == nil {
+		return ocr.NormalizeResult{}, fmt.Errorf("gemini: model is nil")
+	}
+	m.GenerationConfig = genai.GenerationConfig{
+		Temperature:      ptrFloat32(0),
+		ResponseMIMEType: "application/json",
+	}
+
+	// Системные правила нормализации (кратко) + схема
+	sys := `Ты — модуль нормализации ответа для 1–4 классов.
+Извлеки РОВНО то, что прислал ребёнок, и представь это в форме solution_shape.
+Строгие правила:
+1) Не додумывать и не исправлять «как должно быть».
+2) Не решать задачу и не выводить правильный ответ.
+3) Минимальная чистка: убрать «Ответ:», мусор, унифицировать регистр/разделители.
+4) Для shape=number число — в value, единицы — в units.detected/canonical.
+5) Для string: нижний регистр, «ё» сохранять, дефис допустим, орфографию не чинить.
+6) steps/list: 2–6 пунктов, не добавлять новых шагов.
+7) Фото: OCR только для извлечения ответа; при плохом качестве — success=false и needs_clarification=true.
+8) Несколько кандидатов — не выбирать; success=false, error="too_many_candidates" и короткое needs_user_action_message.
+9) Неоднозначные форматы (½, 1 1/2, 1:20, 5–7, ≈10, >5) не сводить к арифметике; заполнить number_kind.
+Верни СТРОГО JSON по normalize.schema.json.`
+	m.SystemInstruction = &genai.Content{
+		Parts: []genai.Part{
+			genai.Text(sys),
+			genai.Text("normalize.schema.json:\n" + prompt.NormalizeSchema),
+		},
+	}
+
+	// Пользовательская часть: передаём вход как JSON, при фото добавляем Blob
+	userObj := map[string]any{
+		"task":  "Нормализуй ответ ученика и верни только JSON по normalize.schema.json.",
+		"input": in,
+	}
+	userJSON, _ := json.Marshal(userObj)
+
+	parts := []genai.Part{genai.Text("INPUT_JSON:\n" + string(userJSON))}
+	if strings.EqualFold(in.Answer.Source, "photo") && len(in.Answer.PhotoB64) > 0 {
+		mime := strings.TrimSpace(in.Answer.Mime)
+		if mime == "" {
+			mime = util.SniffMimeHTTP([]byte(in.Answer.PhotoB64))
+		}
+		parts = append(parts, &genai.Blob{MIMEType: mime, Data: []byte(in.Answer.PhotoB64)})
+	}
+
+	// Ретраи на случай временных ошибок
+	var lastErr error
+	for attempt := 1; attempt <= 3; attempt++ {
+		resp, err := m.GenerateContent(ctx, parts...)
+		if err != nil {
+			lastErr = err
+			time.Sleep(time.Duration(attempt) * 300 * time.Millisecond)
+			continue
+		}
+		raw := firstText(resp)
+		if raw == "" {
+			return ocr.NormalizeResult{}, fmt.Errorf("gemini normalize: empty response")
+		}
+		raw = util.StripCodeFences(strings.TrimSpace(raw))
+
+		var nr ocr.NormalizeResult
+		if err := json.Unmarshal([]byte(raw), &nr); err != nil {
+			return ocr.NormalizeResult{}, fmt.Errorf("gemini normalize: bad JSON: %w", err)
+		}
+		return nr, nil
+	}
+	return ocr.NormalizeResult{}, lastErr
+}
+
 // --------------------------- helpers ---------------------------
 
 func firstText(resp *genai.GenerateContentResponse) string {

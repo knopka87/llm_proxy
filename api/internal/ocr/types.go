@@ -118,6 +118,88 @@ type HintResult struct {
 	} `json:"meta"`
 }
 
+type NormalizeInput struct {
+	TaskID        string `json:"task_id"`
+	UserIDAnon    string `json:"user_id_anon"`
+	Grade         int    `json:"grade"`
+	Subject       string `json:"subject"`
+	TaskType      string `json:"task_type"`
+	SolutionShape string `json:"solution_shape"`
+	Answer        struct {
+		Source   string `json:"source"` // text | photo
+		Text     string `json:"text,omitempty"`
+		PhotoB64 string `json:"photo_b64,omitempty"` // предпочтительно base64
+		Mime     string `json:"mime,omitempty"`      // image/jpeg, image/png
+		Lang     string `json:"lang,omitempty"`
+	} `json:"answer"`
+	ParseContext json.RawMessage `json:"parse_context"`
+	Provider     string          `json:"provider,omitempty"`
+	Model        string          `json:"model,omitempty"`
+}
+
+// NormalizeResult — строгий JSON-ответ нормализации (см. NORMALIZE_ANSWER v1.2)
+// Поля подобраны так, чтобы покрыть все случаи из политики: число/строка/шаги/список,
+// неоднозначности, кандидаты, OCR-метаданные и предупреждения.
+type NormalizeResult struct {
+	Success       bool        `json:"success"`
+	Shape         string      `json:"shape"`                    // target: number|string|steps|list
+	ShapeDetected string      `json:"shape_detected,omitempty"` // фактическая форма ответа
+	Value         interface{} `json:"value"`                    // число | строка | []string | null
+	NumberKind    string      `json:"number_kind,omitempty"`    // integer|decimal|fraction|mixed_fraction|time|range|unknown
+	Confidence    float64     `json:"confidence,omitempty"`     // 0..1
+
+	AnswerSource        string   `json:"answer_source,omitempty"`         // text|photo
+	SourceOCRConfidence *float64 `json:"source_ocr_confidence,omitempty"` // 0..1, при source=photo
+	OCREngine           string   `json:"ocr_engine,omitempty"`
+
+	Normalized *NormalizedInfo `json:"normalized,omitempty"` // как чистили исходный ответ
+	Units      *UnitsInfo      `json:"units,omitempty"`      // единицы измерения
+
+	Warnings   []string    `json:"warnings,omitempty"`   // мягкие предупреждения
+	Spans      []Span      `json:"spans,omitempty"`      // позиции сущностей в тексте (опц.)
+	Candidates []Candidate `json:"candidates,omitempty"` // альтернативные значения
+
+	UncertainReasons       []string `json:"uncertain_reasons,omitempty"`
+	NeedsClarification     bool     `json:"needs_clarification,omitempty"`
+	NeedsUserActionMessage string   `json:"needs_user_action_message,omitempty"` // короткая подсказка ребенку (≤120)
+	Error                  *string  `json:"error"`                               // null | код ошибки
+
+	PIIFlag bool `json:"pii_flag,omitempty"` // найдены ли персональные данные
+}
+
+// NormalizedInfo — сведения о «чистке» исходного ответа.
+type NormalizedInfo struct {
+	Raw   string   `json:"raw,omitempty"`
+	Clean string   `json:"clean,omitempty"`
+	Notes []string `json:"notes,omitempty"`
+}
+
+// UnitsInfo — обнаруженные/нормализованные единицы измерения.
+// Detected/Canonical держим указателями, чтобы уметь сериализовать null.
+type UnitsInfo struct {
+	Detected   *string  `json:"detected"`
+	Canonical  *string  `json:"canonical"`
+	IsCompound bool     `json:"is_compound"`
+	Parts      []string `json:"parts,omitempty"`
+	Kept       bool     `json:"kept"`
+	Mismatch   bool     `json:"mismatch"`
+}
+
+// Span — позиция сущности в исходном тексте (необязательно).
+type Span struct {
+	SpanFrom int    `json:"span_from"`
+	SpanTo   int    `json:"span_to"`
+	Label    string `json:"label,omitempty"`
+}
+
+// Candidate — альтернативное прочтение значения (в т.ч. из-за исправлений/наложений).
+type Candidate struct {
+	Value    interface{} `json:"value"`
+	SpanFrom int         `json:"span_from"`
+	SpanTo   int         `json:"span_to"`
+	Kind     string      `json:"kind"` // digit_number|word_number|time|range|operator|unit|strikethrough|overwritten|superscript|caret_insert|unknown
+}
+
 type Entities struct {
 	Numbers []float64 `json:"numbers"`
 	Units   []string  `json:"units"`

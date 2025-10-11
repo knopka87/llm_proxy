@@ -10,6 +10,7 @@ type Engine interface {
 	Detect(ctx context.Context, img []byte, mime string, gradeHint int) (DetectResult, error)
 	Parse(ctx context.Context, image []byte, options ParseOptions) (ParseResult, error)
 	Hint(ctx context.Context, in HintInput) (HintResult, error)
+	Normalize(ctx context.Context, in NormalizeInput) (NormalizeResult, error)
 }
 
 type Engines struct {
