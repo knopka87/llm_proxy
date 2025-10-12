@@ -12,10 +12,8 @@ import (
 )
 
 type DetectRequest struct {
-	LLMName   string `json:"llm_name"`
-	ImageB64  string `json:"image_b64"`
-	Mime      string `json:"mime,omitempty"`
-	GradeHint int    `json:"grade_hint,omitempty"`
+	LLMName string `json:"llm_name"`
+	ocr.DetectInput
 }
 
 func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +44,7 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err = engine.Detect(ctx, img, req.Mime, req.GradeHint)
+	out, err = engine.Detect(ctx, req.DetectInput)
 	if err != nil {
 		http.Error(w, "detect error: "+err.Error(), http.StatusBadGateway)
 		return
