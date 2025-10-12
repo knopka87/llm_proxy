@@ -74,9 +74,15 @@ func (e *Engine) Detect(ctx context.Context, in ocr.DetectInput) (ocr.DetectResu
 		userText += fmt.Sprintf(" grade_hint=%d.", in.GradeHint)
 	}
 
+	imgBytes, mimeFromDataURL, err := util.DecodeBase64MaybeDataURL(in.ImageB64)
+	if err != nil {
+		return ocr.DetectResult{}, fmt.Errorf("gemini detect: bad base64: %w", err)
+	}
+	finalMIME := util.PickMIME(in.Mime, mimeFromDataURL, imgBytes)
+
 	parts := []genai.Part{
 		genai.Text(userText),
-		&genai.Blob{MIMEType: in.Mime, Data: []byte(in.ImageB64)},
+		&genai.Blob{MIMEType: finalMIME, Data: imgBytes},
 	}
 
 	// Ретраи на случай 5xx/транзиентных сбоёв
@@ -154,9 +160,15 @@ func (e *Engine) Parse(ctx context.Context, in ocr.ParseInput) (ocr.ParseResult,
 
 	user := "Ответ строго JSON по parse.schema.json. Без комментариев." + hints.String()
 
+	imgBytes, mimeFromDataURL, err := util.DecodeBase64MaybeDataURL(in.ImageB64)
+	if err != nil {
+		return ocr.ParseResult{}, fmt.Errorf("gemini parse: bad base64: %w", err)
+	}
+	finalMIME := util.PickMIME("", mimeFromDataURL, imgBytes)
+
 	parts := []genai.Part{
 		genai.Text(user),
-		&genai.Blob{MIMEType: util.SniffMimeHTTP([]byte(in.ImageB64)), Data: []byte(in.ImageB64)},
+		&genai.Blob{MIMEType: finalMIME, Data: imgBytes},
 	}
 
 	var lastErr error
@@ -302,11 +314,12 @@ func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.Norm
 
 	parts := []genai.Part{genai.Text("INPUT_JSON:\n" + string(userJSON))}
 	if strings.EqualFold(in.Answer.Source, "photo") && len(in.Answer.PhotoB64) > 0 {
-		mime := strings.TrimSpace(in.Answer.Mime)
-		if mime == "" {
-			mime = util.SniffMimeHTTP([]byte(in.Answer.PhotoB64))
+		photoBytes, mimeFromDataURL, err := util.DecodeBase64MaybeDataURL(in.Answer.PhotoB64)
+		if err != nil {
+			return ocr.NormalizeResult{}, fmt.Errorf("gemini normalize: bad photo base64: %w", err)
 		}
-		parts = append(parts, &genai.Blob{MIMEType: mime, Data: []byte(in.Answer.PhotoB64)})
+		mime := util.PickMIME(strings.TrimSpace(in.Answer.Mime), mimeFromDataURL, photoBytes)
+		parts = append(parts, &genai.Blob{MIMEType: mime, Data: photoBytes})
 	}
 
 	// Ретраи на случай временных ошибок
