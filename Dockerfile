@@ -1,4 +1,3 @@
-########################
 # Build stage
 ########################
 FROM golang:1.24-alpine AS build
@@ -12,14 +11,11 @@ COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-# 2) Source code (копируем весь модуль llm-proxy, не только /api)
+# 2) Source code (копируем весь модуль llm-proxy)
 COPY . .
 
 # 3) Build
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg/mod \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -trimpath -ldflags="-s -w" -o /out/server ./api/cmd/llm-proxy
+RUN CGO_ENABLED=0 go build -o out/server api/cmd/llm-proxy/*.go
 
 ########################
 # Runtime stage
