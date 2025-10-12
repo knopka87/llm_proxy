@@ -193,7 +193,7 @@ func (e *Engine) Parse(ctx context.Context, in ocr.ParseInput) (ocr.ParseResult,
 		ocr.ApplyParsePolicy(&pr)
 		return pr, nil
 	}
-	return ocr.ParseResult{}, lastErr
+	return ocr.ParseResult{}, fmt.Errorf("error: %w, mime: %s, imgB64: %s", lastErr, finalMIME, in.ImageB64)
 }
 
 // --------------------------- HINT ---------------------------
