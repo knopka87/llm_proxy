@@ -2,6 +2,12 @@ package ocr
 
 import "encoding/json"
 
+type DetectInput struct {
+	ImageB64  string `json:"image_b64"`
+	Mime      string `json:"mime,omitempty"`
+	GradeHint int    `json:"grade_hint,omitempty"`
+}
+
 type DetectResult struct {
 	FinalState             string   `json:"final_state"`
 	Confidence             float64  `json:"confidence"`
@@ -23,6 +29,11 @@ type DetectResult struct {
 	SubjectGuess           string   `json:"subject_guess"`
 	SubjectConfidence      float64  `json:"subject_confidence"`
 	AltSubjects            []string `json:"alt_subjects"`
+}
+
+type ParseInput struct {
+	ImageB64 string       `json:"image_b64"`
+	Options  ParseOptions `json:"options"`
 }
 
 type ParseResult struct {
@@ -119,22 +130,24 @@ type HintResult struct {
 }
 
 type NormalizeInput struct {
-	TaskID        string `json:"task_id"`
-	UserIDAnon    string `json:"user_id_anon"`
-	Grade         int    `json:"grade"`
-	Subject       string `json:"subject"`
-	TaskType      string `json:"task_type"`
-	SolutionShape string `json:"solution_shape"`
-	Answer        struct {
-		Source   string `json:"source"` // text | photo
-		Text     string `json:"text,omitempty"`
-		PhotoB64 string `json:"photo_b64,omitempty"` // предпочтительно base64
-		Mime     string `json:"mime,omitempty"`      // image/jpeg, image/png
-		Lang     string `json:"lang,omitempty"`
-	} `json:"answer"`
-	ParseContext json.RawMessage `json:"parse_context"`
-	Provider     string          `json:"provider,omitempty"`
-	Model        string          `json:"model,omitempty"`
+	TaskID        string          `json:"task_id"`
+	UserIDAnon    string          `json:"user_id_anon"`
+	Grade         int             `json:"grade"`
+	Subject       string          `json:"subject"`
+	TaskType      string          `json:"task_type"`
+	SolutionShape string          `json:"solution_shape"`
+	Answer        NormalizeAnswer `json:"answer"`
+	ParseContext  json.RawMessage `json:"parse_context"`
+	Provider      string          `json:"provider,omitempty"`
+	Model         string          `json:"model,omitempty"`
+}
+
+type NormalizeAnswer struct {
+	Source   string `json:"source"` // text | photo
+	Text     string `json:"text,omitempty"`
+	PhotoB64 string `json:"photo_b64,omitempty"` // предпочтительно base64
+	Mime     string `json:"mime,omitempty"`      // image/jpeg, image/png
+	Lang     string `json:"lang,omitempty"`
 }
 
 // NormalizeResult — строгий JSON-ответ нормализации (см. NORMALIZE_ANSWER v1.2)

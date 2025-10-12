@@ -7,8 +7,8 @@ import (
 
 type Engine interface {
 	Name() string
-	Detect(ctx context.Context, img []byte, mime string, gradeHint int) (DetectResult, error)
-	Parse(ctx context.Context, image []byte, options ParseOptions) (ParseResult, error)
+	Detect(ctx context.Context, in DetectInput) (DetectResult, error)
+	Parse(ctx context.Context, in ParseInput) (ParseResult, error)
 	Hint(ctx context.Context, in HintInput) (HintResult, error)
 	Normalize(ctx context.Context, in NormalizeInput) (NormalizeResult, error)
 	CheckSolution(ctx context.Context, in CheckSolutionInput) (CheckSolutionResult, error)

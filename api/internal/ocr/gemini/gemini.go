@@ -39,7 +39,7 @@ func (e *Engine) SetModel(m string) {
 // --------------------------- DETECT ---------------------------
 
 // Detect Возвращает JSON по detect.schema.json.
-func (e *Engine) Detect(ctx context.Context, img []byte, mime string, gradeHint int) (ocr.DetectResult, error) {
+func (e *Engine) Detect(ctx context.Context, in ocr.DetectInput) (ocr.DetectResult, error) {
 	if e.APIKey == "" {
 		return ocr.DetectResult{}, errors.New("GEMINI_API_KEY is empty")
 	}
@@ -70,13 +70,13 @@ func (e *Engine) Detect(ctx context.Context, img []byte, mime string, gradeHint 
 	// Пользовательский промпт: подсказки и картинка
 	userText := "Определи пригодность фото для распознавания школьного задания. " +
 		"Если несколько заданий — перечисли краткие описания. Верни JSON."
-	if gradeHint >= 1 && gradeHint <= 4 {
-		userText += fmt.Sprintf(" grade_hint=%d.", gradeHint)
+	if in.GradeHint >= 1 && in.GradeHint <= 4 {
+		userText += fmt.Sprintf(" grade_hint=%d.", in.GradeHint)
 	}
 
 	parts := []genai.Part{
 		genai.Text(userText),
-		&genai.Blob{MIMEType: mime, Data: img},
+		&genai.Blob{MIMEType: in.Mime, Data: []byte(in.ImageB64)},
 	}
 
 	// Ретраи на случай 5xx/транзиентных сбоёв
@@ -106,7 +106,7 @@ func (e *Engine) Detect(ctx context.Context, img []byte, mime string, gradeHint 
 // --------------------------- PARSE ---------------------------
 
 // Parse Переписывает текст задания + вопрос. Возвращает JSON по parse.schema.json.
-func (e *Engine) Parse(ctx context.Context, image []byte, opt ocr.ParseOptions) (ocr.ParseResult, error) {
+func (e *Engine) Parse(ctx context.Context, in ocr.ParseInput) (ocr.ParseResult, error) {
 	if e.APIKey == "" {
 		return ocr.ParseResult{}, errors.New("GEMINI_API_KEY is empty")
 	}
@@ -142,21 +142,21 @@ func (e *Engine) Parse(ctx context.Context, image []byte, opt ocr.ParseOptions) 
 
 	// Подсказки из опций (grade/subject/selected)
 	var hints strings.Builder
-	if opt.GradeHint >= 1 && opt.GradeHint <= 4 {
-		fmt.Fprintf(&hints, " grade_hint=%d.", opt.GradeHint)
+	if in.Options.GradeHint >= 1 && in.Options.GradeHint <= 4 {
+		fmt.Fprintf(&hints, " grade_hint=%d.", in.Options.GradeHint)
 	}
-	if s := strings.TrimSpace(opt.SubjectHint); s != "" {
+	if s := strings.TrimSpace(in.Options.SubjectHint); s != "" {
 		fmt.Fprintf(&hints, " subject_hint=%q.", s)
 	}
-	if opt.SelectedTaskIndex >= 0 || strings.TrimSpace(opt.SelectedTaskBrief) != "" {
-		fmt.Fprintf(&hints, " selected_task=[index:%d, brief:%q].", opt.SelectedTaskIndex, opt.SelectedTaskBrief)
+	if in.Options.SelectedTaskIndex >= 0 || strings.TrimSpace(in.Options.SelectedTaskBrief) != "" {
+		fmt.Fprintf(&hints, " selected_task=[index:%d, brief:%q].", in.Options.SelectedTaskIndex, in.Options.SelectedTaskBrief)
 	}
 
 	user := "Ответ строго JSON по parse.schema.json. Без комментариев." + hints.String()
 
 	parts := []genai.Part{
 		genai.Text(user),
-		&genai.Blob{MIMEType: util.SniffMimeHTTP(image), Data: image},
+		&genai.Blob{MIMEType: util.SniffMimeHTTP([]byte(in.ImageB64)), Data: []byte(in.ImageB64)},
 	}
 
 	var lastErr error
