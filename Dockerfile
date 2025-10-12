@@ -15,7 +15,9 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 COPY . .
 
 # 3) Build
-RUN CGO_ENABLED=0 go build -o out/server api/cmd/llm-proxy/*.go
+RUN mkdir -p /out && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -trimpath -ldflags="-s -w" -o /out/server ./api/cmd/llm-proxy
 
 ########################
 # Runtime stage
