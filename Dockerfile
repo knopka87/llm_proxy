@@ -4,22 +4,31 @@
 FROM golang:1.24-alpine AS build
 WORKDIR /src
 
-COPY go.mod ./
-COPY go.sum ./
-RUN go mod download
+# Tools needed for go mod and HTTPS
+RUN apk add --no-cache git ca-certificates && update-ca-certificates
 
-# Код прокси
-COPY api ./api
+# 1) Dependencies (better cache)
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/server ./api/cmd/llm-proxy
+# 2) Source code (копируем весь модуль llm-proxy, не только /api)
+COPY . .
 
-# -------- runtime stage --------
-FROM gcr.io/distroless/base-debian12
+# 3) Build
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -trimpath -ldflags="-s -w" -o /out/server ./api/cmd/llm-proxy
+
+########################
+# Runtime stage
+########################
+FROM gcr.io/distroless/static:nonroot
 WORKDIR /app
 COPY --from=build /out/server /app/server
 
 ENV PORT=8000
 EXPOSE 8000
-
-USER 65532:65532
+USER nonroot:nonroot
 ENTRYPOINT ["/app/server"]
