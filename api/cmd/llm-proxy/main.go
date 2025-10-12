@@ -34,12 +34,12 @@ func main() {
 	}
 	h := handle.New(engines)
 
-	mux.HandleFunc("/v1/llm/detect", h.Detect)
-	mux.HandleFunc("/v1/llm/parse", h.Parse)
-	mux.HandleFunc("/v1/llm/hint", h.Hint)
-	mux.HandleFunc("/v1/llm/normalize", h.Normalize)
-	mux.HandleFunc("/v1/llm/check_solution", h.CheckSolution)
-	mux.HandleFunc("/v1/llm/analogue_solution", h.AnalogueSolution)
+	mux.HandleFunc("/v1/detect", h.Detect)
+	mux.HandleFunc("/v1/parse", h.Parse)
+	mux.HandleFunc("/v1/hint", h.Hint)
+	mux.HandleFunc("/v1/normalize", h.Normalize)
+	mux.HandleFunc("/v1/check_solution", h.CheckSolution)
+	mux.HandleFunc("/v1/analogue_solution", h.AnalogueSolution)
 
 	addr := ":" + cfg.Port
 	log.Printf("llm-proxy listening on %s", addr)
