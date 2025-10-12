@@ -17,7 +17,7 @@ type normalizeReq struct {
 	ocr.NormalizeInput
 }
 
-func (d *Handle) Normalize(w http.ResponseWriter, r *http.Request) {
+func (h *Handle) Normalize(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "POST only", http.StatusMethodNotAllowed)
 		return
@@ -42,7 +42,7 @@ func (d *Handle) Normalize(w http.ResponseWriter, r *http.Request) {
 
 	var out ocr.NormalizeResult
 
-	engine, err := d.engs.GetEngine(req.LLMName)
+	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
 		http.Error(w, "normalize error: "+err.Error(), http.StatusBadGateway)
 		return

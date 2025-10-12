@@ -14,7 +14,7 @@ type HintRequest struct {
 	ocr.HintInput
 }
 
-func (d *Handle) Hint(w http.ResponseWriter, r *http.Request) {
+func (h *Handle) Hint(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "POST only", http.StatusMethodNotAllowed)
 		return
@@ -30,7 +30,7 @@ func (d *Handle) Hint(w http.ResponseWriter, r *http.Request) {
 
 	var out ocr.HintResult
 
-	engine, err := d.engs.GetEngine(req.LLMName)
+	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
 		http.Error(w, "detect error: "+err.Error(), http.StatusBadGateway)
 		return

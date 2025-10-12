@@ -18,7 +18,7 @@ type DetectRequest struct {
 	GradeHint int    `json:"grade_hint,omitempty"`
 }
 
-func (d *Handle) Detect(w http.ResponseWriter, r *http.Request) {
+func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "POST only", http.StatusMethodNotAllowed)
 		return
@@ -40,7 +40,7 @@ func (d *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 
 	var out ocr.DetectResult
 
-	engine, err := d.engs.GetEngine(req.LLMName)
+	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
 		http.Error(w, "detect error: "+err.Error(), http.StatusBadGateway)
 		return

@@ -11,6 +11,8 @@ type Engine interface {
 	Parse(ctx context.Context, image []byte, options ParseOptions) (ParseResult, error)
 	Hint(ctx context.Context, in HintInput) (HintResult, error)
 	Normalize(ctx context.Context, in NormalizeInput) (NormalizeResult, error)
+	CheckSolution(ctx context.Context, in CheckSolutionInput) (CheckSolutionResult, error)
+	AnalogueSolution(ctx context.Context, in AnalogueSolutionInput) (AnalogueSolutionResult, error)
 }
 
 type Engines struct {

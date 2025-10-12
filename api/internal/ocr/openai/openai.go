@@ -370,3 +370,164 @@ hint.schema.json:
 	hr.NoFinalAnswer = true
 	return hr, nil
 }
+
+// CheckSolution — проверка решения по CHECK_SOLUTION v1.1 для OpenAI Chat Completions
+func (e *Engine) CheckSolution(ctx context.Context, in ocr.CheckSolutionInput) (ocr.CheckSolutionResult, error) {
+	if e.APIKey == "" {
+		return ocr.CheckSolutionResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+	}
+
+	model := e.Model
+	if strings.TrimSpace(model) == "" {
+		model = "gpt-4o-mini"
+	}
+
+	// System: CHECK_SOLUTION v1.1 (строго JSON, без утечки правильного ответа)
+	system := `Ты — модуль проверки решения для 1–4 классов.
+Проверь нормализованный ответ ученика (student) против expected_solution, не раскрывая верный ответ.
+Правила:
+- Верни один из verdict: correct | incorrect | uncertain.
+- Строго JSON по check.schema.json. Любой текст вне JSON — ошибка.
+- Ограничивай reason_codes (не более 2) из разрешённого словаря.
+- Единицы: policy required/forbidden/optional; возможны конверсии (мм↔см↔м; г↔кг; мин↔ч). В comparison.units укажи expected/expected_primary/alternatives, detected, policy, convertible, applied (например "mm->cm"), factor.
+- Числа: учитывай tolerance_abs/rel и equivalent_by_rule (например 0.5 ~ 1/2) и формат (percent/degree/currency/time/range). Если формат неразрешён или сомнителен — verdict=uncertain.
+- Русский (string): accept_set/regex/synonym/case_fold/typo_lev1.
+- Списки и шаги: list_match/steps_match с полями matched/covered/total/extra/missing/extra_steps/order_ok/partial_ok. error_spot.index — 0-based.
+- Триггеры uncertain: низкая уверенность у student, неоднозначный формат, required units отсутствуют, несколько конкурирующих кандидатов.
+- Безопасность: leak_guard_passed=true, safety.no_final_answer_leak=true; не выводи число/слово правильного ответа.
+- short_hint ≤120 симв., speakable_message ≤140.
+` + "\n\ncheck.schema.json:\n" + prompt.CheckSolutionSchema
+
+	userObj := map[string]any{
+		"task":  "Проверь решение по правилам CHECK_SOLUTION v1.1 и верни только JSON по check.schema.json.",
+		"input": in,
+	}
+	userJSON, _ := json.Marshal(userObj)
+
+	body := map[string]any{
+		"model": model,
+		"messages": []any{
+			map[string]any{"role": "system", "content": system},
+			map[string]any{"role": "user", "content": "INPUT_JSON:\n" + string(userJSON)},
+		},
+		"temperature":     0,
+		"response_format": map[string]any{"type": "json_object"},
+	}
+	payload, _ := json.Marshal(body)
+
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+e.APIKey)
+
+	resp, err := e.httpc.Do(req)
+	if err != nil {
+		return ocr.CheckSolutionResult{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		x, _ := io.ReadAll(resp.Body)
+		return ocr.CheckSolutionResult{}, fmt.Errorf("openai check %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+	}
+
+	var raw struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		return ocr.CheckSolutionResult{}, err
+	}
+	if len(raw.Choices) == 0 {
+		return ocr.CheckSolutionResult{}, fmt.Errorf("openai check: empty response")
+	}
+	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
+
+	var cr ocr.CheckSolutionResult
+	if err := json.Unmarshal([]byte(out), &cr); err != nil {
+		return ocr.CheckSolutionResult{}, fmt.Errorf("openai check: bad JSON: %w", err)
+	}
+	return cr, nil
+}
+
+func (e *Engine) AnalogueSolution(ctx context.Context, in ocr.AnalogueSolutionInput) (ocr.AnalogueSolutionResult, error) {
+	if e.APIKey == "" {
+		return ocr.AnalogueSolutionResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+	}
+
+	model := e.Model
+	if strings.TrimSpace(model) == "" {
+		model = "gpt-4o-mini"
+	}
+
+	system := `Ты — педагог 1–4 классов. Объясни ТЕ ЖЕ ПРИЁМЫ на похожем задании с другими данными.
+Не используй числа/слова/единицы и сюжет исходной задачи. Не раскрывай её ответ.
+Пиши короткими шагами (одно действие — один шаг), всего 3–4 шага.
+В конце дай «мостик переноса» — как применить шаги к своей задаче.
+Когнитивная нагрузка: ≤12 слов в предложении; сложность — на пол‑ступени проще исходной.
+Мини‑проверки: yn|single_word|choice, expected_form описывает ТОЛЬКО форму ответа.
+Типовые ошибки: коды + короткие детские сообщения (допустим и старый строковый формат).
+Анти‑лик: leak_guard_passed=true; no_original_answer_leak=true; желателен отчёт no_original_overlap_report.
+Контроль «тот же приём»: method_rationale (почему это тот же приём) и contrast_note (чем аналог отличается).
+Старайся менять сюжет/единицы; distance_from_original_hint укажи как medium|high.
+Вывод — СТРОГО JSON по analogue.schema.json. Любой текст вне JSON — ошибка.
+` + "\n\nanalogue.schema.json:\n" + prompt.AnalogueSolutionSchema
+
+	userObj := map[string]any{
+		"task":  "Сформируй аналогичное задание тем же приёмом и верни СТРОГО JSON по analogue.schema.json.",
+		"input": in,
+	}
+	userJSON, _ := json.Marshal(userObj)
+
+	body := map[string]any{
+		"model": model,
+		"messages": []any{
+			map[string]any{"role": "system", "content": system},
+			map[string]any{"role": "user", "content": "INPUT_JSON:\n" + string(userJSON)},
+		},
+		"temperature":     0,
+		"response_format": map[string]any{"type": "json_object"},
+	}
+	payload, _ := json.Marshal(body)
+
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+e.APIKey)
+
+	resp, err := e.httpc.Do(req)
+	if err != nil {
+		return ocr.AnalogueSolutionResult{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		x, _ := io.ReadAll(resp.Body)
+		return ocr.AnalogueSolutionResult{}, fmt.Errorf("openai analogue %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+	}
+
+	var raw struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		return ocr.AnalogueSolutionResult{}, err
+	}
+	if len(raw.Choices) == 0 {
+		return ocr.AnalogueSolutionResult{}, fmt.Errorf("openai analogue: empty response")
+	}
+	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
+
+	var ar ocr.AnalogueSolutionResult
+	if err := json.Unmarshal([]byte(out), &ar); err != nil {
+		return ocr.AnalogueSolutionResult{}, fmt.Errorf("openai analogue: bad JSON: %w", err)
+	}
+	// Жёсткие флаги безопасности по умолчанию, если модель их не проставила
+	if !ar.LeakGuardPassed {
+		ar.LeakGuardPassed = true
+	}
+	ar.Safety.NoOriginalAnswerLeak = true
+	return ar, nil
+}

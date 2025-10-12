@@ -266,3 +266,264 @@ func (m *FlexMap) UnmarshalJSON(b []byte) error {
 	*m = nil
 	return nil
 }
+
+// --- CHECK SOLUTION (v1.1) --------------------------------------------------
+// Структуры соответствуют инструкции CHECK_SOLUTION v1.1 и check.schema.json.
+// Они используются в llm_proxy/checksolution.go и в провайдерах LLM для
+// формирования и парсинга результата без утечки финальных ответов.
+
+// CheckSolutionInput — входные данные проверки решения
+// ВНИМАНИЕ: Expected содержит сведения о верном решении и политиках сравнения,
+// но сервис не должен раскрывать правильный ответ пользователю.
+type CheckSolutionInput struct {
+	TaskID       string          `json:"task_id,omitempty"`
+	UserIDAnon   string          `json:"user_id_anon,omitempty"`
+	Subject      string          `json:"subject,omitempty"` // math|russian|...
+	Grade        int             `json:"grade,omitempty"`
+	ParseContext json.RawMessage `json:"parse_context,omitempty"`
+
+	Student  NormalizeResult  `json:"student"`           // нормализованный ответ ученика
+	Expected ExpectedSolution `json:"expected_solution"` // ожидаемая форма/политики
+}
+
+// ExpectedSolution — ожидаемая форма и политики для сравнения
+// Shape: number|string|steps|list
+// Units.policy: required|forbidden|optional
+// Числовое значение хранится как строка, чтобы поддерживать дроби/смешанные.
+type ExpectedSolution struct {
+	Shape  string             `json:"shape"`
+	Units  *UnitsExpectedSpec `json:"units,omitempty"`
+	Number *NumberSpec        `json:"number_spec,omitempty"`
+	String *StringSpec        `json:"string_spec,omitempty"`
+	List   *ListSpec          `json:"list_spec,omitempty"`
+	Steps  *StepsSpec         `json:"steps_spec,omitempty"`
+}
+
+type UnitsExpectedSpec struct {
+	Policy          string   `json:"policy,omitempty"` // required|forbidden|optional
+	ExpectedPrimary string   `json:"expected_primary,omitempty"`
+	Alternatives    []string `json:"alternatives,omitempty"`
+}
+
+type NumberSpec struct {
+	Value                 string   `json:"value"` // не раскрывать пользователю
+	ToleranceAbs          *float64 `json:"tolerance_abs,omitempty"`
+	ToleranceRel          *float64 `json:"tolerance_rel,omitempty"`
+	AllowEquivalentByRule bool     `json:"allow_equivalent_by_rule,omitempty"`
+	Format                string   `json:"format,omitempty"` // percent|degree|currency|time|range|plain
+}
+
+type StringSpec struct {
+	AcceptSet     []string `json:"accept_set,omitempty"`
+	Regex         string   `json:"regex,omitempty"`
+	Synonyms      []string `json:"synonyms,omitempty"`
+	CaseFold      bool     `json:"case_fold,omitempty"`
+	AllowTypoLev1 bool     `json:"allow_typo_lev1,omitempty"`
+	Expected      string   `json:"expected,omitempty"`
+}
+
+type ListSpec struct {
+	Expected     []string `json:"expected,omitempty"`
+	OrderMatters bool     `json:"order_matters,omitempty"`
+	AllowExtra   bool     `json:"allow_extra,omitempty"`
+	AllowMissing bool     `json:"allow_missing,omitempty"`
+}
+
+type StepsSpec struct {
+	Expected     []string `json:"expected,omitempty"`
+	OrderMatters bool     `json:"order_matters,omitempty"`
+}
+
+// CheckSolutionResult — строгий JSON по check.schema.json v1.1
+// Не должен раскрывать правильный ответ.
+type CheckSolutionResult struct {
+	Verdict          string          `json:"verdict"` // correct|incorrect|uncertain
+	ShortHint        string          `json:"short_hint,omitempty"`
+	ReasonCodes      []string        `json:"reason_codes,omitempty"` // ≤2
+	ErrorSpot        *ErrorSpot      `json:"error_spot,omitempty"`
+	Comparison       CheckComparison `json:"comparison"`
+	NextActionCode   string          `json:"next_action_code,omitempty"`
+	SpeakableMessage string          `json:"speakable_message,omitempty"`
+	Safety           CheckSafety     `json:"safety"`
+	LeakGuardPassed  bool            `json:"leak_guard_passed"`
+	CheckConfidence  float64         `json:"check_confidence,omitempty"`
+	PolicyApplied    []string        `json:"policy_applied,omitempty"`
+}
+
+type ErrorSpot struct {
+	Type  string `json:"type,omitempty"`  // digit|unit|format|step|item|position
+	Index *int   `json:"index,omitempty"` // 0-based для шагов/элементов
+	Note  string `json:"note,omitempty"`
+}
+
+type CheckComparison struct {
+	ShapeOK              bool             `json:"shape_ok"`
+	Units                *UnitsComparison `json:"units,omitempty"`
+	NumberDiff           *NumberDiff      `json:"number_diff,omitempty"`
+	StringMatch          *StringMatch     `json:"string_match,omitempty"`
+	ListMatch            *ListMatch       `json:"list_match,omitempty"`
+	StepsMatch           *StepsMatch      `json:"steps_match,omitempty"`
+	InputCandidatesCount int              `json:"input_candidates_count,omitempty"`
+}
+
+type UnitsComparison struct {
+	Expected        string   `json:"expected,omitempty"`
+	ExpectedPrimary string   `json:"expected_primary,omitempty"`
+	Alternatives    []string `json:"alternatives,omitempty"`
+	Detected        string   `json:"detected,omitempty"`
+	Policy          string   `json:"policy,omitempty"`
+	Convertible     bool     `json:"convertible,omitempty"`
+	Applied         string   `json:"applied,omitempty"` // пример: "mm->cm"
+	Factor          *float64 `json:"factor,omitempty"`  // пример: 0.1
+}
+
+type NumberDiff struct {
+	Abs              *float64 `json:"abs,omitempty"`
+	Rel              *float64 `json:"rel,omitempty"`
+	WithinTolerance  bool     `json:"within_tolerance,omitempty"`
+	EquivalentByRule bool     `json:"equivalent_by_rule,omitempty"`
+}
+
+type StringMatch struct {
+	Method string `json:"method,omitempty"` // exact|synonym|regex|case_fold|typo_lev1
+	Passed bool   `json:"passed"`
+}
+
+type ListMatch struct {
+	Matched        int      `json:"matched,omitempty"`
+	Total          int      `json:"total,omitempty"`
+	Extra          []string `json:"extra,omitempty"`
+	Missing        []string `json:"missing,omitempty"`
+	ExtraItemsList []string `json:"extra_items_list,omitempty"`
+	OrderOK        bool     `json:"order_ok,omitempty"`
+	PartialOK      bool     `json:"partial_ok,omitempty"`
+}
+
+type StepsMatch struct {
+	Covered    int   `json:"covered,omitempty"`
+	Total      int   `json:"total,omitempty"`
+	Missing    []int `json:"missing,omitempty"`
+	ExtraSteps []int `json:"extra_steps,omitempty"`
+	OrderOK    bool  `json:"order_ok,omitempty"`
+	PartialOK  bool  `json:"partial_ok,omitempty"`
+}
+
+type CheckSafety struct {
+	NoFinalAnswerLeak  bool `json:"no_final_answer_leak"`
+	NoMathResultInText bool `json:"no_math_result_in_text,omitempty"`
+}
+
+// --- ANALOGUE SOLUTION ----------------------------------------------
+// Даёт разбор похожего задания тем же приёмом без утечки ответа исходной задачи.
+
+// AnalogueSolutionInput — вход генерации аналога
+// Важно: original_task_essence не должен содержать числа/слова из исходной задачи.
+type AnalogueSolutionInput struct {
+	TaskID              string `json:"task_id,omitempty"`
+	UserIDAnon          string `json:"user_id_anon,omitempty"`
+	Grade               int    `json:"grade,omitempty"`
+	Subject             string `json:"subject,omitempty"` // math|russian|...
+	TaskType            string `json:"task_type,omitempty"`
+	MethodTag           string `json:"method_tag,omitempty"` // тот же приём решения
+	DifficultyHint      string `json:"difficulty_hint,omitempty"`
+	OriginalTaskEssence string `json:"original_task_essence"` // краткая суть без исходных чисел/слов
+	Locale              string `json:"locale,omitempty"`      // ru (по умолчанию)
+}
+
+// AnalogueSolutionResult — строгий JSON по analogue.schema.json v1.1
+// Не должен повторять исходные данные и не раскрывает правильный ответ оригинала.
+type AnalogueSolutionResult struct {
+	AnalogyTitle  string      `json:"analogy_title"`
+	AnalogyTask   string      `json:"analogy_task"`
+	AnalogyData   AnalogyData `json:"analogy_data"`
+	SolutionSteps []string    `json:"solution_steps"` // 3–4 шага, короткие предложения
+
+	// Мини‑проверки: структурные (yn/single_word/choice). Поддержан и старый строковый формат.
+	MiniChecks []MiniCheckItem `json:"mini_checks,omitempty"`
+
+	// Типовые ошибки: коды + сообщения; поддержан старый строковый формат (только сообщение)
+	CommonMistakes []MistakeItem `json:"common_mistakes,omitempty"`
+
+	SelfCheckRule  string   `json:"self_check_rule,omitempty"`
+	TransferBridge []string `json:"transfer_bridge,omitempty"` // 2–3 шага переноса
+	TransferCheck  string   `json:"transfer_check,omitempty"`  // 1 вопрос для самопроверки переноса
+
+	NextActionCode string `json:"next_action_code,omitempty"` // e.g. offer_micro_quiz
+
+	// Доп. контроль когнитивной нагрузки и методической связки
+	GradeTarget              *int   `json:"grade_target,omitempty"`
+	ReadabilityHint          string `json:"readability_hint,omitempty"`            // ≤12 слов в предложении
+	MethodRationale          string `json:"method_rationale,omitempty"`            // почему это тот же приём
+	ContrastNote             string `json:"contrast_note,omitempty"`               // чем аналог отличается
+	DistanceFromOriginalHint string `json:"distance_from_original_hint,omitempty"` // low|medium|high
+
+	// Безопасность/антиликовая защита
+	Safety                  AnalogueSafety `json:"safety"`
+	LeakGuardPassed         bool           `json:"leak_guard_passed"`
+	NoOriginalOverlapReport *OverlapReport `json:"no_original_overlap_report,omitempty"`
+}
+
+type AnalogyData struct {
+	NumbersOrWords []string `json:"numbers_or_words,omitempty"`
+	Units          []string `json:"units,omitempty"`
+	Context        string   `json:"context,omitempty"`
+}
+
+// MiniCheckItem — поддерживает как структурный формат, так и старый строковый.
+type MiniCheckItem struct {
+	Type         string   `json:"type,omitempty"` // yn|single_word|choice
+	Prompt       string   `json:"prompt,omitempty"`
+	Options      []string `json:"options,omitempty"`       // для choice
+	ExpectedForm string   `json:"expected_form,omitempty"` // форма ответа, не сам ответ
+	Raw          string   `json:"raw,omitempty"`           // если пришла строка
+}
+
+func (m *MiniCheckItem) UnmarshalJSON(b []byte) error {
+	// Строковый старый формат
+	var s string
+	if err := json.Unmarshal(b, &s); err == nil {
+		m.Raw = s
+		return nil
+	}
+	// Новый объектный формат
+	type _mini MiniCheckItem
+	var v _mini
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	*m = MiniCheckItem(v)
+	return nil
+}
+
+// MistakeItem — типовая ошибка: код + сообщение; поддерживает старый строковый формат.
+type MistakeItem struct {
+	Code    string `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Raw     string `json:"raw,omitempty"` // если пришла строка
+}
+
+func (m *MistakeItem) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err == nil {
+		m.Raw = s
+		m.Message = s
+		return nil
+	}
+	type _mist MistakeItem
+	var v _mist
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	*m = MistakeItem(v)
+	return nil
+}
+
+// AnalogueSafety — базовые флаги безопасности
+type AnalogueSafety struct {
+	NoOriginalAnswerLeak bool `json:"no_original_answer_leak"`
+}
+
+type OverlapReport struct {
+	OverlapPercent float64  `json:"overlap_percent,omitempty"`
+	Notes          []string `json:"notes,omitempty"`
+}

@@ -17,7 +17,7 @@ type ParseRequest struct {
 	Options  ocr.ParseOptions `json:"options"`
 }
 
-func (d *Handle) Parse(w http.ResponseWriter, r *http.Request) {
+func (h *Handle) Parse(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "POST only", http.StatusMethodNotAllowed)
 		return
@@ -39,7 +39,7 @@ func (d *Handle) Parse(w http.ResponseWriter, r *http.Request) {
 
 	var out ocr.ParseResult
 
-	engine, err := d.engs.GetEngine(req.LLMName)
+	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
 		http.Error(w, "parse error: "+err.Error(), http.StatusBadGateway)
 		return
