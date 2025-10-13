@@ -457,9 +457,9 @@ type AnalogueSolutionResult struct {
 	// Типовые ошибки: коды + сообщения; поддержан старый строковый формат (только сообщение)
 	CommonMistakes []MistakeItem `json:"common_mistakes,omitempty"`
 
-	SelfCheckRule  string   `json:"self_check_rule,omitempty"`
-	TransferBridge []string `json:"transfer_bridge,omitempty"` // 2–3 шага переноса
-	TransferCheck  string   `json:"transfer_check,omitempty"`  // 1 вопрос для самопроверки переноса
+	SelfCheckRule  string `json:"self_check_rule,omitempty"`
+	TransferBridge string `json:"transfer_bridge,omitempty"` // 2–3 шага переноса
+	TransferCheck  string `json:"transfer_check,omitempty"`  // 1 вопрос для самопроверки переноса
 
 	NextActionCode string `json:"next_action_code,omitempty"` // e.g. offer_micro_quiz
 
