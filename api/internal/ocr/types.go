@@ -452,43 +452,44 @@ type AnalogueSolutionResult struct {
 	SolutionSteps []string    `json:"solution_steps"` // 3–4 шага, короткие предложения
 
 	// Мини‑проверки: структурные (yn/single_word/choice). Поддержан и старый строковый формат.
-	MiniChecks []MiniCheckItem `json:"mini_checks,omitempty"`
+	MiniChecks []MiniCheckItem `json:"mini_checks"`
 
 	// Типовые ошибки: коды + сообщения; поддержан старый строковый формат (только сообщение)
-	CommonMistakes []MistakeItem `json:"common_mistakes,omitempty"`
+	CommonMistakes []MistakeItem `json:"common_mistakes"`
 
-	SelfCheckRule  string `json:"self_check_rule,omitempty"`
-	TransferBridge string `json:"transfer_bridge,omitempty"` // 2–3 шага переноса
-	TransferCheck  string `json:"transfer_check,omitempty"`  // 1 вопрос для самопроверки переноса
+	SelfCheckRule  string `json:"self_check_rule"`
+	TransferBridge string `json:"transfer_bridge"`          // 2–3 шага переноса
+	TransferCheck  string `json:"transfer_check,omitempty"` // 1 вопрос для самопроверки переноса
 
-	NextActionCode string `json:"next_action_code,omitempty"` // e.g. offer_micro_quiz
+	NextActionCode string `json:"next_action_code"` // e.g. offer_micro_quiz
 
 	// Доп. контроль когнитивной нагрузки и методической связки
 	GradeTarget              *int   `json:"grade_target,omitempty"`
-	ReadabilityHint          string `json:"readability_hint,omitempty"`            // ≤12 слов в предложении
+	ReadabilityHint          string `json:"readability_hint,omitempty"`            // very_simple|simple|normal
 	MethodRationale          string `json:"method_rationale,omitempty"`            // почему это тот же приём
 	ContrastNote             string `json:"contrast_note,omitempty"`               // чем аналог отличается
 	DistanceFromOriginalHint string `json:"distance_from_original_hint,omitempty"` // low|medium|high
+	ToneHint                 string `json:"tone_hint,omitempty"`
 
 	// Безопасность/антиликовая защита
 	Safety                  AnalogueSafety `json:"safety"`
-	LeakGuardPassed         bool           `json:"leak_guard_passed"`
-	NoOriginalOverlapReport *OverlapReport `json:"no_original_overlap_report,omitempty"`
+	LeakGuardPassed         bool           `json:"leak_guard_passed,omitempty"`
+	NoOriginalOverlapReport []string       `json:"no_original_overlap_report,omitempty"`
 }
 
 type AnalogyData struct {
-	NumbersOrWords []string `json:"numbers_or_words,omitempty"`
-	Units          []string `json:"units,omitempty"`
-	Context        string   `json:"context,omitempty"`
+	NumbersOrWords []string `json:"numbers_or_words"`
+	Units          []string `json:"units"`
+	Context        string   `json:"context"`
 }
 
 // MiniCheckItem — поддерживает как структурный формат, так и старый строковый.
+// ВАЖНО: поле Raw используется только для приёма строкового старого формата и наружу не сериализуется.
 type MiniCheckItem struct {
-	Type         string   `json:"type,omitempty"` // yn|single_word|choice
-	Prompt       string   `json:"prompt,omitempty"`
-	Options      []string `json:"options,omitempty"`       // для choice
-	ExpectedForm string   `json:"expected_form,omitempty"` // форма ответа, не сам ответ
-	Raw          string   `json:"raw,omitempty"`           // если пришла строка
+	Type         string `json:"type,omitempty"` // yn|single_word|choice
+	Prompt       string `json:"prompt,omitempty"`
+	ExpectedForm string `json:"expected_form,omitempty"` // yes|no|word|A/B
+	Raw          string `json:"-"`                       // если пришла строка
 }
 
 func (m *MiniCheckItem) UnmarshalJSON(b []byte) error {
@@ -509,10 +510,11 @@ func (m *MiniCheckItem) UnmarshalJSON(b []byte) error {
 }
 
 // MistakeItem — типовая ошибка: код + сообщение; поддерживает старый строковый формат.
+// Поле Raw скрыто наружу, чтобы соответствовать schema (additionalProperties=false).
 type MistakeItem struct {
 	Code    string `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
-	Raw     string `json:"raw,omitempty"` // если пришла строка
+	Raw     string `json:"-"` // если пришла строка
 }
 
 func (m *MistakeItem) UnmarshalJSON(b []byte) error {
@@ -532,11 +534,8 @@ func (m *MistakeItem) UnmarshalJSON(b []byte) error {
 }
 
 // AnalogueSafety — базовые флаги безопасности
+// AnalogueSafety — базовые флаги безопасности
 type AnalogueSafety struct {
+	NoPII                bool `json:"no_pii"`
 	NoOriginalAnswerLeak bool `json:"no_original_answer_leak"`
-}
-
-type OverlapReport struct {
-	OverlapPercent float64  `json:"overlap_percent,omitempty"`
-	Notes          []string `json:"notes,omitempty"`
 }
