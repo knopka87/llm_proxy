@@ -329,10 +329,11 @@ func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.Norm
 		if b64 == "" {
 			return ocr.NormalizeResult{}, fmt.Errorf("openai normalize: answer.photo_b64 is empty")
 		}
-		mime := strings.TrimSpace(in.Answer.Mime)
-		if mime == "" {
-			mime = "image/jpeg"
+		photoBytes, mimeFromDataURL, err := util.DecodeBase64MaybeDataURL(in.Answer.PhotoB64)
+		if err != nil {
+			return ocr.NormalizeResult{}, fmt.Errorf("gemini normalize: bad photo base64: %w", err)
 		}
+		mime := util.PickMIME(strings.TrimSpace(in.Answer.Mime), mimeFromDataURL, photoBytes)
 		dataURL := b64
 		if !strings.HasPrefix(strings.ToLower(dataURL), "data:") {
 			dataURL = "data:" + mime + ";base64," + b64
