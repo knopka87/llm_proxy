@@ -2,6 +2,7 @@ package gemini
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -161,9 +162,14 @@ func (e *Engine) Parse(ctx context.Context, in ocr.ParseInput) (ocr.ParseResult,
 	user := "Ответ строго JSON по parse.schema.json. Без комментариев." + hints.String()
 
 	imgBytes, mimeFromDataURL, err := util.DecodeBase64MaybeDataURL(in.ImageB64)
-	if err != nil {
-		return ocr.ParseResult{}, fmt.Errorf("gemini parse: bad base64: %w", err)
+	if len(imgBytes) == 0 || err != nil {
+		raw, err := base64.StdEncoding.DecodeString(in.ImageB64)
+		if err != nil {
+			return ocr.ParseResult{}, fmt.Errorf("gemini parse: bad base64: %w", err)
+		}
+		imgBytes = raw
 	}
+
 	finalMIME := util.PickMIME("", mimeFromDataURL, imgBytes)
 
 	parts := []genai.Part{

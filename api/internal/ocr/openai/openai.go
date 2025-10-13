@@ -38,8 +38,21 @@ func (e *Engine) Detect(ctx context.Context, in ocr.DetectInput) (ocr.DetectResu
 	if e.APIKey == "" {
 		return ocr.DetectResult{}, fmt.Errorf("OPENAI_API_KEY not set")
 	}
-	b64 := base64.StdEncoding.EncodeToString([]byte(in.ImageB64))
-	dataURL := "data:" + in.Mime + ";base64," + b64
+	// normalize input image: accept raw base64 or full data: URL
+	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.ImageB64)
+	if len(imgBytes) == 0 {
+		// try plain base64
+		raw, err := base64.StdEncoding.DecodeString(in.ImageB64)
+		if err != nil {
+			return ocr.DetectResult{}, fmt.Errorf("openai detect: invalid image base64")
+		}
+		imgBytes = raw
+	}
+	mime := util.PickMIME(in.Mime, mimeFromDataURL, imgBytes)
+	if !isOpenAIImageMIME(mime) {
+		return ocr.DetectResult{}, fmt.Errorf("openai detect: unsupported MIME %s (need image/jpeg|png|webp)", mime)
+	}
+	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
 
 	system := `Ты — внимательный ассистент 1–4 классов. НЕ решай задание.
 Верни только JSON, строго соответствующий detect.schema.json. Любой текст вне JSON — ошибка.
@@ -116,9 +129,20 @@ func (e *Engine) Parse(ctx context.Context, in ocr.ParseInput) (ocr.ParseResult,
 		model = in.Options.ModelOverride
 	}
 
-	mime := util.SniffMimeHTTP([]byte(in.ImageB64))
-	b64 := base64.StdEncoding.EncodeToString([]byte(in.ImageB64))
-	dataURL := "data:" + mime + ";base64," + b64
+	// normalize input image: accept raw base64 or full data: URL
+	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.ImageB64)
+	if len(imgBytes) == 0 {
+		raw, err := base64.StdEncoding.DecodeString(in.ImageB64)
+		if err != nil {
+			return ocr.ParseResult{}, fmt.Errorf("openai parse: invalid image base64")
+		}
+		imgBytes = raw
+	}
+	mime := util.PickMIME("", mimeFromDataURL, imgBytes)
+	if !isOpenAIImageMIME(mime) {
+		return ocr.ParseResult{}, fmt.Errorf("openai parse: unsupported MIME %s (need image/jpeg|png|webp)", mime)
+	}
+	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
 
 	// Подсказки из DETECT/выбора пользователя
 	var hints strings.Builder
@@ -530,4 +554,13 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in ocr.AnalogueSolutionIn
 	}
 	ar.Safety.NoOriginalAnswerLeak = true
 	return ar, nil
+}
+
+func isOpenAIImageMIME(m string) bool {
+	m = strings.ToLower(strings.TrimSpace(m))
+	switch m {
+	case "image/jpeg", "image/jpg", "image/png", "image/webp":
+		return true
+	}
+	return false
 }
