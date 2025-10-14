@@ -81,6 +81,11 @@ func (e *Engine) Detect(ctx context.Context, in ocr.DetectInput) (ocr.DetectResu
 		// (опционально) можно включить жёсткий JSON-режим у OpenAI:
 		"response_format": map[string]any{"type": "json_object"},
 	}
+	// для GPT-5 поддерживается только значение по умолчанию - 1
+	if strings.Contains(e.Model, "gpt-5") {
+		body["temperature"] = 1
+	}
+
 	payload, _ := json.Marshal(body)
 
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
@@ -184,6 +189,10 @@ parse.schema.json:
 		"temperature":     0,
 		"response_format": map[string]any{"type": "json_object"},
 	}
+	// для GPT-5 поддерживается только значение по умолчанию - 1
+	if strings.Contains(e.Model, "gpt-5") {
+		body["temperature"] = 1
+	}
 
 	payload, _ := json.Marshal(body)
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
@@ -252,6 +261,11 @@ hint.schema.json:
 		"temperature":     0,
 		"response_format": map[string]any{"type": "json_object"},
 	}
+	// для GPT-5 поддерживается только значение по умолчанию - 1
+	if strings.Contains(e.Model, "gpt-5") {
+		body["temperature"] = 1
+	}
+
 	payload, _ := json.Marshal(body)
 
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
@@ -358,6 +372,11 @@ func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.Norm
 		"temperature":     0,
 		"response_format": map[string]any{"type": "json_object"},
 	}
+	// для GPT-5 поддерживается только значение по умолчанию - 1
+	if strings.Contains(e.Model, "gpt-5") {
+		body["temperature"] = 1
+	}
+
 	payload, _ := json.Marshal(body)
 
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
@@ -438,6 +457,11 @@ func (e *Engine) CheckSolution(ctx context.Context, in ocr.CheckSolutionInput) (
 		"temperature":     0,
 		"response_format": map[string]any{"type": "json_object"},
 	}
+	// для GPT-5 поддерживается только значение по умолчанию - 1
+	if strings.Contains(e.Model, "gpt-5") {
+		body["temperature"] = 1
+	}
+
 	payload, _ := json.Marshal(body)
 
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
@@ -514,6 +538,11 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in ocr.AnalogueSolutionIn
 		"temperature":     0,
 		"response_format": map[string]any{"type": "json_object"},
 	}
+	// для GPT-5 поддерживается только значение по умолчанию - 1
+	if strings.Contains(e.Model, "gpt-5") {
+		body["temperature"] = 1
+	}
+
 	payload, _ := json.Marshal(body)
 
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
