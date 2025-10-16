@@ -44,7 +44,7 @@ func (h *Handle) AnalogueSolution(w http.ResponseWriter, r *http.Request) {
 		req.Locale = "ru"
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 70*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 180*time.Second)
 	defer cancel()
 
 	engine, err := h.engs.GetEngine(req.LLMName)
