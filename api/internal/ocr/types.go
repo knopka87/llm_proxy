@@ -8,27 +8,55 @@ type DetectInput struct {
 	GradeHint int    `json:"grade_hint,omitempty"`
 }
 
+// DetectTaskCandidate — кандидат на выбор задачи при дизамбигуации
+type DetectTaskCandidate struct {
+	Index      int     `json:"index"`
+	Title      string  `json:"title"`
+	Confidence float64 `json:"confidence"`
+}
+
+// DetectResult — соответствует detect.schema.json (v1.1, rev5)
+// ВАЖНО: поля, которые запрещены схемой в некоторых состояниях,
+// сделаны опциональными (* или omitempty), чтобы не сериализоваться лишний раз.
+//
+// required: final_state, confidence, multiple_tasks_detected, found_solution,
+//
+//	has_diagrams_or_formulas, has_faces, pii_detected
+//
+// см. detect.schema.json
 type DetectResult struct {
-	FinalState             string   `json:"final_state"`
-	Confidence             float64  `json:"confidence"`
-	NeedsRescan            bool     `json:"needs_rescan"`
-	RescanReason           string   `json:"rescan_reason"`
-	RescanCode             string   `json:"rescan_code"`
-	MultipleTasksDetected  bool     `json:"multiple_tasks_detected"`
-	TasksBrief             []string `json:"tasks_brief"`
-	TopCandidateIndex      *int     `json:"top_candidate_index,omitempty"`
-	AutoChoiceSuggested    bool     `json:"auto_choice_suggested"`
-	DisambiguationNeeded   bool     `json:"disambiguation_needed"`
-	DisambiguationReason   string   `json:"disambiguation_reason"`
-	DisambiguationQuestion string   `json:"disambiguation_question"`
-	FoundSolution          bool     `json:"found_solution"`
-	SolutionRoughQuality   string   `json:"solution_rough_quality"`
-	HasDiagramsOrFormulas  bool     `json:"has_diagrams_or_formulas"`
-	HasFaces               bool     `json:"has_faces"`
-	PIIDetected            bool     `json:"pii_detected"`
-	SubjectGuess           string   `json:"subject_guess"`
-	SubjectConfidence      float64  `json:"subject_confidence"`
-	AltSubjects            []string `json:"alt_subjects"`
+	FinalState string  `json:"final_state"`
+	Confidence float64 `json:"confidence"`
+
+	// multi-task & disambiguation
+	MultipleTasksDetected  bool                  `json:"multiple_tasks_detected"`
+	TasksBrief             []string              `json:"tasks_brief,omitempty"`
+	DisambiguationNeeded   *bool                 `json:"disambiguation_needed,omitempty"`
+	DisambiguationQuestion string                `json:"disambiguation_question,omitempty"`
+	TasksCandidates        []DetectTaskCandidate `json:"tasks_candidates,omitempty"`
+	TopCandidateIndex      *int                  `json:"top_candidate_index,omitempty"`
+	AutoChoiceSuggested    *bool                 `json:"auto_choice_suggested,omitempty"`
+
+	// solution presence & rough quality
+	FoundSolution        bool   `json:"found_solution"`
+	SolutionRoughQuality string `json:"solution_rough_quality,omitempty"` // ok|uncertain|bad
+
+	// rescan branch (only when final_state = needs_rescan)
+	NeedsRescan  *bool  `json:"needs_rescan,omitempty"`
+	RescanCode   string `json:"rescan_code,omitempty"`   // blur|glare|crop|too_far|low_light|none
+	RescanReason string `json:"rescan_reason,omitempty"` // 5..140 chars
+
+	// graphics
+	HasDiagramsOrFormulas bool     `json:"has_diagrams_or_formulas"`
+	GraphicsKinds         []string `json:"graphics_kinds,omitempty"` // when HasDiagramsOrFormulas=true
+
+	// safety/privacy
+	HasFaces    bool `json:"has_faces"`
+	PIIDetected bool `json:"pii_detected"`
+
+	// subject guess (only for recognized_ready_to_parse)
+	SubjectGuess      string  `json:"subject_guess,omitempty"`      // math|russian|logic|world|other|unknown
+	SubjectConfidence float64 `json:"subject_confidence,omitempty"` // 0..1
 }
 
 type ParseInput struct {

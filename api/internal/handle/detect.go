@@ -11,6 +11,14 @@ import (
 	"llm-proxy/api/internal/ocr"
 )
 
+func stripDataURL(b64 string) string {
+	s := strings.TrimSpace(b64)
+	if i := strings.Index(s, ","); i != -1 && strings.HasPrefix(strings.ToLower(s[:i]), "data:") {
+		return s[i+1:]
+	}
+	return s
+}
+
 type DetectRequest struct {
 	LLMName string `json:"llm_name"`
 	ocr.DetectInput
@@ -18,18 +26,19 @@ type DetectRequest struct {
 
 func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "POST only", http.StatusMethodNotAllowed)
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "POST only"})
 		return
 	}
 	var req DetectRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "bad json: "+err.Error(), http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad json: " + err.Error()})
 		return
 	}
 
-	img, err := base64.StdEncoding.DecodeString(strings.TrimSpace(req.ImageB64))
+	req.ImageB64 = stripDataURL(req.ImageB64)
+	img, err := base64.StdEncoding.DecodeString(req.ImageB64)
 	if err != nil || len(img) == 0 {
-		http.Error(w, "bad image_b64", http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad image_b64"})
 		return
 	}
 
@@ -40,13 +49,13 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
-		http.Error(w, "detect error: "+err.Error(), http.StatusBadGateway)
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "detect error: " + err.Error()})
 		return
 	}
 
 	out, err = engine.Detect(ctx, req.DetectInput)
 	if err != nil {
-		http.Error(w, "detect error: "+err.Error(), http.StatusBadGateway)
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "detect error: " + err.Error()})
 		return
 	}
 
