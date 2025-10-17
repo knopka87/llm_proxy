@@ -1,225 +1,221 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "detect.schema.json",
-  "title": "DETECT output schema (v1.1, rev5)",
+  "title": "DETECT v5 output",
   "type": "object",
-  "additionalProperties": false,
   "required": [
-    "final_state",
-    "confidence",
-    "multiple_tasks_detected",
-    "found_solution",
-    "has_diagrams_or_formulas",
-    "has_faces",
-    "pii_detected"
+    "verbatim_mode",
+    "whitespace_policy",
+    "operators_strict",
+    "page_meta",
+    "tasks"
   ],
   "properties": {
-    "final_state": {
+    "verbatim_mode": {
+      "type": "boolean",
+      "const": true
+    },
+    "whitespace_policy": {
       "type": "string",
       "enum": [
-        "recognized_ready_to_parse",
-        "needs_rescan",
-        "not_a_task",
-        "inappropriate_image"
+        "preserve_all"
       ]
     },
-    "confidence": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1
+    "operators_strict": {
+      "type": "boolean",
+      "const": true
     },
-    "multiple_tasks_detected": {
-      "type": "boolean"
-    },
-    "tasks_brief": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 120
-      },
-      "minItems": 2,
-      "maxItems": 12
-    },
-    "disambiguation_needed": {
-      "type": "boolean"
-    },
-    "disambiguation_question": {
-      "type": "string",
-      "minLength": 5,
-      "maxLength": 140
-    },
-    "tasks_candidates": {
-      "type": "array",
-      "minItems": 2,
-      "maxItems": 12,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "index",
-          "title",
-          "confidence"
-        ],
-        "properties": {
-          "index": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "title": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 80
-          },
-          "confidence": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1
-          }
+    "page_meta": {
+      "type": "object",
+      "required": [
+        "source_id",
+        "page_number"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string"
+        },
+        "page_number": {
+          "type": "integer"
+        },
+        "image_bbox_units": {
+          "type": "string",
+          "enum": [
+            "px"
+          ]
         }
       }
     },
-    "top_candidate_index": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "auto_choice_suggested": {
-      "type": "boolean"
-    },
-    "found_solution": {
-      "type": "boolean"
-    },
-    "solution_rough_quality": {
-      "type": "string",
-      "enum": [
-        "ok",
-        "uncertain",
-        "bad"
-      ]
-    },
-    "needs_rescan": {
-      "type": "boolean"
-    },
-    "rescan_code": {
-      "type": "string",
-      "enum": [
-        "blur",
-        "glare",
-        "crop",
-        "too_far",
-        "low_light",
-        "none"
-      ]
-    },
-    "rescan_reason": {
-      "type": "string",
-      "minLength": 5,
-      "maxLength": 140
-    },
-    "has_diagrams_or_formulas": {
-      "type": "boolean"
-    },
-    "graphics_kinds": {
+    "tasks": {
       "type": "array",
-      "items": {
-        "type": "string",
-        "enum": [
-          "table",
-          "geometry",
-          "diagram",
-          "formula",
-          "illustration"
-        ]
-      },
       "minItems": 1,
-      "maxItems": 5,
-      "uniqueItems": true
-    },
-    "has_faces": {
-      "type": "boolean"
-    },
-    "pii_detected": {
-      "type": "boolean"
-    },
-    "subject_guess": {
-      "type": "string",
-      "enum": [
-        "math",
-        "russian",
-        "logic",
-        "world",
-        "other",
-        "unknown"
-      ]
-    },
-    "subject_confidence": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1
+      "items": {
+        "type": "object",
+        "required": [
+          "original_number",
+          "title_raw",
+          "blocks",
+          "has_faces",
+          "pii_detected"
+        ],
+        "properties": {
+          "original_number": {
+            "type": "string"
+          },
+          "title_raw": {
+            "type": "string"
+          },
+          "letters_detected": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[а-я]$"
+            }
+          },
+          "examples_per_letter_expected": {
+            "type": "integer"
+          },
+          "has_faces": {
+            "type": "boolean"
+          },
+          "pii_detected": {
+            "type": "boolean"
+          },
+          "multiple_tasks_detected": {
+            "type": "boolean"
+          },
+          "blocks": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "block_id",
+                "block_raw",
+                "items_raw"
+              ],
+              "properties": {
+                "block_id": {
+                  "type": "string"
+                },
+                "block_label": {
+                  "type": "string",
+                  "description": "e.g., 'а)'"
+                },
+                "block_raw": {
+                  "type": "string"
+                },
+                "items_raw": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "text",
+                      "group_id"
+                    ],
+                    "properties": {
+                      "text": {
+                        "type": "string"
+                      },
+                      "group_id": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "layout_raw": {
+                  "type": "string"
+                },
+                "semantic_raw": {
+                  "type": "object",
+                  "properties": {
+                    "columns": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "operand",
+                              "operator",
+                              "sum_line",
+                              "result"
+                            ]
+                          },
+                          "cells": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "cells"
+                        ]
+                      }
+                    },
+                    "boxes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "row",
+                          "col"
+                        ],
+                        "properties": {
+                          "row": {
+                            "type": "integer"
+                          },
+                          "col": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "quality_checks": {
+            "type": "object",
+            "properties": {
+              "sentence_order_preserved": {
+                "type": "boolean"
+              },
+              "letters_count_matches_source": {
+                "type": "boolean"
+              },
+              "examples_per_letter_matches_source": {
+                "type": "boolean"
+              },
+              "mul_sign_correct_per_item": {
+                "type": "boolean"
+              },
+              "thousands_space_preserved": {
+                "type": "boolean"
+              },
+              "layout_roundtrip_ok": {
+                "type": "boolean"
+              },
+              "boxes_count_match": {
+                "type": "boolean"
+              },
+              "alignment_check": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
     }
-  },
-  "allOf": [
-    {
-      "if": { "properties": { "multiple_tasks_detected": { "const": true } } },
-      "then": { "required": [ "tasks_brief" ] },
-      "else": { "not": { "anyOf": [
-        { "required": [ "tasks_brief" ] },
-        { "required": [ "disambiguation_needed" ] },
-        { "required": [ "disambiguation_question" ] },
-        { "required": [ "tasks_candidates" ] },
-        { "required": [ "top_candidate_index" ] },
-        { "required": [ "auto_choice_suggested" ] }
-      ] } }
-    },
-    {
-      "if": { "properties": { "disambiguation_needed": { "const": true } } },
-      "then": {
-        "required": [ "disambiguation_question", "tasks_candidates", "top_candidate_index" ],
-        "properties": { "multiple_tasks_detected": { "const": true } }
-      },
-      "else": { "not": { "anyOf": [
-        { "required": [ "disambiguation_question" ] },
-        { "required": [ "tasks_candidates" ] },
-        { "required": [ "top_candidate_index" ] },
-        { "required": [ "auto_choice_suggested" ] }
-      ] } }
-    },
-    {
-      "if": { "properties": { "final_state": { "const": "needs_rescan" } } },
-      "then": {
-        "required": [ "needs_rescan", "rescan_reason" ],
-        "properties": { "needs_rescan": { "const": true } }
-      },
-      "else": { "not": { "anyOf": [
-        { "required": [ "needs_rescan" ] },
-        { "required": [ "rescan_code" ] },
-        { "required": [ "rescan_reason" ] }
-      ] } }
-    },
-    {
-      "if": { "properties": { "found_solution": { "const": true } } },
-      "then": { "properties": { "final_state": { "const": "recognized_ready_to_parse" } } }
-    },
-    {
-      "if": { "properties": { "has_diagrams_or_formulas": { "const": true } } },
-      "then": { "required": [ "graphics_kinds" ] },
-      "else": { "not": { "required": [ "graphics_kinds" ] } }
-    },
-    {
-      "if": { "properties": { "final_state": { "const": "recognized_ready_to_parse" } } },
-      "then": { "not": { "anyOf": [] } },
-      "else": { "not": { "anyOf": [
-        { "required": [ "subject_guess" ] },
-        { "required": [ "subject_confidence" ] }
-      ] } }
-    },
-    {
-      "if": { "required": [ "subject_guess" ] },
-      "then": { "required": [ "subject_confidence" ] }
-    },
-    {
-      "if": { "required": [ "subject_confidence" ] },
-      "then": { "required": [ "subject_guess" ] }
-    }
-  ]
+  }
 }
