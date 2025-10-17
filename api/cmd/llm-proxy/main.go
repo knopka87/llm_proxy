@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"llm-proxy/api/internal/config"
 	handle "llm-proxy/api/internal/handle"
@@ -42,6 +43,14 @@ func main() {
 	mux.HandleFunc("/v1/analogue_solution", h.AnalogueSolution)
 
 	addr := ":" + cfg.Port
+	srv := &http.Server{
+		Addr:              addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 15 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      5 * time.Minute,
+		IdleTimeout:       2 * time.Minute,
+	}
 	log.Printf("llm-proxy listening on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	log.Fatal(srv.ListenAndServe())
 }

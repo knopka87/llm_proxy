@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -38,7 +39,17 @@ func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 180*time.Second)
+	deadline := 180 * time.Second
+	if ts := r.Header.Get("X-Request-Timeout"); ts != "" {
+		if v, _ := strconv.Atoi(ts); v > 0 {
+			deadline = time.Duration(v) * time.Second
+		}
+	} else if ts := r.URL.Query().Get("timeoutSec"); ts != "" {
+		if v, _ := strconv.Atoi(ts); v > 0 {
+			deadline = time.Duration(v) * time.Second
+		}
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
 	engine, err := h.engs.GetEngine(req.LLMName)
