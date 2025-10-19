@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"llm-proxy/api/internal/ocr"
+	"llm-proxy/api/internal/ocr/types"
 )
 
 func stripDataURL(b64 string) string {
@@ -22,7 +22,7 @@ func stripDataURL(b64 string) string {
 
 type DetectRequest struct {
 	LLMName string `json:"llm_name"`
-	ocr.DetectInput
+	types.DetectInput
 }
 
 func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +56,7 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
-	var out ocr.DetectResult
+	var out types.DetectResult
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {

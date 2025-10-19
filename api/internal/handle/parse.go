@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"llm-proxy/api/internal/ocr"
+	"llm-proxy/api/internal/ocr/types"
 )
 
 type ParseRequest struct {
 	LLMName string `json:"llm_name"`
-	ocr.ParseInput
+	types.ParseInput
 }
 
 func (h *Handle) Parse(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +47,7 @@ func (h *Handle) Parse(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
-	var out ocr.ParseResult
+	var out types.ParseResult
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {

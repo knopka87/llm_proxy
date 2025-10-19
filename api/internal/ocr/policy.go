@@ -1,7 +1,9 @@
 package ocr
 
+import "llm-proxy/api/internal/ocr/types"
+
 // ApplyParsePolicy корректирует confirmation_needed/reason по правилам PROMPT_PARSE.
-func ApplyParsePolicy(pr *ParseResult) {
+func ApplyParsePolicy(pr *types.ParseResult) {
 	// Автоподтверждение при всех условиях:
 	auto := pr.Confidence >= 0.80 &&
 		pr.MeaningChangeRisk <= 0.20 &&

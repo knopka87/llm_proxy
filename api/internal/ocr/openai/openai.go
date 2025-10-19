@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"llm-proxy/api/internal/ocr"
+	"llm-proxy/api/internal/ocr/types"
 	"llm-proxy/api/internal/prompt"
 	"llm-proxy/api/internal/util"
 )
@@ -34,9 +35,9 @@ func (e *Engine) Name() string { return "gpt" }
 
 func (e *Engine) GetModel() string { return e.Model }
 
-func (e *Engine) Detect(ctx context.Context, in ocr.DetectInput) (ocr.DetectResult, error) {
+func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.DetectResult, error) {
 	if e.APIKey == "" {
-		return ocr.DetectResult{}, fmt.Errorf("OPENAI_API_KEY not set")
+		return types.DetectResult{}, fmt.Errorf("OPENAI_API_KEY not set")
 	}
 	// normalize input image: accept raw base64 or full data: URL
 	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.ImageB64)
@@ -44,13 +45,13 @@ func (e *Engine) Detect(ctx context.Context, in ocr.DetectInput) (ocr.DetectResu
 		// try plain base64
 		raw, err := base64.StdEncoding.DecodeString(in.ImageB64)
 		if err != nil {
-			return ocr.DetectResult{}, fmt.Errorf("openai detect: invalid image base64")
+			return types.DetectResult{}, fmt.Errorf("openai detect: invalid image base64")
 		}
 		imgBytes = raw
 	}
 	mime := util.PickMIME(in.Mime, mimeFromDataURL, imgBytes)
 	if !isOpenAIImageMIME(mime) {
-		return ocr.DetectResult{}, fmt.Errorf("openai detect: unsupported MIME %s (need image/jpeg|png|webp)", mime)
+		return types.DetectResult{}, fmt.Errorf("openai detect: unsupported MIME %s (need image/jpeg|png|webp)", mime)
 	}
 	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
 
@@ -126,12 +127,12 @@ func (e *Engine) Detect(ctx context.Context, in ocr.DetectInput) (ocr.DetectResu
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return ocr.DetectResult{}, err
+		return types.DetectResult{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		x, _ := io.ReadAll(resp.Body)
-		return ocr.DetectResult{}, fmt.Errorf("openai detect %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.DetectResult{}, fmt.Errorf("openai detect %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	var raw struct {
@@ -142,24 +143,24 @@ func (e *Engine) Detect(ctx context.Context, in ocr.DetectInput) (ocr.DetectResu
 		} `json:"choices"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return ocr.DetectResult{}, err
+		return types.DetectResult{}, err
 	}
 	if len(raw.Choices) == 0 {
-		return ocr.DetectResult{}, fmt.Errorf("openai detect: empty response")
+		return types.DetectResult{}, fmt.Errorf("openai detect: empty response")
 	}
 	out := strings.TrimSpace(raw.Choices[0].Message.Content)
 	out = util.StripCodeFences(out)
 
-	var r ocr.DetectResult
+	var r types.DetectResult
 	if err := json.Unmarshal([]byte(out), &r); err != nil {
-		return ocr.DetectResult{}, fmt.Errorf("openai detect: bad JSON: %w", err)
+		return types.DetectResult{}, fmt.Errorf("openai detect: bad JSON: %w", err)
 	}
 	return r, nil
 }
 
-func (e *Engine) Parse(ctx context.Context, in ocr.ParseInput) (ocr.ParseResult, error) {
+func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseResult, error) {
 	if e.APIKey == "" {
-		return ocr.ParseResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.ParseResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.Model
 	if in.Options.ModelOverride != "" {
@@ -171,13 +172,13 @@ func (e *Engine) Parse(ctx context.Context, in ocr.ParseInput) (ocr.ParseResult,
 	if len(imgBytes) == 0 {
 		raw, err := base64.StdEncoding.DecodeString(in.ImageB64)
 		if err != nil {
-			return ocr.ParseResult{}, fmt.Errorf("openai parse: invalid image base64")
+			return types.ParseResult{}, fmt.Errorf("openai parse: invalid image base64")
 		}
 		imgBytes = raw
 	}
 	mime := util.PickMIME("", mimeFromDataURL, imgBytes)
 	if !isOpenAIImageMIME(mime) {
-		return ocr.ParseResult{}, fmt.Errorf("openai parse: unsupported MIME %s (need image/jpeg|png|webp)", mime)
+		return types.ParseResult{}, fmt.Errorf("openai parse: unsupported MIME %s (need image/jpeg|png|webp)", mime)
 	}
 	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
 
@@ -233,12 +234,12 @@ parse.schema.json:
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return ocr.ParseResult{}, err
+		return types.ParseResult{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return ocr.ParseResult{}, fmt.Errorf("openai parse %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.ParseResult{}, fmt.Errorf("openai parse %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	var raw struct {
@@ -249,16 +250,16 @@ parse.schema.json:
 		} `json:"choices"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return ocr.ParseResult{}, err
+		return types.ParseResult{}, err
 	}
 	if len(raw.Choices) == 0 {
-		return ocr.ParseResult{}, fmt.Errorf("openai parse: empty response")
+		return types.ParseResult{}, fmt.Errorf("openai parse: empty response")
 	}
 	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
 
-	var pr ocr.ParseResult
+	var pr types.ParseResult
 	if err := json.Unmarshal([]byte(out), &pr); err != nil {
-		return ocr.ParseResult{}, fmt.Errorf("openai parse: bad JSON: %w", err)
+		return types.ParseResult{}, fmt.Errorf("openai parse: bad JSON: %w", err)
 	}
 
 	// Серверный гард (политика подтверждения из PROMPT_PARSE)
@@ -266,9 +267,9 @@ parse.schema.json:
 	return pr, nil
 }
 
-func (e *Engine) Hint(ctx context.Context, in ocr.HintInput) (ocr.HintResult, error) {
+func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult, error) {
 	if e.APIKey == "" {
-		return ocr.HintResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.HintResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.Model
 
@@ -306,12 +307,12 @@ hint.schema.json:
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return ocr.HintResult{}, err
+		return types.HintResult{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return ocr.HintResult{}, fmt.Errorf("openai hint %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.HintResult{}, fmt.Errorf("openai hint %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	var raw struct {
@@ -322,24 +323,24 @@ hint.schema.json:
 		} `json:"choices"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return ocr.HintResult{}, err
+		return types.HintResult{}, err
 	}
 	if len(raw.Choices) == 0 {
-		return ocr.HintResult{}, fmt.Errorf("openai hint: empty response")
+		return types.HintResult{}, fmt.Errorf("openai hint: empty response")
 	}
 	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
 
-	var hr ocr.HintResult
+	var hr types.HintResult
 	if err := json.Unmarshal([]byte(out), &hr); err != nil {
-		return ocr.HintResult{}, fmt.Errorf("openai hint: bad JSON: %w", err)
+		return types.HintResult{}, fmt.Errorf("openai hint: bad JSON: %w", err)
 	}
 	hr.NoFinalAnswer = true
 	return hr, nil
 }
 
-func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.NormalizeResult, error) {
+func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.NormalizeResult, error) {
 	if e.APIKey == "" {
-		return ocr.NormalizeResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.NormalizeResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 
 	model := e.Model
@@ -373,11 +374,11 @@ func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.Norm
 	if strings.EqualFold(in.Answer.Source, "photo") {
 		b64 := strings.TrimSpace(in.Answer.PhotoB64)
 		if b64 == "" {
-			return ocr.NormalizeResult{}, fmt.Errorf("openai normalize: answer.photo_b64 is empty")
+			return types.NormalizeResult{}, fmt.Errorf("openai normalize: answer.photo_b64 is empty")
 		}
 		photoBytes, mimeFromDataURL, err := util.DecodeBase64MaybeDataURL(in.Answer.PhotoB64)
 		if err != nil {
-			return ocr.NormalizeResult{}, fmt.Errorf("gemini normalize: bad photo base64: %w", err)
+			return types.NormalizeResult{}, fmt.Errorf("gemini normalize: bad photo base64: %w", err)
 		}
 		mime := util.PickMIME(strings.TrimSpace(in.Answer.Mime), mimeFromDataURL, photoBytes)
 		dataURL := b64
@@ -390,7 +391,7 @@ func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.Norm
 		}
 	} else { // text (по умолчанию)
 		if strings.TrimSpace(in.Answer.Text) == "" {
-			return ocr.NormalizeResult{}, fmt.Errorf("openai normalize: answer.text is empty")
+			return types.NormalizeResult{}, fmt.Errorf("openai normalize: answer.text is empty")
 		}
 		userContent = string(userJSON)
 	}
@@ -417,12 +418,12 @@ func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.Norm
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return ocr.NormalizeResult{}, err
+		return types.NormalizeResult{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return ocr.NormalizeResult{}, fmt.Errorf("openai normalize %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.NormalizeResult{}, fmt.Errorf("openai normalize %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	var raw struct {
@@ -433,24 +434,24 @@ func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.Norm
 		} `json:"choices"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return ocr.NormalizeResult{}, err
+		return types.NormalizeResult{}, err
 	}
 	if len(raw.Choices) == 0 {
-		return ocr.NormalizeResult{}, fmt.Errorf("openai normalize: empty response")
+		return types.NormalizeResult{}, fmt.Errorf("openai normalize: empty response")
 	}
 	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
 
-	var nr ocr.NormalizeResult
+	var nr types.NormalizeResult
 	if err := json.Unmarshal([]byte(out), &nr); err != nil {
-		return ocr.NormalizeResult{}, fmt.Errorf("openai normalize: bad JSON: %w", err)
+		return types.NormalizeResult{}, fmt.Errorf("openai normalize: bad JSON: %w", err)
 	}
 	return nr, nil
 }
 
 // CheckSolution — проверка решения по CHECK_SOLUTION v1.1 для OpenAI Chat Completions
-func (e *Engine) CheckSolution(ctx context.Context, in ocr.CheckSolutionInput) (ocr.CheckSolutionResult, error) {
+func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput) (types.CheckSolutionResult, error) {
 	if e.APIKey == "" {
-		return ocr.CheckSolutionResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.CheckSolutionResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 
 	model := e.Model
@@ -502,12 +503,12 @@ func (e *Engine) CheckSolution(ctx context.Context, in ocr.CheckSolutionInput) (
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return ocr.CheckSolutionResult{}, err
+		return types.CheckSolutionResult{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return ocr.CheckSolutionResult{}, fmt.Errorf("openai check %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.CheckSolutionResult{}, fmt.Errorf("openai check %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	var raw struct {
@@ -518,23 +519,23 @@ func (e *Engine) CheckSolution(ctx context.Context, in ocr.CheckSolutionInput) (
 		} `json:"choices"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return ocr.CheckSolutionResult{}, err
+		return types.CheckSolutionResult{}, err
 	}
 	if len(raw.Choices) == 0 {
-		return ocr.CheckSolutionResult{}, fmt.Errorf("openai check: empty response")
+		return types.CheckSolutionResult{}, fmt.Errorf("openai check: empty response")
 	}
 	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
 
-	var cr ocr.CheckSolutionResult
+	var cr types.CheckSolutionResult
 	if err := json.Unmarshal([]byte(out), &cr); err != nil {
-		return ocr.CheckSolutionResult{}, fmt.Errorf("openai check: bad JSON: %w", err)
+		return types.CheckSolutionResult{}, fmt.Errorf("openai check: bad JSON: %w", err)
 	}
 	return cr, nil
 }
 
-func (e *Engine) AnalogueSolution(ctx context.Context, in ocr.AnalogueSolutionInput) (ocr.AnalogueSolutionResult, error) {
+func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolutionInput) (types.AnalogueSolutionResult, error) {
 	if e.APIKey == "" {
-		return ocr.AnalogueSolutionResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.AnalogueSolutionResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 
 	model := e.Model
@@ -583,12 +584,12 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in ocr.AnalogueSolutionIn
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return ocr.AnalogueSolutionResult{}, err
+		return types.AnalogueSolutionResult{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return ocr.AnalogueSolutionResult{}, fmt.Errorf("openai analogue %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	var raw struct {
@@ -599,16 +600,16 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in ocr.AnalogueSolutionIn
 		} `json:"choices"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return ocr.AnalogueSolutionResult{}, err
+		return types.AnalogueSolutionResult{}, err
 	}
 	if len(raw.Choices) == 0 {
-		return ocr.AnalogueSolutionResult{}, fmt.Errorf("openai analogue: empty response")
+		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue: empty response")
 	}
 	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
 
-	var ar ocr.AnalogueSolutionResult
+	var ar types.AnalogueSolutionResult
 	if err := json.Unmarshal([]byte(out), &ar); err != nil {
-		return ocr.AnalogueSolutionResult{}, fmt.Errorf("openai analogue: bad JSON: %w", err)
+		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue: bad JSON: %w", err)
 	}
 	// Жёсткие флаги безопасности по умолчанию, если модель их не проставила
 	if !ar.LeakGuardPassed {

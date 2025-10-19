@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"llm-proxy/api/internal/ocr"
+	"llm-proxy/api/internal/ocr/types"
 )
 
 // --- NORMALIZE ---------------------------------------------------------------
 
 type normalizeReq struct {
 	LLMName string `json:"llm_name"`
-	ocr.NormalizeInput
+	types.NormalizeInput
 }
 
 func (h *Handle) Normalize(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +51,7 @@ func (h *Handle) Normalize(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
-	var out ocr.NormalizeResult
+	var out types.NormalizeResult
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {

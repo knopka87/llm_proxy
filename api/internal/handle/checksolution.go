@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"llm-proxy/api/internal/ocr"
+	"llm-proxy/api/internal/ocr/types"
 )
 
 // --- CHECK SOLUTION ---------------------------------------------------------
 
 type checkReq struct {
 	LLMName string `json:"llm_name"`
-	ocr.CheckSolutionInput
+	types.CheckSolutionInput
 }
 
 func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {

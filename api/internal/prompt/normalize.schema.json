@@ -3,12 +3,226 @@
   "$id": "normalize.schema.json",
   "type": "object",
   "additionalProperties": false,
+  "required": [
+    "success",
+    "shape",
+    "answer_source"
+  ],
   "properties": {
+    "success": {
+      "type": "boolean"
+    },
+    "shape": {
+      "type": "string",
+      "enum": [
+        "number",
+        "string",
+        "steps",
+        "list"
+      ]
+    },
+    "shape_detected": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "number",
+        "string",
+        "steps",
+        "list",
+        "unknown",
+        null
+      ]
+    },
+    "value": {},
+    "number_kind": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "integer",
+        "decimal",
+        "fraction",
+        "mixed_fraction",
+        "time",
+        "range",
+        "unknown",
+        null
+      ]
+    },
+    "confidence": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "answer_source": {
+      "type": "string",
+      "enum": [
+        "text",
+        "photo"
+      ]
+    },
+    "source_ocr_confidence": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "ocr_engine": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "normalized": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "clean": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "units": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "detected": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "canonical": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "mm",
+            "cm",
+            "m",
+            "km",
+            "mg",
+            "g",
+            "kg",
+            "s",
+            "min",
+            "h",
+            "rub",
+            "uah",
+            "usd",
+            "eur",
+            "celsius",
+            "percent",
+            null
+          ]
+        },
+        "system": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "si_length",
+            "si_mass",
+            "time",
+            "currency",
+            "temperature",
+            "ratio",
+            null
+          ]
+        },
+        "is_compound": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "kept": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "mismatch": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "non_digit_symbols_removed",
+          "unit_removed",
+          "leading_zeros",
+          "mixed_language",
+          "ambiguous_fraction",
+          "trimmed_whitespace",
+          "single_step_detected",
+          "low_contrast",
+          "skewed_page",
+          "partial_crop",
+          "non_alpha_symbols_removed",
+          "correction_detected",
+          "multilingual_mixture",
+          "drawing_or_scheme_detected",
+          "blur"
+        ]
+      }
+    },
     "candidates": {
       "type": "array",
       "items": {
         "type": "object",
+        "required": [
+          "value",
+          "span_from",
+          "span_to"
+        ],
         "properties": {
+          "value": {},
+          "span_from": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "span_to": {
+            "type": "integer",
+            "minimum": 0
+          },
           "kind": {
             "type": [
               "string",
@@ -27,14 +241,377 @@
               "caret_insert",
               null
             ]
+          },
+          "priority": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "uncertain_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "conflicting_corrections",
+          "low_ocr_quality",
+          "shape_mismatch",
+          "too_many_candidates",
+          "partial_crop",
+          "blur",
+          "unknown"
+        ]
+      }
+    },
+    "needs_clarification": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "needs_user_action_message": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 120
+    },
+    "next_action_hint": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "ask_rephoto",
+        "ask_retry",
+        "none",
+        null
+      ]
+    },
+    "auto_select_policy": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "last",
+        "first",
+        "none",
+        null
+      ]
+    },
+    "transcribe_output_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "raw_transcription": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "error": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "empty_answer",
+        "shape_mismatch",
+        "ocr_unreadable",
+        "too_many_candidates",
+        "invalid_number_format",
+        "length_exceeded",
+        "pii_detected",
+        "internal_error",
+        null
+      ]
+    },
+    "pii_flag": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "shape": {
+            "const": "number"
           }
         },
         "required": [
-          "value",
-          "span_from",
-          "span_to"
+          "shape"
         ]
+      },
+      "then": {
+        "properties": {
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "shape": {
+            "const": "string"
+          }
+        },
+        "required": [
+          "shape"
+        ]
+      },
+      "then": {
+        "properties": {
+          "value": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "shape": {
+            "const": "steps"
+          }
+        },
+        "required": [
+          "shape"
+        ]
+      },
+      "then": {
+        "properties": {
+          "value": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 6
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "shape": {
+            "const": "list"
+          }
+        },
+        "required": [
+          "shape"
+        ]
+      },
+      "then": {
+        "properties": {
+          "value": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {}
+          }
+        }
       }
     }
-  }
+  ],
+  "examples": [
+    {
+      "success": true,
+      "shape": "number",
+      "value": 7,
+      "number_kind": "integer",
+      "confidence": 0.92,
+      "answer_source": "photo",
+      "source_ocr_confidence": 0.88,
+      "normalized": {
+        "raw": "5̶, 7",
+        "clean": "7",
+        "notes": [
+          "strikethrough:5"
+        ]
+      },
+      "units": {
+        "detected": null,
+        "canonical": null,
+        "kept": false
+      },
+      "warnings": [
+        "correction_detected"
+      ],
+      "candidates": [
+        {
+          "value": "5",
+          "span_from": 0,
+          "span_to": 1,
+          "kind": "strikethrough"
+        },
+        {
+          "value": "7",
+          "span_from": 3,
+          "span_to": 4,
+          "kind": "digit_number"
+        }
+      ]
+    },
+    {
+      "success": false,
+      "shape": "number",
+      "value": null,
+      "answer_source": "photo",
+      "error": "too_many_candidates",
+      "uncertain_reasons": [
+        "conflicting_corrections"
+      ],
+      "needs_clarification": true,
+      "needs_user_action_message": "Пожалуйста, напиши итоговое число отдельно, одной строкой."
+    },
+    {
+      "success": false,
+      "shape": "number",
+      "value": null,
+      "answer_source": "text",
+      "error": "shape_mismatch",
+      "number_kind": "fraction",
+      "needs_clarification": true,
+      "needs_user_action_message": "Напиши только число без единиц и лишних знаков."
+    },
+    {
+      "success": true,
+      "shape": "steps",
+      "value": [
+        "Сложи десятки: 30+20=50",
+        "Сложи единицы: 5+7=12",
+        "Итого: 50+12=62"
+      ],
+      "confidence": 0.83,
+      "answer_source": "text",
+      "normalized": {
+        "raw": "1) 30+20=50; 2) 5+7=12; 3) 50+12=62",
+        "clean": null,
+        "notes": []
+      },
+      "needs_clarification": false
+    },
+    {
+      "success": true,
+      "shape": "list",
+      "value": [
+        "красный",
+        "синий",
+        "зелёный"
+      ],
+      "confidence": 0.9,
+      "answer_source": "text",
+      "normalized": {
+        "raw": "красный, синий, зелёный",
+        "clean": null,
+        "notes": []
+      },
+      "needs_clarification": false
+    },
+    {
+      "success": true,
+      "shape": "number",
+      "value": 42,
+      "number_kind": "integer",
+      "confidence": 0.88,
+      "answer_source": "text",
+      "normalized": {
+        "raw": "42 см",
+        "clean": "42",
+        "notes": []
+      },
+      "units": {
+        "detected": "см",
+        "canonical": "cm",
+        "kept": false,
+        "mismatch": false
+      },
+      "warnings": [
+        "unit_removed"
+      ],
+      "needs_clarification": false
+    },
+    {
+      "success": true,
+      "shape": "number",
+      "value": 7,
+      "number_kind": "integer",
+      "confidence": 0.78,
+      "answer_source": "photo",
+      "source_ocr_confidence": 0.7,
+      "next_action_hint": "ask_rephoto",
+      "needs_clarification": true,
+      "needs_user_action_message": "Сделай фото ближе и чётче, без тени, по центру."
+    },
+    {
+      "success": true,
+      "shape": "list",
+      "value": [
+        5,
+        7,
+        9
+      ],
+      "confidence": 0.86,
+      "answer_source": "text",
+      "normalized": {
+        "raw": "5 см, 7 см, 9 см",
+        "clean": "5, 7, 9",
+        "notes": []
+      },
+      "units": {
+        "detected": "см",
+        "canonical": "cm",
+        "kept": false,
+        "mismatch": false
+      },
+      "warnings": [
+        "unit_removed"
+      ],
+      "needs_clarification": false
+    },
+    {
+      "success": true,
+      "shape": "string",
+      "value": "длина = 12 см — ок",
+      "confidence": 0.9,
+      "answer_source": "text",
+      "normalized": {
+        "raw": "длина = 12 см — ок",
+        "clean": "длина = 12 см — ок",
+        "notes": [
+          "unicode_nbsp_normalized"
+        ]
+      },
+      "units": {
+        "detected": "см",
+        "canonical": "cm",
+        "kept": true,
+        "mismatch": false
+      },
+      "needs_clarification": false
+    }
+  ]
 }

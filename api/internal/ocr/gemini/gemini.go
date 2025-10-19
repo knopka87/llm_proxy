@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"llm-proxy/api/internal/ocr"
+	"llm-proxy/api/internal/ocr/types"
 	"llm-proxy/api/internal/prompt"
 	"llm-proxy/api/internal/util"
 
@@ -40,19 +41,19 @@ func (e *Engine) SetModel(m string) {
 // --------------------------- DETECT ---------------------------
 
 // Detect Возвращает JSON по detect.schema.json.
-func (e *Engine) Detect(ctx context.Context, in ocr.DetectInput) (ocr.DetectResult, error) {
+func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.DetectResult, error) {
 	if e.APIKey == "" {
-		return ocr.DetectResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.DetectResult{}, errors.New("GEMINI_API_KEY is empty")
 	}
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return ocr.DetectResult{}, err
+		return types.DetectResult{}, err
 	}
 	defer cl.Close()
 
 	m := cl.GenerativeModel(strings.TrimSpace(e.Model))
 	if m == nil {
-		return ocr.DetectResult{}, fmt.Errorf("gemini: model is nil")
+		return types.DetectResult{}, fmt.Errorf("gemini: model is nil")
 	}
 	// Возвращаем строго JSON
 	m.GenerationConfig = genai.GenerationConfig{
@@ -111,7 +112,7 @@ func (e *Engine) Detect(ctx context.Context, in ocr.DetectInput) (ocr.DetectResu
 
 	imgBytes, mimeFromDataURL, err := util.DecodeBase64MaybeDataURL(in.ImageB64)
 	if err != nil {
-		return ocr.DetectResult{}, fmt.Errorf("gemini detect: bad base64: %w", err)
+		return types.DetectResult{}, fmt.Errorf("gemini detect: bad base64: %w", err)
 	}
 	finalMIME := util.PickMIME(in.Mime, mimeFromDataURL, imgBytes)
 
@@ -131,36 +132,36 @@ func (e *Engine) Detect(ctx context.Context, in ocr.DetectInput) (ocr.DetectResu
 		}
 		txt := firstText(resp)
 		if txt == "" {
-			return ocr.DetectResult{}, fmt.Errorf("gemini detect: empty response")
+			return types.DetectResult{}, fmt.Errorf("gemini detect: empty response")
 		}
 		txt = util.StripCodeFences(strings.TrimSpace(txt))
 
-		var out ocr.DetectResult
+		var out types.DetectResult
 		if err := json.Unmarshal([]byte(txt), &out); err != nil {
-			return ocr.DetectResult{}, fmt.Errorf("gemini detect: bad JSON: %w", err)
+			return types.DetectResult{}, fmt.Errorf("gemini detect: bad JSON: %w", err)
 		}
 		return out, nil
 	}
-	return ocr.DetectResult{}, lastErr
+	return types.DetectResult{}, lastErr
 }
 
 // --------------------------- PARSE ---------------------------
 
 // Parse Переписывает текст задания + вопрос. Возвращает JSON по parse.schema.json.
-func (e *Engine) Parse(ctx context.Context, in ocr.ParseInput) (ocr.ParseResult, error) {
+func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseResult, error) {
 	if e.APIKey == "" {
-		return ocr.ParseResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.ParseResult{}, errors.New("GEMINI_API_KEY is empty")
 	}
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return ocr.ParseResult{}, err
+		return types.ParseResult{}, err
 	}
 	defer cl.Close()
 
 	model := strings.TrimSpace(e.Model)
 	m := cl.GenerativeModel(model)
 	if m == nil {
-		return ocr.ParseResult{}, fmt.Errorf("gemini: model is nil")
+		return types.ParseResult{}, fmt.Errorf("gemini: model is nil")
 	}
 	m.GenerationConfig = genai.GenerationConfig{
 		Temperature:      ptrFloat32(0),
@@ -199,7 +200,7 @@ func (e *Engine) Parse(ctx context.Context, in ocr.ParseInput) (ocr.ParseResult,
 	if len(imgBytes) == 0 || err != nil {
 		raw, err := base64.StdEncoding.DecodeString(in.ImageB64)
 		if err != nil {
-			return ocr.ParseResult{}, fmt.Errorf("gemini parse: bad base64: %w", err)
+			return types.ParseResult{}, fmt.Errorf("gemini parse: bad base64: %w", err)
 		}
 		imgBytes = raw
 	}
@@ -221,37 +222,37 @@ func (e *Engine) Parse(ctx context.Context, in ocr.ParseInput) (ocr.ParseResult,
 		}
 		txt := firstText(resp)
 		if txt == "" {
-			return ocr.ParseResult{}, fmt.Errorf("gemini parse: empty response")
+			return types.ParseResult{}, fmt.Errorf("gemini parse: empty response")
 		}
 		txt = util.StripCodeFences(strings.TrimSpace(txt))
 
-		var pr ocr.ParseResult
+		var pr types.ParseResult
 		if err := json.Unmarshal([]byte(txt), &pr); err != nil {
-			return ocr.ParseResult{}, fmt.Errorf("gemini parse: bad JSON: %w", err)
+			return types.ParseResult{}, fmt.Errorf("gemini parse: bad JSON: %w", err)
 		}
 		// Применяем серверную политику подтверждения (PROMPT_PARSE)
 		ocr.ApplyParsePolicy(&pr)
 		return pr, nil
 	}
-	return ocr.ParseResult{}, fmt.Errorf("error: %w, mime: %s, imgB64: %s", lastErr, finalMIME, in.ImageB64)
+	return types.ParseResult{}, fmt.Errorf("error: %w, mime: %s, imgB64: %s", lastErr, finalMIME, in.ImageB64)
 }
 
 // --------------------------- HINT ---------------------------
 
 // Hint Генерирует L1/L2/L3 подсказку. Возвращает JSON по hint.schema.json.
-func (e *Engine) Hint(ctx context.Context, in ocr.HintInput) (ocr.HintResult, error) {
+func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult, error) {
 	if e.APIKey == "" {
-		return ocr.HintResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.HintResult{}, errors.New("GEMINI_API_KEY is empty")
 	}
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return ocr.HintResult{}, err
+		return types.HintResult{}, err
 	}
 	defer cl.Close()
 
 	m := cl.GenerativeModel(strings.TrimSpace(e.Model))
 	if m == nil {
-		return ocr.HintResult{}, fmt.Errorf("gemini: model is nil")
+		return types.HintResult{}, fmt.Errorf("gemini: model is nil")
 	}
 	m.GenerationConfig = genai.GenerationConfig{
 		Temperature:      ptrFloat32(0),
@@ -288,36 +289,36 @@ func (e *Engine) Hint(ctx context.Context, in ocr.HintInput) (ocr.HintResult, er
 		}
 		txt := firstText(resp)
 		if txt == "" {
-			return ocr.HintResult{}, fmt.Errorf("gemini hint: empty response")
+			return types.HintResult{}, fmt.Errorf("gemini hint: empty response")
 		}
 		txt = util.StripCodeFences(strings.TrimSpace(txt))
 
-		var hr ocr.HintResult
+		var hr types.HintResult
 		if err := json.Unmarshal([]byte(txt), &hr); err != nil {
-			return ocr.HintResult{}, fmt.Errorf("gemini hint: bad JSON: %w", err)
+			return types.HintResult{}, fmt.Errorf("gemini hint: bad JSON: %w", err)
 		}
 		hr.NoFinalAnswer = true
 		return hr, nil
 	}
-	return ocr.HintResult{}, lastErr
+	return types.HintResult{}, lastErr
 }
 
 // Normalize приводит ответ ученика к однозначной форме без догадок и без решения задачи.
 // Строго возвращает JSON по normalize.schema.json (см. NORMALIZE_ANSWER v1.2).
-func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.NormalizeResult, error) {
+func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.NormalizeResult, error) {
 	if e.APIKey == "" {
-		return ocr.NormalizeResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.NormalizeResult{}, errors.New("GEMINI_API_KEY is empty")
 	}
 
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return ocr.NormalizeResult{}, err
+		return types.NormalizeResult{}, err
 	}
 	defer cl.Close()
 
 	m := cl.GenerativeModel(strings.TrimSpace(e.Model))
 	if m == nil {
-		return ocr.NormalizeResult{}, fmt.Errorf("gemini: model is nil")
+		return types.NormalizeResult{}, fmt.Errorf("gemini: model is nil")
 	}
 	m.GenerationConfig = genai.GenerationConfig{
 		Temperature:      ptrFloat32(0),
@@ -356,7 +357,7 @@ func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.Norm
 	if strings.EqualFold(in.Answer.Source, "photo") && len(in.Answer.PhotoB64) > 0 {
 		photoBytes, mimeFromDataURL, err := util.DecodeBase64MaybeDataURL(in.Answer.PhotoB64)
 		if err != nil {
-			return ocr.NormalizeResult{}, fmt.Errorf("gemini normalize: bad photo base64: %w", err)
+			return types.NormalizeResult{}, fmt.Errorf("gemini normalize: bad photo base64: %w", err)
 		}
 		mime := util.PickMIME(strings.TrimSpace(in.Answer.Mime), mimeFromDataURL, photoBytes)
 		parts = append(parts, &genai.Blob{MIMEType: mime, Data: photoBytes})
@@ -373,33 +374,33 @@ func (e *Engine) Normalize(ctx context.Context, in ocr.NormalizeInput) (ocr.Norm
 		}
 		raw := firstText(resp)
 		if raw == "" {
-			return ocr.NormalizeResult{}, fmt.Errorf("gemini normalize: empty response")
+			return types.NormalizeResult{}, fmt.Errorf("gemini normalize: empty response")
 		}
 		raw = util.StripCodeFences(strings.TrimSpace(raw))
 
-		var nr ocr.NormalizeResult
+		var nr types.NormalizeResult
 		if err := json.Unmarshal([]byte(raw), &nr); err != nil {
-			return ocr.NormalizeResult{}, fmt.Errorf("gemini normalize: bad JSON: %w", err)
+			return types.NormalizeResult{}, fmt.Errorf("gemini normalize: bad JSON: %w", err)
 		}
 		return nr, nil
 	}
-	return ocr.NormalizeResult{}, lastErr
+	return types.NormalizeResult{}, lastErr
 }
 
-func (e *Engine) CheckSolution(ctx context.Context, in ocr.CheckSolutionInput) (ocr.CheckSolutionResult, error) {
+func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput) (types.CheckSolutionResult, error) {
 	if e.APIKey == "" {
-		return ocr.CheckSolutionResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.CheckSolutionResult{}, errors.New("GEMINI_API_KEY is empty")
 	}
 
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return ocr.CheckSolutionResult{}, err
+		return types.CheckSolutionResult{}, err
 	}
 	defer cl.Close()
 
 	m := cl.GenerativeModel(strings.TrimSpace(e.Model))
 	if m == nil {
-		return ocr.CheckSolutionResult{}, fmt.Errorf("gemini: model is nil")
+		return types.CheckSolutionResult{}, fmt.Errorf("gemini: model is nil")
 	}
 	m.GenerationConfig = genai.GenerationConfig{
 		Temperature:      ptrFloat32(0),
@@ -446,33 +447,33 @@ func (e *Engine) CheckSolution(ctx context.Context, in ocr.CheckSolutionInput) (
 		}
 		out := firstText(resp)
 		if strings.TrimSpace(out) == "" {
-			return ocr.CheckSolutionResult{}, fmt.Errorf("gemini check: empty response")
+			return types.CheckSolutionResult{}, fmt.Errorf("gemini check: empty response")
 		}
 		out = util.StripCodeFences(strings.TrimSpace(out))
 
-		var cr ocr.CheckSolutionResult
+		var cr types.CheckSolutionResult
 		if err := json.Unmarshal([]byte(out), &cr); err != nil {
-			return ocr.CheckSolutionResult{}, fmt.Errorf("gemini check: bad JSON: %w", err)
+			return types.CheckSolutionResult{}, fmt.Errorf("gemini check: bad JSON: %w", err)
 		}
 		return cr, nil
 	}
-	return ocr.CheckSolutionResult{}, lastErr
+	return types.CheckSolutionResult{}, lastErr
 }
 
-func (e *Engine) AnalogueSolution(ctx context.Context, in ocr.AnalogueSolutionInput) (ocr.AnalogueSolutionResult, error) {
+func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolutionInput) (types.AnalogueSolutionResult, error) {
 	if e.APIKey == "" {
-		return ocr.AnalogueSolutionResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.AnalogueSolutionResult{}, errors.New("GEMINI_API_KEY is empty")
 	}
 
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return ocr.AnalogueSolutionResult{}, err
+		return types.AnalogueSolutionResult{}, err
 	}
 	defer cl.Close()
 
 	m := cl.GenerativeModel(strings.TrimSpace(e.Model))
 	if m == nil {
-		return ocr.AnalogueSolutionResult{}, fmt.Errorf("gemini: model is nil")
+		return types.AnalogueSolutionResult{}, fmt.Errorf("gemini: model is nil")
 	}
 	m.GenerationConfig = genai.GenerationConfig{
 		Temperature:      ptrFloat32(0),
@@ -516,13 +517,13 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in ocr.AnalogueSolutionIn
 		}
 		out := firstText(resp)
 		if strings.TrimSpace(out) == "" {
-			return ocr.AnalogueSolutionResult{}, fmt.Errorf("gemini analogue: empty response")
+			return types.AnalogueSolutionResult{}, fmt.Errorf("gemini analogue: empty response")
 		}
 		out = util.StripCodeFences(strings.TrimSpace(out))
 
-		var ar ocr.AnalogueSolutionResult
+		var ar types.AnalogueSolutionResult
 		if err := json.Unmarshal([]byte(out), &ar); err != nil {
-			return ocr.AnalogueSolutionResult{}, fmt.Errorf("gemini analogue: bad JSON: %w", err)
+			return types.AnalogueSolutionResult{}, fmt.Errorf("gemini analogue: bad JSON: %w", err)
 		}
 		// Жёсткие флаги безопасности по умолчанию, если модель их не проставила
 		if !ar.LeakGuardPassed {
@@ -531,7 +532,7 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in ocr.AnalogueSolutionIn
 		ar.Safety.NoOriginalAnswerLeak = true
 		return ar, nil
 	}
-	return ocr.AnalogueSolutionResult{}, lastErr
+	return types.AnalogueSolutionResult{}, lastErr
 }
 
 // --------------------------- helpers ---------------------------

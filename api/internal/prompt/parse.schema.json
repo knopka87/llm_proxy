@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "parse.schema.json",
+  "title": "PARSE Output Schema v1.2 (MVP-aligned)",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -19,7 +20,14 @@
     "confirmation_needed",
     "confirmation_reason",
     "grade",
-    "grade_alignment"
+    "grade_alignment",
+    "original_number",
+    "has_subparts",
+    "subparts_labels",
+    "solution_fragments_detected",
+    "stripped_solution_spans",
+    "has_diagrams_or_formulas",
+    "routing_hint"
   ],
   "properties": {
     "final_state": {
@@ -30,14 +38,16 @@
       ]
     },
     "raw_text": {
+      "description": "Строгая, дословная транскрибация условия выбранной задачи без решения.",
       "type": "string",
       "minLength": 1,
       "maxLength": 4000
     },
     "question": {
+      "description": "Именно вопрос задачи, выделенный из условия без перефразирования.",
       "type": "string",
       "minLength": 1,
-      "maxLength": 300
+      "maxLength": 600
     },
     "entities": {
       "type": "object",
@@ -66,7 +76,12 @@
           },
           "maxItems": 20
         }
-      }
+      },
+      "required": [
+        "numbers",
+        "units",
+        "names"
+      ]
     },
     "confidence": {
       "type": "number",
@@ -159,6 +174,61 @@
         "maybe_higher",
         "unknown"
       ]
+    },
+    "original_number": {
+      "description": "Оригинальный номер/маркер задачи как на фото (например, '№ 312', '2.', 'б)'). Записывается дословно.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "has_subparts": {
+      "type": "boolean"
+    },
+    "subparts_labels": {
+      "description": "Список меток подпунктов в порядке появления (например, ['a)', 'б)', '1)']).",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 10
+      },
+      "maxItems": 20
+    },
+    "solution_fragments_detected": {
+      "description": "Обнаружены ли во входном фрагменты решения (промежут. вычисления, ответы, схемы).",
+      "type": "boolean"
+    },
+    "stripped_solution_spans": {
+      "description": "Диапазоны [start, end] символов во входном raw_text, удалённые/помеченные как решение. Пустой массив, если не было.",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "maxItems": 50
+    },
+    "has_diagrams_or_formulas": {
+      "type": "boolean"
+    },
+    "routing_hint": {
+      "type": "string",
+      "enum": [
+        "request_new_photo_one_task",
+        "proceed_hints",
+        "confirm_transcription"
+      ]
+    },
+    "attachments_used": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 100
+      },
+      "maxItems": 5
     }
   }
 }

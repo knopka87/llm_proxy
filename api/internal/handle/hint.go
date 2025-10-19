@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"time"
 
-	"llm-proxy/api/internal/ocr"
+	"llm-proxy/api/internal/ocr/types"
 )
 
 type HintRequest struct {
 	LLMName string `json:"llm_name"`
-	ocr.HintInput
+	types.HintInput
 }
 
 func (h *Handle) Hint(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +39,7 @@ func (h *Handle) Hint(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
-	var out ocr.HintResult
+	var out types.HintResult
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {

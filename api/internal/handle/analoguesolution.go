@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"llm-proxy/api/internal/ocr"
+	"llm-proxy/api/internal/ocr/types"
 )
 
 // --- ANALOGUE SOLUTION (v1.1) ----------------------------------------------
@@ -18,7 +18,7 @@ import (
 // Поля запроса соответствуют AnalogueSolutionInput (см. types.go)
 type analogueReq struct {
 	LLMName string `json:"llm_name"`
-	ocr.AnalogueSolutionInput
+	types.AnalogueSolutionInput
 }
 
 // AnalogueSolution — HTTP-хендлер генерации «похожего задания тем же приёмом»

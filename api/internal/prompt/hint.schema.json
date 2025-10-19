@@ -47,7 +47,7 @@
         "maxLength": 100
       },
       "minItems": 0,
-      "maxItems": 3
+      "maxItems": 5
     },
     "rule_hint": {
       "type": "string",
@@ -125,9 +125,10 @@
           "type": "string",
           "enum": [
             "matched",
-            "generic"
+            "loose",
+            "none"
           ],
-          "default": "generic"
+          "default": "matched"
         },
         "math_flags": {
           "type": "array",
