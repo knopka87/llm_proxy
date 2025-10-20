@@ -1,221 +1,35 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "DETECT v5 output",
+  "title": "DETECT v5 output (minimal blocks)",
   "type": "object",
-  "required": [
-    "verbatim_mode",
-    "whitespace_policy",
-    "operators_strict",
-    "page_meta",
-    "tasks"
-  ],
+  "required": ["tasks"],
   "properties": {
-    "verbatim_mode": {
-      "type": "boolean",
-      "const": true
-    },
-    "whitespace_policy": {
-      "type": "string",
-      "enum": [
-        "preserve_all"
-      ]
-    },
-    "operators_strict": {
-      "type": "boolean",
-      "const": true
-    },
-    "page_meta": {
-      "type": "object",
-      "required": [
-        "source_id",
-        "page_number"
-      ],
-      "properties": {
-        "source_id": {
-          "type": "string"
-        },
-        "page_number": {
-          "type": "integer"
-        },
-        "image_bbox_units": {
-          "type": "string",
-          "enum": [
-            "px"
-          ]
-        }
-      }
-    },
     "tasks": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": [
-          "original_number",
-          "title_raw",
-          "blocks",
-          "has_faces",
-          "pii_detected"
-        ],
+        "required": ["original_number", "title_raw", "blocks"],
         "properties": {
-          "original_number": {
-            "type": "string"
-          },
-          "title_raw": {
-            "type": "string"
-          },
-          "letters_detected": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^[а-я]$"
-            }
-          },
-          "examples_per_letter_expected": {
-            "type": "integer"
-          },
-          "has_faces": {
-            "type": "boolean"
-          },
-          "pii_detected": {
-            "type": "boolean"
-          },
-          "multiple_tasks_detected": {
-            "type": "boolean"
-          },
+          "original_number": { "type": "string" },
+          "title_raw": { "type": "string" },
+          "multiple_tasks_detected": { "type": "boolean" },
           "blocks": {
             "type": "array",
             "minItems": 1,
             "items": {
               "type": "object",
-              "required": [
-                "block_id",
-                "block_raw",
-                "items_raw"
-              ],
+              "required": ["block_raw"],
               "properties": {
-                "block_id": {
-                  "type": "string"
-                },
-                "block_label": {
-                  "type": "string",
-                  "description": "e.g., 'а)'"
-                },
-                "block_raw": {
-                  "type": "string"
-                },
-                "items_raw": {
-                  "type": "array",
-                  "minItems": 1,
-                  "items": {
-                    "type": "object",
-                    "required": [
-                      "text",
-                      "group_id"
-                    ],
-                    "properties": {
-                      "text": {
-                        "type": "string"
-                      },
-                      "group_id": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                },
-                "layout_raw": {
-                  "type": "string"
-                },
-                "semantic_raw": {
-                  "type": "object",
-                  "properties": {
-                    "columns": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "rows": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "kind": {
-                            "type": "string",
-                            "enum": [
-                              "operand",
-                              "operator",
-                              "sum_line",
-                              "result"
-                            ]
-                          },
-                          "cells": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
-                          }
-                        },
-                        "required": [
-                          "kind",
-                          "cells"
-                        ]
-                      }
-                    },
-                    "boxes": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "row",
-                          "col"
-                        ],
-                        "properties": {
-                          "row": {
-                            "type": "integer"
-                          },
-                          "col": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "quality_checks": {
-            "type": "object",
-            "properties": {
-              "sentence_order_preserved": {
-                "type": "boolean"
+                "block_raw": { "type": "string" }
               },
-              "letters_count_matches_source": {
-                "type": "boolean"
-              },
-              "examples_per_letter_matches_source": {
-                "type": "boolean"
-              },
-              "mul_sign_correct_per_item": {
-                "type": "boolean"
-              },
-              "thousands_space_preserved": {
-                "type": "boolean"
-              },
-              "layout_roundtrip_ok": {
-                "type": "boolean"
-              },
-              "boxes_count_match": {
-                "type": "boolean"
-              },
-              "alignment_check": {
-                "type": "boolean"
-              }
+              "additionalProperties": false
             }
           }
-        }
+        },
+        "additionalProperties": false
       }
     }
-  }
+  },
+  "additionalProperties": false
 }

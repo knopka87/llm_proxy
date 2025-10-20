@@ -88,12 +88,14 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 • Зафиксируй флаги: has_faces, pii_detected, multiple_tasks_detected, thousands_space_preserved, operators_strict.
 • Проверь: конкатенация items_raw по group_id строго равна block_raw; операторы/разрядные пробелы сохранены.
 
-Выводи ТОЛЬКО JSON, строго соответствующий detect.schema.json (DETECT). Любой текст вне JSON — ошибка.
+Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
+`
+	var schema map[string]any
+	if err := json.Unmarshal([]byte(prompt.DetectSchema), &schema); err != nil {
+		return types.DetectResult{}, fmt.Errorf("bad detect schema: %w", err)
+	}
 
-Ниже содержимое detect.schema.json (используй как спецификацию формата ответа):
-` + prompt.DetectSchema
-
-	user := "Ответ строго JSON по detect.schema.json (DETECT). Без комментариев."
+	user := "Ответ строго JSON по схеме. Без комментариев."
 	if in.GradeHint >= 1 && in.GradeHint <= 4 {
 		user += fmt.Sprintf(" grade_hint=%d", in.GradeHint)
 	}
@@ -111,8 +113,14 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 			},
 		},
 		"temperature": 0,
-		// (опционально) можно включить жёсткий JSON-режим у OpenAI:
-		"response_format": map[string]any{"type": "json_object"},
+		"response_format": map[string]any{
+			"type": "json_object",
+			"json_schema": map[string]any{
+				"name":   "detect",
+				"strict": true,
+				"schema": schema,
+			},
+		},
 	}
 	// для GPT-5 поддерживается только значение по умолчанию - 1
 	if strings.Contains(e.Model, "gpt-5") {
@@ -200,12 +208,14 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 Соблюдай политику подтверждения:
 - Автоподтверждение, если: confidence ≥ 0.80, meaning_change_risk ≤ 0.20, bracketed_spans_count = 0, needs_rescan=false.
 - Иначе запрашивай подтверждение.
-Верни только JSON по parse.schema.json. Любой текст вне JSON — ошибка.
+Верни строго JSON по схеме. Любой текст вне JSON — ошибка
+`
+	var schema map[string]any
+	if err := json.Unmarshal([]byte(prompt.ParseSchema), &schema); err != nil {
+		return types.ParseResult{}, fmt.Errorf("bad parse schema: %w", err)
+	}
 
-parse.schema.json:
-` + prompt.ParseSchema
-
-	user := "Ответ строго JSON по parse.schema.json. Без комментариев." + hints.String()
+	user := "Ответ строго JSON по схеме. Без комментариев." + hints.String()
 
 	body := map[string]any{
 		"model": model,
@@ -219,8 +229,15 @@ parse.schema.json:
 				},
 			},
 		},
-		"temperature":     0,
-		"response_format": map[string]any{"type": "json_object"},
+		"temperature": 0,
+		"response_format": map[string]any{
+			"type": "json_object",
+			"json_schema": map[string]any{
+				"name":   "parse",
+				"strict": true,
+				"schema": schema,
+			},
+		},
 	}
 	// для GPT-5 поддерживается только значение по умолчанию - 1
 	if strings.Contains(e.Model, "gpt-5") {
@@ -274,13 +291,15 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 	model := e.Model
 
 	system := `Ты — помощник для 1–4 классов. Сформируй РОВНО ОДИН блок подсказки уровня ` + string(in.Level) + `.
-Не решай задачу и не подставляй числа/слова из условия. Вывод — строго JSON по hint.schema.json.
-
-hint.schema.json:
-` + prompt.HintSchema
-
+Не решай задачу и не подставляй числа/слова из условия. 
+Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
+`
+	var schema map[string]any
+	if err := json.Unmarshal([]byte(prompt.HintSchema), &schema); err != nil {
+		return types.HintResult{}, fmt.Errorf("bad hint schema: %w", err)
+	}
 	userObj := map[string]any{
-		"task":  "Сгенерируй подсказку согласно PROMPT_HINT v1.4 и верни JSON по hint.schema.json.",
+		"task":  "Сгенерируй подсказку согласно PROMPT_HINT v1.4 и верни JSON по схеме.",
 		"input": in,
 	}
 	userJSON, _ := json.Marshal(userObj)
@@ -291,8 +310,15 @@ hint.schema.json:
 			map[string]any{"role": "system", "content": system},
 			map[string]any{"role": "user", "content": string(userJSON)},
 		},
-		"temperature":     0,
-		"response_format": map[string]any{"type": "json_object"},
+		"temperature": 0,
+		"response_format": map[string]any{
+			"type": "json_object",
+			"json_schema": map[string]any{
+				"name":   "hint",
+				"strict": true,
+				"schema": schema,
+			},
+		},
 	}
 	// для GPT-5 поддерживается только значение по умолчанию - 1
 	if strings.Contains(e.Model, "gpt-5") {
@@ -334,7 +360,6 @@ hint.schema.json:
 	if err := json.Unmarshal([]byte(out), &hr); err != nil {
 		return types.HintResult{}, fmt.Errorf("openai hint: bad JSON: %w", err)
 	}
-	hr.NoFinalAnswer = true
 	return hr, nil
 }
 
@@ -361,10 +386,14 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 7) Фото: OCR только для извлечения ответа; при плохом качестве — success=false и needs_clarification=true.
 8) Несколько кандидатов — не выбирать; success=false, error="too_many_candidates" и короткое needs_user_action_message.
 9) Неоднозначные форматы (½, 1 1/2, 1:20, 5–7, ≈10, >5) не сводить к арифметике; заполнить number_kind.
-Верни СТРОГО JSON по normalize.schema.json.` + "\n\nnormalize.schema.json:\n" + prompt.NormalizeSchema
+Верни строго JSON по схеме. Любой текст вне JSON — ошибка.`
 
+	var schema map[string]any
+	if err := json.Unmarshal([]byte(prompt.NormalizeSchema), &schema); err != nil {
+		return types.NormalizeResult{}, fmt.Errorf("bad normalize schema: %w", err)
+	}
 	userObj := map[string]any{
-		"task":  "Нормализуй ответ ученика и верни только JSON по normalize.schema.json.",
+		"task":  "Нормализуй ответ ученика и верни только JSON по схеме.",
 		"input": in,
 	}
 	userJSON, _ := json.Marshal(userObj)
@@ -402,8 +431,15 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 			map[string]any{"role": "system", "content": system},
 			map[string]any{"role": "user", "content": userContent},
 		},
-		"temperature":     0,
-		"response_format": map[string]any{"type": "json_object"},
+		"temperature": 0,
+		"response_format": map[string]any{
+			"type": "json_object",
+			"json_schema": map[string]any{
+				"name":   "normalize",
+				"strict": true,
+				"schema": schema,
+			},
+		},
 	}
 	// для GPT-5 поддерживается только значение по умолчанию - 1
 	if strings.Contains(e.Model, "gpt-5") {
@@ -473,10 +509,15 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput)
 - Триггеры uncertain: низкая уверенность у student, неоднозначный формат, required units отсутствуют, несколько конкурирующих кандидатов.
 - Безопасность: leak_guard_passed=true, safety.no_final_answer_leak=true; не выводи число/слово правильного ответа.
 - short_hint ≤120 симв., speakable_message ≤140.
-` + "\n\ncheck.schema.json:\n" + prompt.CheckSolutionSchema
+Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
+`
+	var schema map[string]any
+	if err := json.Unmarshal([]byte(prompt.CheckSolutionSchema), &schema); err != nil {
+		return types.CheckSolutionResult{}, fmt.Errorf("bad check solution schema: %w", err)
+	}
 
 	userObj := map[string]any{
-		"task":  "Проверь решение по правилам CHECK_SOLUTION v1.1 и верни только JSON по check.schema.json.",
+		"task":  "Проверь решение по правилам CHECK_SOLUTION v1.1 и верни только JSON по схеме.",
 		"input": in,
 	}
 	userJSON, _ := json.Marshal(userObj)
@@ -487,8 +528,15 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput)
 			map[string]any{"role": "system", "content": system},
 			map[string]any{"role": "user", "content": "INPUT_JSON:\n" + string(userJSON)},
 		},
-		"temperature":     0,
-		"response_format": map[string]any{"type": "json_object"},
+		"temperature": 0,
+		"response_format": map[string]any{
+			"type": "json_object",
+			"json_schema": map[string]any{
+				"name":   "check_solution",
+				"strict": true,
+				"schema": schema,
+			},
+		},
 	}
 	// для GPT-5 поддерживается только значение по умолчанию - 1
 	if strings.Contains(e.Model, "gpt-5") {
@@ -553,11 +601,15 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 Анти‑лик: leak_guard_passed=true; no_original_answer_leak=true; желателен отчёт no_original_overlap_report.
 Контроль «тот же приём»: method_rationale (почему это тот же приём) и contrast_note (чем аналог отличается).
 Старайся менять сюжет/единицы; distance_from_original_hint укажи как medium|high.
-Вывод — СТРОГО JSON по analogue.schema.json. Любой текст вне JSON — ошибка.
-` + "\n\nanalogue.schema.json:\n" + prompt.AnalogueSolutionSchema
+Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
+`
+	var schema map[string]any
+	if err := json.Unmarshal([]byte(prompt.AnalogueSolutionSchema), &schema); err != nil {
+		return types.AnalogueSolutionResult{}, fmt.Errorf("bad analogue solution schema: %w", err)
+	}
 
 	userObj := map[string]any{
-		"task":  "Сформируй аналогичное задание тем же приёмом и верни СТРОГО JSON по analogue.schema.json.",
+		"task":  "Сформируй аналогичное задание тем же приёмом и верни СТРОГО JSON по схеме.",
 		"input": in,
 	}
 	userJSON, _ := json.Marshal(userObj)
@@ -568,8 +620,15 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 			map[string]any{"role": "system", "content": system},
 			map[string]any{"role": "user", "content": "INPUT_JSON:\n" + string(userJSON)},
 		},
-		"temperature":     0,
-		"response_format": map[string]any{"type": "json_object"},
+		"temperature": 0,
+		"response_format": map[string]any{
+			"type": "json_object",
+			"json_schema": map[string]any{
+				"name":   "analogue_solution",
+				"strict": true,
+				"schema": schema,
+			},
+		},
 	}
 	// для GPT-5 поддерживается только значение по умолчанию - 1
 	if strings.Contains(e.Model, "gpt-5") {
