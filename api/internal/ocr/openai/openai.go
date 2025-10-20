@@ -88,6 +88,8 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 
 Верни строго JSON по схеме detect. Любой текст вне JSON — ошибка. Никаких комментариев, заголовков и пояснений.
 `
+
+	system = "Верни строго JSON по схеме detect. Любой текст вне JSON — ошибка. Никаких комментариев, заголовков и пояснений."
 	schema, err := util.LoadPromptSchema("detect")
 	if err != nil {
 		return types.DetectResult{}, err
