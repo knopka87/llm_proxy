@@ -6,8 +6,6 @@ import "llm-proxy/api/internal/ocr/types"
 func ApplyParsePolicy(pr *types.ParseResult) {
 	// Автоподтверждение при всех условиях:
 	auto := pr.Confidence >= 0.80 &&
-		pr.MeaningChangeRisk <= 0.20 &&
-		pr.BracketedSpansCount == 0 &&
 		!pr.NeedsRescan
 
 	if auto {
@@ -21,10 +19,6 @@ func ApplyParsePolicy(pr *types.ParseResult) {
 	switch {
 	case pr.Confidence < 0.80:
 		pr.ConfirmationReason = "low_confidence"
-	case pr.BracketedSpansCount >= 1:
-		pr.ConfirmationReason = "bracketed_spans_present"
-	case pr.MeaningChangeRisk > 0.20:
-		pr.ConfirmationReason = "meaning_change_risk_high"
 	case pr.NeedsRescan:
 		pr.ConfirmationReason = "has_diagrams_or_low_quality"
 	default:
