@@ -297,7 +297,6 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 		if err := json.Unmarshal([]byte(txt), &hr); err != nil {
 			return types.HintResult{}, fmt.Errorf("gemini hint: bad JSON: %w", err)
 		}
-		hr.NoFinalAnswer = true
 		return hr, nil
 	}
 	return types.HintResult{}, lastErr
