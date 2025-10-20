@@ -39,10 +39,10 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 	if e.APIKey == "" {
 		return types.DetectResult{}, fmt.Errorf("OPENAI_API_KEY not set")
 	}
-	// normalize input image: accept raw base64 or full data: URL
+
+	// accept raw base64 or data: URL
 	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.ImageB64)
 	if len(imgBytes) == 0 {
-		// try plain base64
 		raw, err := base64.StdEncoding.DecodeString(in.ImageB64)
 		if err != nil {
 			return types.DetectResult{}, fmt.Errorf("openai detect: invalid image base64")
@@ -102,19 +102,24 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 
 	body := map[string]any{
 		"model": e.Model,
-		"messages": []any{
-			map[string]any{"role": "system", "content": system},
+		"input": []any{
+			map[string]any{
+				"role": "system",
+				"content": []any{
+					map[string]any{"type": "input_text", "text": system},
+				},
+			},
 			map[string]any{
 				"role": "user",
 				"content": []any{
-					map[string]any{"type": "text", "text": user},
-					map[string]any{"type": "image_url", "image_url": map[string]any{"url": dataURL, "detail": "high"}},
+					map[string]any{"type": "input_text", "text": user},
+					map[string]any{"type": "input_image", "image_url": map[string]any{"url": dataURL}},
 				},
 			},
 		},
 		"temperature": 0,
 		"response_format": map[string]any{
-			"type": "json_object",
+			"type": "json_schema",
 			"json_schema": map[string]any{
 				"name":   "detect",
 				"strict": true,
@@ -122,14 +127,13 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 			},
 		},
 	}
-	// для GPT-5 поддерживается только значение по умолчанию - 1
+
 	if strings.Contains(e.Model, "gpt-5") {
 		body["temperature"] = 1
 	}
 
 	payload, _ := json.Marshal(body)
-
-	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
 
@@ -138,26 +142,16 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 		return types.DetectResult{}, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
 		return types.DetectResult{}, fmt.Errorf("openai detect %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	var raw struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+	out, err := util.ExtractResponsesText(resp.Body)
+	if err != nil {
 		return types.DetectResult{}, err
 	}
-	if len(raw.Choices) == 0 {
-		return types.DetectResult{}, fmt.Errorf("openai detect: empty response")
-	}
-	out := strings.TrimSpace(raw.Choices[0].Message.Content)
-	out = util.StripCodeFences(out)
+	out = util.StripCodeFences(strings.TrimSpace(out))
 
 	var r types.DetectResult
 	if err := json.Unmarshal([]byte(out), &r); err != nil {
@@ -175,7 +169,6 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 		model = in.Options.ModelOverride
 	}
 
-	// normalize input image: accept raw base64 or full data: URL
 	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.ImageB64)
 	if len(imgBytes) == 0 {
 		raw, err := base64.StdEncoding.DecodeString(in.ImageB64)
@@ -190,7 +183,6 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 	}
 	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
 
-	// Подсказки из DETECT/выбора пользователя
 	var hints strings.Builder
 	if in.Options.GradeHint >= 1 && in.Options.GradeHint <= 4 {
 		fmt.Fprintf(&hints, " grade_hint=%d.", in.Options.GradeHint)
@@ -198,7 +190,6 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 	if s := strings.TrimSpace(in.Options.SubjectHint); s != "" {
 		fmt.Fprintf(&hints, " subject_hint=%q.", s)
 	}
-	// если пользователь выбрал один из нескольких пунктов — добавим это как ориентир
 	if in.Options.SelectedTaskIndex >= 0 || strings.TrimSpace(in.Options.SelectedTaskBrief) != "" {
 		fmt.Fprintf(&hints, " selected_task=[index:%d, brief:%q].", in.Options.SelectedTaskIndex, in.Options.SelectedTaskBrief)
 	}
@@ -214,24 +205,28 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 	if err := json.Unmarshal([]byte(prompt.ParseSchema), &schema); err != nil {
 		return types.ParseResult{}, fmt.Errorf("bad parse schema: %w", err)
 	}
-
 	user := "Ответ строго JSON по схеме. Без комментариев." + hints.String()
 
 	body := map[string]any{
 		"model": model,
-		"messages": []any{
-			map[string]any{"role": "system", "content": system},
+		"input": []any{
+			map[string]any{
+				"role": "system",
+				"content": []any{
+					map[string]any{"type": "input_text", "text": system},
+				},
+			},
 			map[string]any{
 				"role": "user",
 				"content": []any{
-					map[string]any{"type": "text", "text": user},
-					map[string]any{"type": "image_url", "image_url": map[string]any{"url": dataURL, "detail": "high"}},
+					map[string]any{"type": "input_text", "text": user},
+					map[string]any{"type": "input_image", "image_url": map[string]any{"url": dataURL}},
 				},
 			},
 		},
 		"temperature": 0,
 		"response_format": map[string]any{
-			"type": "json_object",
+			"type": "json_schema",
 			"json_schema": map[string]any{
 				"name":   "parse",
 				"strict": true,
@@ -239,13 +234,12 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 			},
 		},
 	}
-	// для GPT-5 поддерживается только значение по умолчанию - 1
-	if strings.Contains(e.Model, "gpt-5") {
+	if strings.Contains(model, "gpt-5") {
 		body["temperature"] = 1
 	}
 
 	payload, _ := json.Marshal(body)
-	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
 
@@ -259,27 +253,16 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 		return types.ParseResult{}, fmt.Errorf("openai parse %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	var raw struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+	out, err := util.ExtractResponsesText(resp.Body)
+	if err != nil {
 		return types.ParseResult{}, err
 	}
-	if len(raw.Choices) == 0 {
-		return types.ParseResult{}, fmt.Errorf("openai parse: empty response")
-	}
-	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
+	out = util.StripCodeFences(strings.TrimSpace(out))
 
 	var pr types.ParseResult
 	if err := json.Unmarshal([]byte(out), &pr); err != nil {
 		return types.ParseResult{}, fmt.Errorf("openai parse: bad JSON: %w", err)
 	}
-
-	// Серверный гард (политика подтверждения из PROMPT_PARSE)
 	ocr.ApplyParsePolicy(&pr)
 	return pr, nil
 }
@@ -291,7 +274,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 	model := e.Model
 
 	system := `Ты — помощник для 1–4 классов. Сформируй РОВНО ОДИН блок подсказки уровня ` + string(in.Level) + `.
-Не решай задачу и не подставляй числа/слова из условия. 
+Не решай задачу и не подставляй числа/слова из условия.
 Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
 `
 	var schema map[string]any
@@ -299,20 +282,30 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 		return types.HintResult{}, fmt.Errorf("bad hint schema: %w", err)
 	}
 	userObj := map[string]any{
-		"task":  "Сгенерируй подсказку согласно PROMPT_HINT v1.4 и верни JSON по схеме.",
+		"task":  "Сгенерируй подсказку согласно PROMPT_HINT и верни JSON по схеме.",
 		"input": in,
 	}
 	userJSON, _ := json.Marshal(userObj)
 
 	body := map[string]any{
 		"model": model,
-		"messages": []any{
-			map[string]any{"role": "system", "content": system},
-			map[string]any{"role": "user", "content": string(userJSON)},
+		"input": []any{
+			map[string]any{
+				"role": "system",
+				"content": []any{
+					map[string]any{"type": "input_text", "text": system},
+				},
+			},
+			map[string]any{
+				"role": "user",
+				"content": []any{
+					map[string]any{"type": "input_text", "text": string(userJSON)},
+				},
+			},
 		},
 		"temperature": 0,
 		"response_format": map[string]any{
-			"type": "json_object",
+			"type": "json_schema",
 			"json_schema": map[string]any{
 				"name":   "hint",
 				"strict": true,
@@ -320,14 +313,12 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 			},
 		},
 	}
-	// для GPT-5 поддерживается только значение по умолчанию - 1
 	if strings.Contains(e.Model, "gpt-5") {
 		body["temperature"] = 1
 	}
 
 	payload, _ := json.Marshal(body)
-
-	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
 
@@ -341,20 +332,11 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 		return types.HintResult{}, fmt.Errorf("openai hint %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	var raw struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+	out, err := util.ExtractResponsesText(resp.Body)
+	if err != nil {
 		return types.HintResult{}, err
 	}
-	if len(raw.Choices) == 0 {
-		return types.HintResult{}, fmt.Errorf("openai hint: empty response")
-	}
-	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
+	out = util.StripCodeFences(strings.TrimSpace(out))
 
 	var hr types.HintResult
 	if err := json.Unmarshal([]byte(out), &hr); err != nil {
@@ -367,13 +349,11 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 	if e.APIKey == "" {
 		return types.NormalizeResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
-
 	model := e.Model
 	if strings.TrimSpace(model) == "" {
 		model = "gpt-4o-mini"
 	}
 
-	// System prompt + schema
 	system := `Ты — модуль нормализации ответа для 1–4 классов.
 Извлеки РОВНО то, что прислал ребёнок, и представь это в форме solution_shape.
 Строгие правила:
@@ -398,8 +378,7 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 	}
 	userJSON, _ := json.Marshal(userObj)
 
-	// Подготовим контент для Chat Completions
-	var userContent any
+	var userContent []any
 	if strings.EqualFold(in.Answer.Source, "photo") {
 		b64 := strings.TrimSpace(in.Answer.PhotoB64)
 		if b64 == "" {
@@ -407,7 +386,7 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 		}
 		photoBytes, mimeFromDataURL, err := util.DecodeBase64MaybeDataURL(in.Answer.PhotoB64)
 		if err != nil {
-			return types.NormalizeResult{}, fmt.Errorf("gemini normalize: bad photo base64: %w", err)
+			return types.NormalizeResult{}, fmt.Errorf("openai normalize: bad photo base64: %w", err)
 		}
 		mime := util.PickMIME(strings.TrimSpace(in.Answer.Mime), mimeFromDataURL, photoBytes)
 		dataURL := b64
@@ -415,25 +394,33 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 			dataURL = "data:" + mime + ";base64," + b64
 		}
 		userContent = []any{
-			map[string]any{"type": "text", "text": "INPUT_JSON:\n" + string(userJSON)},
-			map[string]any{"type": "image_url", "image_url": map[string]any{"url": dataURL, "detail": "high"}},
+			map[string]any{"type": "input_text", "text": "INPUT_JSON:\n" + string(userJSON)},
+			map[string]any{"type": "input_image", "image_url": map[string]any{"url": dataURL}},
 		}
-	} else { // text (по умолчанию)
+	} else {
 		if strings.TrimSpace(in.Answer.Text) == "" {
 			return types.NormalizeResult{}, fmt.Errorf("openai normalize: answer.text is empty")
 		}
-		userContent = string(userJSON)
+		userContent = []any{map[string]any{"type": "input_text", "text": string(userJSON)}}
 	}
 
 	body := map[string]any{
 		"model": model,
-		"messages": []any{
-			map[string]any{"role": "system", "content": system},
-			map[string]any{"role": "user", "content": userContent},
+		"input": []any{
+			map[string]any{
+				"role": "system",
+				"content": []any{
+					map[string]any{"type": "input_text", "text": system},
+				},
+			},
+			map[string]any{
+				"role":    "user",
+				"content": userContent,
+			},
 		},
 		"temperature": 0,
 		"response_format": map[string]any{
-			"type": "json_object",
+			"type": "json_schema",
 			"json_schema": map[string]any{
 				"name":   "normalize",
 				"strict": true,
@@ -441,14 +428,12 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 			},
 		},
 	}
-	// для GPT-5 поддерживается только значение по умолчанию - 1
 	if strings.Contains(e.Model, "gpt-5") {
 		body["temperature"] = 1
 	}
 
 	payload, _ := json.Marshal(body)
-
-	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
 
@@ -462,20 +447,11 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 		return types.NormalizeResult{}, fmt.Errorf("openai normalize %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	var raw struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+	out, err := util.ExtractResponsesText(resp.Body)
+	if err != nil {
 		return types.NormalizeResult{}, err
 	}
-	if len(raw.Choices) == 0 {
-		return types.NormalizeResult{}, fmt.Errorf("openai normalize: empty response")
-	}
-	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
+	out = util.StripCodeFences(strings.TrimSpace(out))
 
 	var nr types.NormalizeResult
 	if err := json.Unmarshal([]byte(out), &nr); err != nil {
@@ -484,18 +460,15 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 	return nr, nil
 }
 
-// CheckSolution — проверка решения по CHECK_SOLUTION v1.1 для OpenAI Chat Completions
 func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput) (types.CheckSolutionResult, error) {
 	if e.APIKey == "" {
 		return types.CheckSolutionResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
-
 	model := e.Model
 	if strings.TrimSpace(model) == "" {
 		model = "gpt-4o-mini"
 	}
 
-	// System: CHECK_SOLUTION v1.1 (строго JSON, без утечки правильного ответа)
 	system := `Ты — модуль проверки решения для 1–4 классов.
 Проверь нормализованный ответ ученика (student) против expected_solution, не раскрывая верный ответ.
 Правила:
@@ -517,20 +490,30 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput)
 	}
 
 	userObj := map[string]any{
-		"task":  "Проверь решение по правилам CHECK_SOLUTION v1.1 и верни только JSON по схеме.",
+		"task":  "Проверь решение по правилам CHECK_SOLUTION и верни только JSON по схеме.",
 		"input": in,
 	}
 	userJSON, _ := json.Marshal(userObj)
 
 	body := map[string]any{
 		"model": model,
-		"messages": []any{
-			map[string]any{"role": "system", "content": system},
-			map[string]any{"role": "user", "content": "INPUT_JSON:\n" + string(userJSON)},
+		"input": []any{
+			map[string]any{
+				"role": "system",
+				"content": []any{
+					map[string]any{"type": "input_text", "text": system},
+				},
+			},
+			map[string]any{
+				"role": "user",
+				"content": []any{
+					map[string]any{"type": "input_text", "text": "INPUT_JSON:\n" + string(userJSON)},
+				},
+			},
 		},
 		"temperature": 0,
 		"response_format": map[string]any{
-			"type": "json_object",
+			"type": "json_schema",
 			"json_schema": map[string]any{
 				"name":   "check_solution",
 				"strict": true,
@@ -538,14 +521,12 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput)
 			},
 		},
 	}
-	// для GPT-5 поддерживается только значение по умолчанию - 1
-	if strings.Contains(e.Model, "gpt-5") {
+	if strings.Contains(model, "gpt-5") {
 		body["temperature"] = 1
 	}
 
 	payload, _ := json.Marshal(body)
-
-	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
 
@@ -559,20 +540,11 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput)
 		return types.CheckSolutionResult{}, fmt.Errorf("openai check %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	var raw struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+	out, err := util.ExtractResponsesText(resp.Body)
+	if err != nil {
 		return types.CheckSolutionResult{}, err
 	}
-	if len(raw.Choices) == 0 {
-		return types.CheckSolutionResult{}, fmt.Errorf("openai check: empty response")
-	}
-	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
+	out = util.StripCodeFences(strings.TrimSpace(out))
 
 	var cr types.CheckSolutionResult
 	if err := json.Unmarshal([]byte(out), &cr); err != nil {
@@ -585,7 +557,6 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 	if e.APIKey == "" {
 		return types.AnalogueSolutionResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
-
 	model := e.Model
 	if strings.TrimSpace(model) == "" {
 		model = "gpt-4o-mini"
@@ -616,13 +587,23 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 
 	body := map[string]any{
 		"model": model,
-		"messages": []any{
-			map[string]any{"role": "system", "content": system},
-			map[string]any{"role": "user", "content": "INPUT_JSON:\n" + string(userJSON)},
+		"input": []any{
+			map[string]any{
+				"role": "system",
+				"content": []any{
+					map[string]any{"type": "input_text", "text": system},
+				},
+			},
+			map[string]any{
+				"role": "user",
+				"content": []any{
+					map[string]any{"type": "input_text", "text": "INPUT_JSON:\n" + string(userJSON)},
+				},
+			},
 		},
 		"temperature": 0,
 		"response_format": map[string]any{
-			"type": "json_object",
+			"type": "json_schema",
 			"json_schema": map[string]any{
 				"name":   "analogue_solution",
 				"strict": true,
@@ -630,14 +611,12 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 			},
 		},
 	}
-	// для GPT-5 поддерживается только значение по умолчанию - 1
-	if strings.Contains(e.Model, "gpt-5") {
+	if strings.Contains(model, "gpt-5") {
 		body["temperature"] = 1
 	}
 
 	payload, _ := json.Marshal(body)
-
-	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payload))
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
 
@@ -651,26 +630,16 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	var raw struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+	out, err := util.ExtractResponsesText(resp.Body)
+	if err != nil {
 		return types.AnalogueSolutionResult{}, err
 	}
-	if len(raw.Choices) == 0 {
-		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue: empty response")
-	}
-	out := util.StripCodeFences(strings.TrimSpace(raw.Choices[0].Message.Content))
+	out = util.StripCodeFences(strings.TrimSpace(out))
 
 	var ar types.AnalogueSolutionResult
 	if err := json.Unmarshal([]byte(out), &ar); err != nil {
 		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue: bad JSON: %w", err)
 	}
-	// Жёсткие флаги безопасности по умолчанию, если модель их не проставила
 	if !ar.LeakGuardPassed {
 		ar.LeakGuardPassed = true
 	}
