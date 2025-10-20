@@ -113,7 +113,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 				"role": "user",
 				"content": []any{
 					map[string]any{"type": "input_text", "text": user},
-					map[string]any{"type": "input_image", "image_url": map[string]any{"url": dataURL}},
+					map[string]any{"type": "input_image", "image_url": dataURL},
 				},
 			},
 		},
@@ -187,13 +187,13 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 
 	var hints strings.Builder
 	if in.Options.GradeHint >= 1 && in.Options.GradeHint <= 4 {
-		fmt.Fprintf(&hints, " grade_hint=%d.", in.Options.GradeHint)
+		_, _ = fmt.Fprintf(&hints, " grade_hint=%d.", in.Options.GradeHint)
 	}
 	if s := strings.TrimSpace(in.Options.SubjectHint); s != "" {
-		fmt.Fprintf(&hints, " subject_hint=%q.", s)
+		_, _ = fmt.Fprintf(&hints, " subject_hint=%q.", s)
 	}
 	if in.Options.SelectedTaskIndex >= 0 || strings.TrimSpace(in.Options.SelectedTaskBrief) != "" {
-		fmt.Fprintf(&hints, " selected_task=[index:%d, brief:%q].", in.Options.SelectedTaskIndex, in.Options.SelectedTaskBrief)
+		_, _ = fmt.Fprintf(&hints, " selected_task=[index:%d, brief:%q].", in.Options.SelectedTaskIndex, in.Options.SelectedTaskBrief)
 	}
 
 	system := `Ты — школьный ассистент 1–4 классов. Перепиши выбранное задание полностью текстом, не додумывай.
@@ -222,7 +222,7 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 				"role": "user",
 				"content": []any{
 					map[string]any{"type": "input_text", "text": user},
-					map[string]any{"type": "input_image", "image_url": map[string]any{"url": dataURL}},
+					map[string]any{"type": "input_image", "image_url": dataURL},
 				},
 			},
 		},
@@ -401,7 +401,7 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 		}
 		userContent = []any{
 			map[string]any{"type": "input_text", "text": "INPUT_JSON:\n" + string(userJSON)},
-			map[string]any{"type": "input_image", "image_url": map[string]any{"url": dataURL}},
+			map[string]any{"type": "input_image", "image_url": dataURL},
 		}
 	} else {
 		if strings.TrimSpace(in.Answer.Text) == "" {
