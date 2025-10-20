@@ -147,12 +147,16 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 		return types.DetectResult{}, fmt.Errorf("openai detect %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	out, err := util.ExtractResponsesText(resp.Body)
-	if err != nil {
-		return types.DetectResult{}, err
+	raw, _ := io.ReadAll(resp.Body)
+	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
+	if err != nil || strings.TrimSpace(out) == "" {
+		// fallback to manual extraction from Responses API envelope
+		out = fallbackExtractResponsesText(raw)
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
-
+	if out == "" {
+		return types.DetectResult{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+	}
 	var r types.DetectResult
 	if err := json.Unmarshal([]byte(out), &r); err != nil {
 		return types.DetectResult{}, fmt.Errorf("openai detect: bad JSON: %w", err)
@@ -255,12 +259,15 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 		return types.ParseResult{}, fmt.Errorf("openai parse %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	out, err := util.ExtractResponsesText(resp.Body)
-	if err != nil {
-		return types.ParseResult{}, err
+	raw, _ := io.ReadAll(resp.Body)
+	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
+	if err != nil || strings.TrimSpace(out) == "" {
+		out = fallbackExtractResponsesText(raw)
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
-
+	if out == "" {
+		return types.ParseResult{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+	}
 	var pr types.ParseResult
 	if err := json.Unmarshal([]byte(out), &pr); err != nil {
 		return types.ParseResult{}, fmt.Errorf("openai parse: bad JSON: %w", err)
@@ -336,12 +343,15 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 		return types.HintResult{}, fmt.Errorf("openai hint %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	out, err := util.ExtractResponsesText(resp.Body)
-	if err != nil {
-		return types.HintResult{}, err
+	raw, _ := io.ReadAll(resp.Body)
+	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
+	if err != nil || strings.TrimSpace(out) == "" {
+		out = fallbackExtractResponsesText(raw)
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
-
+	if out == "" {
+		return types.HintResult{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+	}
 	var hr types.HintResult
 	if err := json.Unmarshal([]byte(out), &hr); err != nil {
 		return types.HintResult{}, fmt.Errorf("openai hint: bad JSON: %w", err)
@@ -453,12 +463,15 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 		return types.NormalizeResult{}, fmt.Errorf("openai normalize %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	out, err := util.ExtractResponsesText(resp.Body)
-	if err != nil {
-		return types.NormalizeResult{}, err
+	raw, _ := io.ReadAll(resp.Body)
+	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
+	if err != nil || strings.TrimSpace(out) == "" {
+		out = fallbackExtractResponsesText(raw)
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
-
+	if out == "" {
+		return types.NormalizeResult{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+	}
 	var nr types.NormalizeResult
 	if err := json.Unmarshal([]byte(out), &nr); err != nil {
 		return types.NormalizeResult{}, fmt.Errorf("openai normalize: bad JSON: %w", err)
@@ -547,12 +560,15 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput)
 		return types.CheckSolutionResult{}, fmt.Errorf("openai check %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	out, err := util.ExtractResponsesText(resp.Body)
-	if err != nil {
-		return types.CheckSolutionResult{}, err
+	raw, _ := io.ReadAll(resp.Body)
+	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
+	if err != nil || strings.TrimSpace(out) == "" {
+		out = fallbackExtractResponsesText(raw)
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
-
+	if out == "" {
+		return types.CheckSolutionResult{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+	}
 	var cr types.CheckSolutionResult
 	if err := json.Unmarshal([]byte(out), &cr); err != nil {
 		return types.CheckSolutionResult{}, fmt.Errorf("openai check: bad JSON: %w", err)
@@ -638,12 +654,15 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
-	out, err := util.ExtractResponsesText(resp.Body)
-	if err != nil {
-		return types.AnalogueSolutionResult{}, err
+	raw, _ := io.ReadAll(resp.Body)
+	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
+	if err != nil || strings.TrimSpace(out) == "" {
+		out = fallbackExtractResponsesText(raw)
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
-
+	if out == "" {
+		return types.AnalogueSolutionResult{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+	}
 	var ar types.AnalogueSolutionResult
 	if err := json.Unmarshal([]byte(out), &ar); err != nil {
 		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue: bad JSON: %w", err)
@@ -653,6 +672,59 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 	}
 	ar.Safety.NoOriginalAnswerLeak = true
 	return ar, nil
+}
+
+// fallbackExtractResponsesText extracts model text from the Responses API envelope
+// per https://platform.openai.com/docs/api-reference/responses/object.
+// It prefers `output_text`, and otherwise concatenates any text segments
+// found in `output[i].content[j].text` where `type` is `output_text` or `text`.
+func fallbackExtractResponsesText(raw []byte) string {
+	type content struct {
+		Type string `json:"type"`
+		Text string `json:"text"`
+	}
+	type output struct {
+		Content []content `json:"content"`
+		Role    string    `json:"role,omitempty"`
+	}
+	var env struct {
+		Object     string   `json:"object"`
+		Status     string   `json:"status"`
+		Output     []output `json:"output"`
+		OutputText string   `json:"output_text"`
+	}
+	if err := json.Unmarshal(raw, &env); err != nil {
+		return ""
+	}
+
+	// Prefer the convenience field when present
+	if s := strings.TrimSpace(env.OutputText); s != "" {
+		return s
+	}
+
+	var b strings.Builder
+	for _, o := range env.Output {
+		for _, c := range o.Content {
+			if strings.TrimSpace(c.Text) == "" {
+				continue
+			}
+			// Both `output_text` and `text` are seen in practice
+			if c.Type == "output_text" || c.Type == "text" || c.Type == "" {
+				if b.Len() > 0 {
+					b.WriteByte('\n')
+				}
+				b.WriteString(c.Text)
+			}
+		}
+	}
+	return b.String()
+}
+
+func truncateBytes(b []byte, n int) string {
+	if len(b) > n {
+		return string(b[:n]) + "..."
+	}
+	return string(b)
 }
 
 func isOpenAIImageMIME(m string) bool {
