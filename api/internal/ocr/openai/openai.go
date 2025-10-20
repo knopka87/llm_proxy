@@ -87,7 +87,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 • Зафиксируй флаги: has_faces, pii_detected, multiple_tasks_detected, thousands_space_preserved, operators_strict.
 • Проверь: конкатенация items_raw по group_id строго равна block_raw; операторы/разрядные пробелы сохранены.
 
-Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
+Верни строго JSON по схеме detect. Любой текст вне JSON — ошибка.
 `
 	schema, err := util.LoadPromptSchema("detect")
 	if err != nil {
@@ -199,7 +199,7 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 Соблюдай политику подтверждения:
 - Автоподтверждение, если: confidence ≥ 0.80, meaning_change_risk ≤ 0.20, bracketed_spans_count = 0, needs_rescan=false.
 - Иначе запрашивай подтверждение.
-Верни строго JSON по схеме. Любой текст вне JSON — ошибка
+Верни строго JSON по схеме parse. Любой текст вне JSON — ошибка
 `
 	schema, err := util.LoadPromptSchema("parse")
 	if err != nil {
@@ -277,7 +277,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 
 	system := `Ты — помощник для 1–4 классов. Сформируй РОВНО ОДИН блок подсказки уровня ` + string(in.Level) + `.
 Не решай задачу и не подставляй числа/слова из условия.
-Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
+Верни строго JSON по схеме hint. Любой текст вне JSON — ошибка.
 `
 	schema, err := util.LoadPromptSchema("hint")
 	if err != nil {
@@ -370,7 +370,7 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 7) Фото: OCR только для извлечения ответа; при плохом качестве — success=false и needs_clarification=true.
 8) Несколько кандидатов — не выбирать; success=false, error="too_many_candidates" и короткое needs_user_action_message.
 9) Неоднозначные форматы (½, 1 1/2, 1:20, 5–7, ≈10, >5) не сводить к арифметике; заполнить number_kind.
-Верни строго JSON по схеме. Любой текст вне JSON — ошибка.`
+Верни строго JSON по схеме normalize. Любой текст вне JSON — ошибка.`
 
 	schema, err := util.LoadPromptSchema("normalize")
 	if err != nil {
@@ -488,7 +488,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput)
 - Триггеры uncertain: низкая уверенность у student, неоднозначный формат, required units отсутствуют, несколько конкурирующих кандидатов.
 - Безопасность: leak_guard_passed=true, safety.no_final_answer_leak=true; не выводи число/слово правильного ответа.
 - short_hint ≤120 симв., speakable_message ≤140.
-Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
+Верни строго JSON по схеме check_solution. Любой текст вне JSON — ошибка.
 `
 	schema, err := util.LoadPromptSchema("check")
 	if err != nil {
@@ -579,7 +579,7 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 Анти‑лик: leak_guard_passed=true; no_original_answer_leak=true; желателен отчёт no_original_overlap_report.
 Контроль «тот же приём»: method_rationale (почему это тот же приём) и contrast_note (чем аналог отличается).
 Старайся менять сюжет/единицы; distance_from_original_hint укажи как medium|high.
-Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
+Верни строго JSON по схеме analogue_solution. Любой текст вне JSON — ошибка.
 `
 	schema, err := util.LoadPromptSchema("analogue")
 	if err != nil {
