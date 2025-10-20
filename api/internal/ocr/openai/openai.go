@@ -13,7 +13,6 @@ import (
 
 	"llm-proxy/api/internal/ocr"
 	"llm-proxy/api/internal/ocr/types"
-	"llm-proxy/api/internal/prompt"
 	"llm-proxy/api/internal/util"
 )
 
@@ -90,10 +89,11 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 
 Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
 `
-	var schema map[string]any
-	if err := json.Unmarshal([]byte(prompt.DetectSchema), &schema); err != nil {
-		return types.DetectResult{}, fmt.Errorf("bad detect schema: %w", err)
+	schema, err := util.LoadPromptSchema("detect")
+	if err != nil {
+		return types.DetectResult{}, err
 	}
+	util.FixJSONSchemaStrict(schema)
 
 	user := "Ответ строго JSON по схеме. Без комментариев."
 	if in.GradeHint >= 1 && in.GradeHint <= 4 {
@@ -201,10 +201,12 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 - Иначе запрашивай подтверждение.
 Верни строго JSON по схеме. Любой текст вне JSON — ошибка
 `
-	var schema map[string]any
-	if err := json.Unmarshal([]byte(prompt.ParseSchema), &schema); err != nil {
-		return types.ParseResult{}, fmt.Errorf("bad parse schema: %w", err)
+	schema, err := util.LoadPromptSchema("parse")
+	if err != nil {
+		return types.ParseResult{}, err
 	}
+	util.FixJSONSchemaStrict(schema)
+
 	user := "Ответ строго JSON по схеме. Без комментариев." + hints.String()
 
 	body := map[string]any{
@@ -277,10 +279,12 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 Не решай задачу и не подставляй числа/слова из условия.
 Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
 `
-	var schema map[string]any
-	if err := json.Unmarshal([]byte(prompt.HintSchema), &schema); err != nil {
-		return types.HintResult{}, fmt.Errorf("bad hint schema: %w", err)
+	schema, err := util.LoadPromptSchema("hint")
+	if err != nil {
+		return types.HintResult{}, err
 	}
+	util.FixJSONSchemaStrict(schema)
+
 	userObj := map[string]any{
 		"task":  "Сгенерируй подсказку согласно PROMPT_HINT и верни JSON по схеме.",
 		"input": in,
@@ -368,10 +372,12 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 9) Неоднозначные форматы (½, 1 1/2, 1:20, 5–7, ≈10, >5) не сводить к арифметике; заполнить number_kind.
 Верни строго JSON по схеме. Любой текст вне JSON — ошибка.`
 
-	var schema map[string]any
-	if err := json.Unmarshal([]byte(prompt.NormalizeSchema), &schema); err != nil {
-		return types.NormalizeResult{}, fmt.Errorf("bad normalize schema: %w", err)
+	schema, err := util.LoadPromptSchema("normalize")
+	if err != nil {
+		return types.NormalizeResult{}, err
 	}
+	util.FixJSONSchemaStrict(schema)
+
 	userObj := map[string]any{
 		"task":  "Нормализуй ответ ученика и верни только JSON по схеме.",
 		"input": in,
@@ -484,10 +490,11 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput)
 - short_hint ≤120 симв., speakable_message ≤140.
 Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
 `
-	var schema map[string]any
-	if err := json.Unmarshal([]byte(prompt.CheckSolutionSchema), &schema); err != nil {
-		return types.CheckSolutionResult{}, fmt.Errorf("bad check solution schema: %w", err)
+	schema, err := util.LoadPromptSchema("check")
+	if err != nil {
+		return types.CheckSolutionResult{}, err
 	}
+	util.FixJSONSchemaStrict(schema)
 
 	userObj := map[string]any{
 		"task":  "Проверь решение по правилам CHECK_SOLUTION и верни только JSON по схеме.",
@@ -574,10 +581,11 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 Старайся менять сюжет/единицы; distance_from_original_hint укажи как medium|high.
 Верни строго JSON по схеме. Любой текст вне JSON — ошибка.
 `
-	var schema map[string]any
-	if err := json.Unmarshal([]byte(prompt.AnalogueSolutionSchema), &schema); err != nil {
-		return types.AnalogueSolutionResult{}, fmt.Errorf("bad analogue solution schema: %w", err)
+	schema, err := util.LoadPromptSchema("analogue")
+	if err != nil {
+		return types.AnalogueSolutionResult{}, err
 	}
+	util.FixJSONSchemaStrict(schema)
 
 	userObj := map[string]any{
 		"task":  "Сформируй аналогичное задание тем же приёмом и верни СТРОГО JSON по схеме.",
