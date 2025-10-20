@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "detect.schema.v1.3 (backward compatible)",
+  "title": "DETECT v5 output (minimal blocks)",
   "type": "object",
   "required": ["tasks"],
   "properties": {
@@ -11,18 +11,9 @@
         "type": "object",
         "required": ["original_number", "title_raw", "blocks"],
         "properties": {
-          "original_number": {
-            "type": "string",
-            "description": "Оригинальный номер задания (verbatim)."
-          },
-          "title_raw": {
-            "type": "string",
-            "description": "Заголовок/подпункт задачи (verbatim)."
-          },
-          "multiple_tasks_detected": {
-            "type": "boolean",
-            "description": "true, если на изображении явно несколько разных задач."
-          },
+          "original_number": { "type": "string", "description": "Оригинальный номер задания (verbatim)." },
+          "title_raw": { "type": "string", "description": "Заголовок/подпункт задачи (verbatim)." },
+          "multiple_tasks_detected": { "type": "boolean", "description": "true, если на изображении явно несколько разных задач." },
           "blocks": {
             "type": "array",
             "minItems": 1,
@@ -30,113 +21,10 @@
               "type": "object",
               "required": ["block_raw"],
               "properties": {
-                "block_id": {
-                  "type": "string",
-                  "description": "Уникальный идентификатор блока в рамкaх текущей задачи. Нужен для связи с items_raw.group_id."
-                },
-                "block_raw": {
-                  "type": "string",
-                  "description": "Полный текст блока (verbatim)."
-                },
-                "items_raw": {
-                  "type": "array",
-                  "description": "Атомарные части блока (если разбиение очевидно). Конкатенация items_raw.item_raw в порядке order должна в точности совпадать с block_raw.",
-                  "items": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                      "item_raw"
-                    ],
-                    "properties": {
-                      "item_raw": {
-                        "type": "string",
-                        "description": "Атом блока (verbatim)."
-                      },
-                      "group_id": {
-                        "type": "string",
-                        "description": "Ссылка на block_id, к которому относится атом."
-                      },
-                      "order": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "description": "Порядковый номер атома в блоке."
-                      }
-                    }
-                  }
-                },
-                "layout_raw": {
-                  "type": "string",
-                  "description": "Моноширинный текст фиксированной ширины для версточных задач (столбики/сетки/□). Заполняется, только если применимо."
-                },
-                "semantic_raw": {
-                  "type": "object",
-                  "description": "Семантическое представление верстки; заполняется, только если применимо.",
-                  "additionalProperties": false,
-                  "properties": {
-                    "lines": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Построчное представление моноширинного блока."
-                    },
-                    "grid": {
-                      "type": "array",
-                      "items": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "description": "Сеточное представление (строки×колонки)."
-                    },
-                    "boxes": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": [
-                          "row",
-                          "col"
-                        ],
-                        "properties": {
-                          "row": {
-                            "type": "integer",
-                            "minimum": 0
-                          },
-                          "col": {
-                            "type": "integer",
-                            "minimum": 0
-                          },
-                          "symbol": {
-                            "type": "string",
-                            "description": "Символ (например, '□')."
-                          }
-                        }
-                      },
-                      "description": "Координаты специальных символов (например, □)"
-                    }
-                  }
-                }
+                "block_raw": { "type": "string", "description": "Полный текст блока (verbatim)." }
               },
               "additionalProperties": false
             }
-          },
-          "operators_strict": {
-            "type": "boolean",
-            "description": "true, если в извлечённом тексте сохранены исходные символы операций (·/×, :/÷, +/−). Опционально; валидация на бэкенде."
-          },
-          "thousands_space_preserved": {
-            "type": "boolean",
-            "description": "true, если сохранены разрядные пробелы в числах. Опционально; валидация на бэкенде."
-          },
-          "has_faces": {
-            "type": "boolean",
-            "description": "true, если на фото обнаружены лица; поле опционально и может быть выключено политикой MVP."
-          },
-          "pii_detected": {
-            "type": "boolean",
-            "description": "true, если обнаружены PII (ФИО/телефоны и т.п.); поле опционально и может быть выключено политикой MVP."
           }
         },
         "additionalProperties": false
