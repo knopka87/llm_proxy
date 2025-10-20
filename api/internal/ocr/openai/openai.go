@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -135,7 +136,10 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
 
+	start := time.Now()
 	resp, err := e.httpc.Do(req)
+	t := time.Since(start).Milliseconds()
+	log.Printf("detect time: %d", t)
 	if err != nil {
 		return types.DetectResult{}, err
 	}
