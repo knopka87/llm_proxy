@@ -132,6 +132,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 	}
 
 	payload, _ := json.Marshal(body)
+	log.Print(string(payload))
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
