@@ -118,12 +118,14 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 			},
 		},
 		"temperature": 0,
-		"response_format": map[string]any{
-			"type": "json_schema",
-			"json_schema": map[string]any{
-				"name":   "detect",
-				"strict": true,
-				"schema": schema,
+		"text": map[string]any{
+			"format": map[string]any{
+				"type": "json_schema",
+				"json_schema": map[string]any{
+					"name":   "detect",
+					"strict": true,
+					"schema": schema,
+				},
 			},
 		},
 	}
@@ -225,12 +227,14 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 			},
 		},
 		"temperature": 0,
-		"response_format": map[string]any{
-			"type": "json_schema",
-			"json_schema": map[string]any{
-				"name":   "parse",
-				"strict": true,
-				"schema": schema,
+		"text": map[string]any{
+			"format": map[string]any{
+				"type": "json_schema",
+				"json_schema": map[string]any{
+					"name":   "parse",
+					"strict": true,
+					"schema": schema,
+				},
 			},
 		},
 	}
@@ -304,12 +308,14 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 			},
 		},
 		"temperature": 0,
-		"response_format": map[string]any{
-			"type": "json_schema",
-			"json_schema": map[string]any{
-				"name":   "hint",
-				"strict": true,
-				"schema": schema,
+		"text": map[string]any{
+			"format": map[string]any{
+				"type": "json_schema",
+				"json_schema": map[string]any{
+					"name":   "hint",
+					"strict": true,
+					"schema": schema,
+				},
 			},
 		},
 	}
@@ -419,12 +425,14 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 			},
 		},
 		"temperature": 0,
-		"response_format": map[string]any{
-			"type": "json_schema",
-			"json_schema": map[string]any{
-				"name":   "normalize",
-				"strict": true,
-				"schema": schema,
+		"text": map[string]any{
+			"format": map[string]any{
+				"type": "json_schema",
+				"json_schema": map[string]any{
+					"name":   "normalize",
+					"strict": true,
+					"schema": schema,
+				},
 			},
 		},
 	}
@@ -512,12 +520,14 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput)
 			},
 		},
 		"temperature": 0,
-		"response_format": map[string]any{
-			"type": "json_schema",
-			"json_schema": map[string]any{
-				"name":   "check_solution",
-				"strict": true,
-				"schema": schema,
+		"text": map[string]any{
+			"format": map[string]any{
+				"type": "json_schema",
+				"json_schema": map[string]any{
+					"name":   "check_solution",
+					"strict": true,
+					"schema": schema,
+				},
 			},
 		},
 	}
@@ -602,12 +612,14 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 			},
 		},
 		"temperature": 0,
-		"response_format": map[string]any{
-			"type": "json_schema",
-			"json_schema": map[string]any{
-				"name":   "analogue_solution",
-				"strict": true,
-				"schema": schema,
+		"text": map[string]any{
+			"format": map[string]any{
+				"type": "json_schema",
+				"json_schema": map[string]any{
+					"name":   "analogue_solution",
+					"strict": true,
+					"schema": schema,
+				},
 			},
 		},
 	}
