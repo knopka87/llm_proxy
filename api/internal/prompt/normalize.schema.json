@@ -36,7 +36,10 @@
     },
     "value": {
       "type": ["number", "string", "array", "null"],
-      "description": "Нормализованное значение. Фактическая форма зависит от поля `shape`: для `number` — число; для `string` — строка; для `steps` — массив строк (до 6) или null; для `list` — массив произвольных элементов."
+      "description": "Нормализованное значение. Фактическая форма зависит от поля `shape`: для `number` — число; для `string` — строка; для `steps` — массив строк (до 6) или null; для `list` — массив произвольных элементов.",
+      "items": {
+        "type": ["number", "string", "boolean", "object", "array", "null"]
+      }
     },
     "units": {
       "type": "object",
