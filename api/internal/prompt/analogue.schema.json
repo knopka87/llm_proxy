@@ -35,25 +35,13 @@
       "minItems": 1,
       "maxItems": 3,
       "items": {
-        "oneOf": [
-          {
-            "type": "string",
-            "maxLength": 100
-          },
-          {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "prompt"
-            ],
-            "properties": {
-              "prompt": {
-                "type": "string",
-                "maxLength": 100
-              }
-            }
-          }
-        ]
+        "type": ["string", "object"],
+        "maxLength": 100,
+        "additionalProperties": false,
+        "required": ["prompt"],
+        "properties": {
+          "prompt": { "type": "string", "maxLength": 100 }
+        }
       }
     },
     "transfer_bridge": {
