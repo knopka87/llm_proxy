@@ -43,86 +43,61 @@
       "additionalProperties": false,
       "properties": {
         "units": {
-          "oneOf": [
-            { "type": "null" },
-            {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["detected"],
-              "properties": {
-                "detected": { "type": ["string", "null"] },
-                "applied": { "type": ["string", "null"] }
-              }
-            }
-          ]
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["detected"],
+          "properties": {
+            "detected": { "type": ["string", "null"] },
+            "applied": { "type": ["string", "null"] }
+          }
         },
         "number_diff": {
-          "oneOf": [
-            { "type": "null" },
-            {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["within_tolerance"],
-              "properties": {
-                "within_tolerance": { "type": "boolean" }
-              }
-            }
-          ]
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["within_tolerance"],
+          "properties": {
+            "within_tolerance": { "type": "boolean" }
+          }
         },
         "string_match": {
-          "oneOf": [
-            { "type": "null" },
-            {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["mode"],
-              "properties": {
-                "mode": {
-                  "type": "string",
-                  "enum": ["exact", "regex", "synonym", "case_fold"]
-                }
-              }
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["mode"],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["exact", "regex", "synonym", "case_fold"]
             }
-          ]
+          }
         },
         "list_match": {
-          "oneOf": [
-            { "type": "null" },
-            {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["total", "extra"],
-              "properties": {
-                "total": { "type": "integer", "minimum": 0 },
-                "extra": { "type": "integer", "minimum": 0 },
-                "missing": {
-                  "type": "array",
-                  "items": { "type": "string" }
-                }
-              }
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["total", "extra"],
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "extra": { "type": "integer", "minimum": 0 },
+            "missing": {
+              "type": "array",
+              "items": { "type": "string" }
             }
-          ]
+          }
         },
         "steps_match": {
-          "oneOf": [
-            { "type": "null" },
-            {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["order_ok"],
-              "properties": {
-                "missing": {
-                  "type": "array",
-                  "items": { "type": "string" }
-                },
-                "order_ok": { "type": "boolean" },
-                "extra_steps": {
-                  "type": "array",
-                  "items": { "type": "string" }
-                }
-              }
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["order_ok"],
+          "properties": {
+            "missing": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "order_ok": { "type": "boolean" },
+            "extra_steps": {
+              "type": "array",
+              "items": { "type": "string" }
             }
-          ]
+          }
         }
       }
     },
