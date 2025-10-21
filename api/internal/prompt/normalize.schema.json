@@ -34,7 +34,10 @@
         null
       ]
     },
-    "value": {},
+    "value": {
+        "type": ["number", "string", "array", "null"],
+        "description": "Нормализованное значение; фактический тип зависит от поля `shape` и уточняется в ветках if/then."
+      },
     "units": {
       "type": "object",
       "additionalProperties": false,
@@ -106,5 +109,100 @@
       ],
       "maxLength": 120
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "shape": {
+            "const": "number"
+          }
+        },
+        "required": [
+          "shape"
+        ]
+      },
+      "then": {
+        "properties": {
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "shape": {
+            "const": "string"
+          }
+        },
+        "required": [
+          "shape"
+        ]
+      },
+      "then": {
+        "properties": {
+          "value": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "shape": {
+            "const": "steps"
+          }
+        },
+        "required": [
+          "shape"
+        ]
+      },
+      "then": {
+        "properties": {
+          "value": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 6
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "shape": {
+            "const": "list"
+          }
+        },
+        "required": [
+          "shape"
+        ]
+      },
+      "then": {
+        "properties": {
+          "value": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {}
+          }
+        }
+      }
+    }
+  ]
 }
