@@ -27,7 +27,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 	defaultSystem := `Ты — помощник для 1–4 классов. Сформируй РОВНО ОДИН блок подсказки уровня ` + string(in.Level) + `. Не решай задачу и не подставляй числа/слова из условия. Верни строго JSON по схеме hint. Любой текст вне JSON — ошибка.`
 
 	level := strings.ToUpper(string(in.Level))
-	system, err := util.LoadSystemPrompt("hint" + level)
+	system, err := util.LoadSystemPrompt("hint"+level, "gpt")
 	log.Printf("HINT" + level + ": " + system)
 	if err != nil {
 		system = defaultSystem
