@@ -9,6 +9,15 @@ import (
 	"llm-proxy/api/internal/prompt"
 )
 
+func LoadSystemPrompt(name string) (string, error) {
+	p := filepath.Join("prompt", fmt.Sprintf("%s.txt", name))
+	if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
+		return string(b), nil
+	} else {
+		return "", err
+	}
+}
+
 // Загружаем <name>.schema.json из PROMPT_SCHEMA_DIR, иначе берём из встроенных prompt.*.
 func LoadPromptSchema(name string) (map[string]any, error) {
 	p := filepath.Join("../prompt", name+".schema.json")

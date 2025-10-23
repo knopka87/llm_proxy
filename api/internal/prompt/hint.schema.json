@@ -1,34 +1,39 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "hint.schema.json",
+  "title": "Схема подсказки для начальной школы (версия 5)",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "hint_title",
-    "hint_steps",
-    "control_question"
+    "hint_steps"
   ],
   "properties": {
     "hint_title": {
       "type": "string",
-      "maxLength": 80
+      "enum": [
+        "L1",
+        "L2",
+        "L3"
+      ],
+      "description": "Уровень подсказки: L1 — наводящий вопрос, L2 — практический совет, L3 — общий алгоритм."
     },
     "hint_steps": {
       "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
       "items": {
         "type": "string",
-        "maxLength": 260
+        "minLength": 10,
+        "maxLength": 150
       },
-      "minItems": 1,
-      "maxItems": 5
+      "description": "Короткие шаги подсказки. L1: 1 шаг, L2: 1-2 шага, L3: 2-3 шага."
     },
-    "control_question": {
-      "type": "string",
-      "maxLength": 200
-    },
-    "rule_hint": {
-      "type": "string",
-      "maxLength": 160
+    "grade": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "description": "Класс ученика (опционально, для логирования)"
     }
   }
 }

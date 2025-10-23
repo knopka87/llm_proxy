@@ -20,8 +20,13 @@ type HintInput struct {
 }
 
 type HintResult struct {
-	HintTitle       string   `json:"hint_title"`
-	HintSteps       []string `json:"hint_steps"`
-	ControlQuestion string   `json:"control_question"`
-	RuleHint        string   `json:"rule_hint,omitempty"`
+	// Уровень подсказки: L1 — наводящий вопрос, L2 — практический совет, L3 — общий алгоритм.
+	// В схеме это поле называется `hint_title` и имеет enum [L1, L2, L3].
+	HintTitle HintLevel `json:"hint_title"`
+
+	// Короткие шаги подсказки. По схеме: minItems=1, maxItems=3; каждый элемент 10..150 символов.
+	HintSteps []string `json:"hint_steps"`
+
+	// Опционально. Класс ученика 1..4 (для логирования). В схеме поле не обязательное.
+	Grade *int `json:"grade,omitempty"`
 }

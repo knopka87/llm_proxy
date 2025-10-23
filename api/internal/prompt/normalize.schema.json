@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "normalize.schema.json",
+  "title": "NORMALIZE_ANSWER — MVP schema (NO PII)",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -84,6 +85,36 @@
         }
       }
     },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "normalized": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "clean": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "uncertain_reasons": {
       "type": "array",
       "items": {
@@ -111,6 +142,58 @@
         "null"
       ],
       "maxLength": 120
+    },
+    "error": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "too_many_candidates",
+        "ocr_unreadable",
+        "no_answer",
+        "shape_mismatch",
+        "internal_error",
+        null
+      ]
+    },
+    "number_kind": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "integer",
+        "decimal",
+        "fraction",
+        "mixed_fraction",
+        "range",
+        "time",
+        "approximate",
+        "inequality",
+        "unknown",
+        null
+      ]
+    },
+    "next_action_hint": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "ask_rephoto",
+        "ask_retry",
+        "none",
+        null
+      ]
+    },
+    "explanation_short": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 400,
+      "description": "Короткое пояснение для редких случаев (без нового shape)."
     }
   }
 }

@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"llm-proxy/api/internal/config"
-	handle "llm-proxy/api/internal/handle"
+	"llm-proxy/api/internal/handle"
 	"llm-proxy/api/internal/ocr"
 	"llm-proxy/api/internal/ocr/gemini"
-	"llm-proxy/api/internal/ocr/openai"
+	"llm-proxy/api/internal/ocr/gpt"
 )
 
 func main() {
@@ -26,11 +26,11 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	})
 
 	engines := &ocr.Engines{
-		OpenAI: openai.New(cfg.OpenAIAPIKey, cfg.OpenAIModel),
+		OpenAI: gpt.New(cfg.OpenAIAPIKey, cfg.OpenAIModel),
 		Gemini: gemini.New(cfg.GeminiAPIKey, cfg.GeminiModel),
 	}
 	h := handle.New(engines)
@@ -41,6 +41,7 @@ func main() {
 	mux.HandleFunc("/v1/normalize", h.Normalize)
 	mux.HandleFunc("/v1/check_solution", h.CheckSolution)
 	mux.HandleFunc("/v1/analogue_solution", h.AnalogueSolution)
+	mux.HandleFunc("/api/prompt", h.UpdateSystemPromptHandler)
 
 	addr := ":" + cfg.Port
 	srv := &http.Server{
