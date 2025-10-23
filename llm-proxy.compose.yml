@@ -11,7 +11,7 @@ services:
       - .env
     restart: unless-stopped
     volumes:
-      - ./prompts:/app/prompts
+      - ./prompts:/app/prompts:rw
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
