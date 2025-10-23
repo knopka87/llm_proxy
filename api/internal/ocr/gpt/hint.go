@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -24,6 +25,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 
 	level := strings.ToUpper(string(in.Level))
 	system, err := util.LoadSystemPrompt("hint" + level)
+	log.Printf("HINT" + level + ": " + system)
 	if err != nil {
 		system = defaultSystem
 	}
