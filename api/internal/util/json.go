@@ -5,17 +5,33 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"llm-proxy/api/internal/prompt"
 )
 
-func LoadSystemPrompt(name string) (string, error) {
-	p := filepath.Join("prompt", fmt.Sprintf("%s.txt", name))
-	if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
-		return string(b), nil
-	} else {
-		return "", err
+func LoadSystemPrompt(name, provider string) (string, error) {
+	// First try provider-aware layout used by UpdateSystemPromptHandler:
+	//   <PROMPT_DIR or api/internal/ocr>/<provider>/prompt/<name>.txt
+	baseRoot := os.Getenv("PROMPT_DIR")
+	if baseRoot == "" {
+		baseRoot = filepath.Join("api", "internal", "ocr")
 	}
+
+	if provider != "" {
+		p := filepath.Join(baseRoot, strings.ToLower(provider), "prompt", fmt.Sprintf("%s.txt", name))
+		if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
+			return string(b), nil
+		}
+	}
+
+	// Legacy fallback: prompt/<name>.txt (old layout)
+	legacy := filepath.Join("prompt", fmt.Sprintf("%s.txt", name))
+	if b, err := os.ReadFile(legacy); err == nil && len(b) > 0 {
+		return string(b), nil
+	}
+
+	return "", fmt.Errorf("system prompt %q not found in %s (provider=%q) or legacy prompt dir", name, baseRoot, provider)
 }
 
 // Загружаем <name>.schema.json из PROMPT_SCHEMA_DIR, иначе берём из встроенных prompt.*.
