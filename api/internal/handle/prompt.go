@@ -34,7 +34,11 @@ func (h *Handle) UpdateSystemPromptHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	baseDir := filepath.Join("api", "internal", "ocr", strings.ToLower(req.Provider), "prompt")
+	baseRoot := os.Getenv("PROMPT_DIR")
+	if baseRoot == "" {
+		baseRoot = filepath.Join("api", "internal", "ocr")
+	}
+	baseDir := filepath.Join(baseRoot, strings.ToLower(req.Provider), "prompt")
 	if err := os.MkdirAll(baseDir, 0o755); err != nil {
 		http.Error(w, "make dir: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -49,7 +53,7 @@ func (h *Handle) UpdateSystemPromptHandler(w http.ResponseWriter, r *http.Reques
 	dstPath := filepath.Join(baseDir, filename+".txt")
 
 	// Write atomically: temp file in the same directory, then rename.
-	tmp, err := os.CreateTemp(baseDir, filename+".*.tmp")
+	tmp, err := os.CreateTemp(baseDir, filename+".tmp")
 	if err != nil {
 		http.Error(w, "create temp: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -83,6 +87,6 @@ func (h *Handle) UpdateSystemPromptHandler(w http.ResponseWriter, r *http.Reques
 		Size:     len(req.Text),
 		Updated:  time.Now().UTC().Format(time.RFC3339),
 	}
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_ = json.NewEncoder(w).Encode(resp)
 }

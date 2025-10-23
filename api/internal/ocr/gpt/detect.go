@@ -21,6 +21,9 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 		return types.DetectResult{}, fmt.Errorf("OPENAI_API_KEY not set")
 	}
 
+	// TODO переделать на отдельный env
+	e.Model = "gpt-4.1-mini"
+
 	// accept raw base64 or data: URL
 	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.ImageB64)
 	if len(imgBytes) == 0 {

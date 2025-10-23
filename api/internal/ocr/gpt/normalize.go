@@ -22,6 +22,9 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 		model = "gpt-4o-mini"
 	}
 
+	// TODO переделать на отдельный env
+	e.Model = "gpt-4o"
+
 	system := `PROMPT — NORMALIZE_ANSWER (NO PII, компакт для MVP)
 Задача: нормализуй ответ ученика в JSON по схеме normalize: success, shape ∈ {number|string|steps|list}, value, optional units, warnings.
 Не придумывай ответ, не решай заново, не меняй смысл. Не выводи null-поля и пустые массивы.

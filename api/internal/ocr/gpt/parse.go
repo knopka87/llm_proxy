@@ -23,6 +23,8 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 	if in.Options.ModelOverride != "" {
 		model = in.Options.ModelOverride
 	}
+	// TODO переделать на отдельный env
+	e.Model = "gpt-4.1-mini"
 
 	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.ImageB64)
 	if len(imgBytes) == 0 {

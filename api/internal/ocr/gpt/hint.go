@@ -20,6 +20,9 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 	}
 	model := e.Model
 
+	// TODO переделать на отдельный env
+	e.Model = "gpt-4.1-mini"
+
 	// Try to load system prompt from /prompt/hint<L1|L2|L3>.txt; fallback to the default text if not found.
 	defaultSystem := `Ты — помощник для 1–4 классов. Сформируй РОВНО ОДИН блок подсказки уровня ` + string(in.Level) + `. Не решай задачу и не подставляй числа/слова из условия. Верни строго JSON по схеме hint. Любой текст вне JSON — ошибка.`
 
