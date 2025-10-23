@@ -10,11 +10,14 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+    volumes:
+      - ./prompts:/app/prompts
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       PORT: ${PORT:-8000}
+      PROMPT_DIR: /app/prompts
     ports:
       - "8000:8000"
