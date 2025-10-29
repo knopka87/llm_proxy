@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "normalize.schema.json",
+  "title": "NORMALIZE_Output.v1",
+  "type": "object",
+  "properties": {
+    "shape": { "type": "string", "enum": ["number", "string", "list", "steps"] },
+    "value": {},
+    "units": { "type": "string" },
+    "warnings": { "type": "array", "items": { "type": "string", "pattern": "^spelling_issue:.+" }, "maxItems": 10 },
+    "needs_clarification": { "type": "boolean" },
+    "uncertain_reasons": { "type": "array", "items": { "type": "string" }, "maxItems": 3 }
+  },
+  "required": ["shape", "value"],
+  "additionalProperties": false
+}

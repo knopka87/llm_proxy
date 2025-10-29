@@ -7,36 +7,44 @@ import (
 	"path/filepath"
 	"strings"
 
-	"llm-proxy/api/internal/prompt"
+	"llm-proxy/api/internal/v1/prompt"
 )
 
-func LoadSystemPrompt(name, provider string) (string, error) {
+func LoadSystemPrompt(name, provider, version string) (string, error) {
+	return loadPrompt(name, "system", provider, version)
+}
+
+func LoadUserPrompt(name, provider, version string) (string, error) {
+	return loadPrompt(name, "user", provider, version)
+}
+
+func loadPrompt(name, tp, provider, version string) (string, error) {
 	// First try provider-aware layout used by UpdateSystemPromptHandler:
-	//   <PROMPT_DIR or api/internal/ocr>/<provider>/prompt/<name>.txt
+	//   <PROMPT_DIR or api/internal/<version>/ocr/<provider>/prompt/<name>.<type(tp)>.txt
 	baseRoot := os.Getenv("PROMPT_DIR")
 	if baseRoot == "" {
-		baseRoot = filepath.Join("api", "internal", "ocr")
+		baseRoot = filepath.Join("api", "internal", version, "ocr")
 	}
 
 	if provider != "" {
-		p := filepath.Join(baseRoot, strings.ToLower(provider), "prompt", fmt.Sprintf("%s.txt", name))
+		p := filepath.Join(baseRoot, strings.ToLower(provider), "prompt", fmt.Sprintf("%s.%s.txt", tp, name))
 		if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
-			return string(b), nil
+			return strings.TrimSpace(string(b)), nil
 		}
 	}
 
 	// Legacy fallback: prompt/<name>.txt (old layout)
-	legacy := filepath.Join("prompt", fmt.Sprintf("%s.txt", name))
+	legacy := filepath.Join("prompt", fmt.Sprintf("%s.%s.txt", tp, name))
 	if b, err := os.ReadFile(legacy); err == nil && len(b) > 0 {
-		return string(b), nil
+		return strings.TrimSpace(string(b)), nil
 	}
 
-	return "", fmt.Errorf("system prompt %q not found in %s (provider=%q) or legacy prompt dir", name, baseRoot, provider)
+	return "", fmt.Errorf("prompt %q not found in %s (provider=%q) or legacy prompt dir", name, baseRoot, provider)
 }
 
 // Загружаем <name>.schema.json из PROMPT_SCHEMA_DIR, иначе берём из встроенных prompt.*.
-func LoadPromptSchema(name string) (map[string]any, error) {
-	p := filepath.Join("../prompt", name+".schema.json")
+func LoadPromptSchema(name, version string) (map[string]any, error) {
+	p := filepath.Join("../", version, "/prompt", name+".schema.json")
 	if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
 		var m map[string]any
 		if err := json.Unmarshal(b, &m); err != nil {

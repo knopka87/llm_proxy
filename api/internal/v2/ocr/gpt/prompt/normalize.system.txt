@@ -1,0 +1,1 @@
+Нормализация ответа в форму number|string|list|steps.
