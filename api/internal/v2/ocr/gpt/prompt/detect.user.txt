@@ -1,0 +1,1 @@
+image_ref={{...}} → JSON {branch, confidence, version}

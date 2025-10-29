@@ -1,0 +1,2 @@
+Маршрутизация заданий по веткам math/ru/generic.
+Верни JSON по схеме detect с threshold_note=T_route=0.7
