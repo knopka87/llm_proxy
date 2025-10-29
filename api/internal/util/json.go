@@ -19,23 +19,18 @@ func LoadUserPrompt(name, provider, version string) (string, error) {
 }
 
 func loadPrompt(name, tp, provider, version string) (string, error) {
+	if provider == "" {
+		return "", fmt.Errorf("provider is empty")
+	}
 	// First try provider-aware layout used by UpdateSystemPromptHandler:
 	//   <PROMPT_DIR or api/internal/<version>/ocr/<provider>/prompt/<name>.<type(tp)>.txt
 	baseRoot := os.Getenv("PROMPT_DIR")
 	if baseRoot == "" {
-		baseRoot = filepath.Join("api", "internal", version, "ocr")
+		baseRoot = filepath.Join("api", "internal")
 	}
 
-	if provider != "" {
-		p := filepath.Join(baseRoot, strings.ToLower(provider), "prompt", fmt.Sprintf("%s.%s.txt", tp, name))
-		if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
-			return strings.TrimSpace(string(b)), nil
-		}
-	}
-
-	// Legacy fallback: prompt/<name>.txt (old layout)
-	legacy := filepath.Join("prompt", fmt.Sprintf("%s.%s.txt", tp, name))
-	if b, err := os.ReadFile(legacy); err == nil && len(b) > 0 {
+	p := filepath.Join(baseRoot, version, "ocr", strings.ToLower(provider), "prompt", fmt.Sprintf("%s.%s.txt", tp, name))
+	if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
 		return strings.TrimSpace(string(b)), nil
 	}
 
