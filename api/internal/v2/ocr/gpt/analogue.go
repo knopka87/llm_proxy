@@ -15,9 +15,9 @@ import (
 
 const ANALOGUE = "analogue"
 
-func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolutionInput) (types.AnalogueSolutionResult, error) {
+func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, error) {
 	if e.APIKey == "" {
-		return types.AnalogueSolutionResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.AnalogueResponse{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
 	if strings.TrimSpace(model) == "" {
@@ -29,18 +29,18 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 
 	system, err := util.LoadSystemPrompt(ANALOGUE, e.Name(), e.Version())
 	if err != nil {
-		return types.AnalogueSolutionResult{}, err
+		return types.AnalogueResponse{}, err
 	}
 
 	schema, err := util.LoadPromptSchema(ANALOGUE, e.Version())
 	if err != nil {
-		return types.AnalogueSolutionResult{}, err
+		return types.AnalogueResponse{}, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
 	user, err := util.LoadUserPrompt(ANALOGUE, e.Name(), e.Version())
 	if err != nil {
-		return types.AnalogueSolutionResult{}, err
+		return types.AnalogueResponse{}, err
 	}
 
 	userObj := map[string]any{
@@ -86,12 +86,12 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return types.AnalogueSolutionResult{}, err
+		return types.AnalogueResponse{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.AnalogueResponse{}, fmt.Errorf("openai analogue %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	raw, _ := io.ReadAll(resp.Body)
@@ -101,11 +101,11 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
 	if out == "" {
-		return types.AnalogueSolutionResult{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+		return types.AnalogueResponse{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
 	}
-	var ar types.AnalogueSolutionResult
+	var ar types.AnalogueResponse
 	if err := json.Unmarshal([]byte(out), &ar); err != nil {
-		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue: bad JSON: %w", err)
+		return types.AnalogueResponse{}, fmt.Errorf("openai analogue: bad JSON: %w", err)
 	}
 
 	return ar, nil

@@ -11,7 +11,11 @@ import (
 )
 
 func LoadSystemPrompt(name, provider, version string) (string, error) {
-	return loadPrompt(name, "system", provider, version)
+	system, err := loadPrompt(name, "system", provider, version)
+	if err != nil {
+		system, err = loadPrompt("universal", "system", provider, version)
+	}
+	return system, err
 }
 
 func LoadUserPrompt(name, provider, version string) (string, error) {

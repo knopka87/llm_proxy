@@ -14,7 +14,7 @@ import (
 
 type DetectRequest struct {
 	LLMName string `json:"llm_name"`
-	types.DetectInput
+	types.DetectRequest
 }
 
 func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
@@ -28,8 +28,8 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.ImageRef = stripDataURL(req.ImageRef)
-	img, err := base64.StdEncoding.DecodeString(req.ImageRef)
+	req.Image = stripDataURL(req.Image)
+	img, err := base64.StdEncoding.DecodeString(req.Image)
 	if err != nil || len(img) == 0 {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad image_b64"})
 		return
@@ -48,7 +48,7 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
-	var out types.DetectResult
+	var out types.DetectResponse
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
@@ -56,7 +56,7 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err = engine.Detect(ctx, req.DetectInput)
+	out, err = engine.Detect(ctx, req.DetectRequest)
 	if err != nil {
 		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "detect error: " + err.Error()})
 		return

@@ -15,9 +15,9 @@ import (
 
 const HINT = "hint"
 
-func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult, error) {
+func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, error) {
 	if e.APIKey == "" {
-		return types.HintResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.HintResponse{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
 
@@ -25,23 +25,20 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 	model = "gpt-4.1-mini"
 
 	// Try to load system prompt from /prompt/hint<L1|L2|L3>.txt; fallback to the default text if not found.
-	defaultSystem := `Ты — помощник для 1–4 классов. Сформируй РОВНО ОДИН блок подсказки уровня ` + string(in.Level) + `. Не решай задачу и не подставляй числа/слова из условия. Верни строго JSON по схеме hint. Любой текст вне JSON — ошибка.`
-
-	subject := in.Subject
-	system, err := util.LoadSystemPrompt(HINT+"_"+subject, e.Name(), e.Version())
+	system, err := util.LoadSystemPrompt(HINT, e.Name(), e.Version())
 	if err != nil {
-		system = defaultSystem
+		return types.HintResponse{}, err
 	}
 
 	schema, err := util.LoadPromptSchema(HINT, e.Version())
 	if err != nil {
-		return types.HintResult{}, err
+		return types.HintResponse{}, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
-	userTask, err := util.LoadUserPrompt(HINT+"_"+subject, e.Name(), e.Version())
+	userTask, err := util.LoadUserPrompt(HINT, e.Name(), e.Version())
 	if err != nil {
-		return types.HintResult{}, err
+		return types.HintResponse{}, err
 	}
 
 	userObj := map[string]any{
@@ -87,12 +84,12 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return types.HintResult{}, err
+		return types.HintResponse{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return types.HintResult{}, fmt.Errorf("openai hint %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.HintResponse{}, fmt.Errorf("openai hint %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	raw, _ := io.ReadAll(resp.Body)
@@ -102,11 +99,11 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
 	if out == "" {
-		return types.HintResult{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+		return types.HintResponse{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
 	}
-	var hr types.HintResult
+	var hr types.HintResponse
 	if err := json.Unmarshal([]byte(out), &hr); err != nil {
-		return types.HintResult{}, fmt.Errorf("openai hint: bad JSON: %w", err)
+		return types.HintResponse{}, fmt.Errorf("openai hint: bad JSON: %w", err)
 	}
 	return hr, nil
 }

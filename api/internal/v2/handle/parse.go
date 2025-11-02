@@ -12,7 +12,7 @@ import (
 
 type ParseRequest struct {
 	LLMName string `json:"llm_name"`
-	types.ParseInput
+	types.ParseRequest
 }
 
 func (h *Handle) Parse(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +39,7 @@ func (h *Handle) Parse(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
-	var out types.ParseResult
+	var out types.ParseResponse
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
@@ -47,7 +47,7 @@ func (h *Handle) Parse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err = engine.Parse(ctx, req.ParseInput)
+	out, err = engine.Parse(ctx, req.ParseRequest)
 	if err != nil {
 		http.Error(w, "parse error: "+err.Error(), http.StatusBadGateway)
 		return

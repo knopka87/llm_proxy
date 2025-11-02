@@ -18,9 +18,9 @@ import (
 
 const DETECT = "detect"
 
-func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.DetectResult, error) {
+func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.DetectResponse, error) {
 	if e.APIKey == "" {
-		return types.DetectResult{}, fmt.Errorf("OPENAI_API_KEY not set")
+		return types.DetectResponse{}, fmt.Errorf("OPENAI_API_KEY not set")
 	}
 
 	model := e.GetModel()
@@ -28,34 +28,34 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 	model = "gpt-4.1-mini"
 
 	// accept raw base64 or data: URL
-	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.ImageRef)
+	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.Image)
 	if len(imgBytes) == 0 {
-		raw, err := base64.StdEncoding.DecodeString(in.ImageRef)
+		raw, err := base64.StdEncoding.DecodeString(in.Image)
 		if err != nil {
-			return types.DetectResult{}, fmt.Errorf("openai detect: invalid image base64")
+			return types.DetectResponse{}, fmt.Errorf("openai detect: invalid image base64")
 		}
 		imgBytes = raw
 	}
 	mime := util.PickMIME("", mimeFromDataURL, imgBytes)
 	if !isOpenAIImageMIME(mime) {
-		return types.DetectResult{}, fmt.Errorf("openai detect: unsupported MIME %s (need image/jpeg|png|webp)", mime)
+		return types.DetectResponse{}, fmt.Errorf("openai detect: unsupported MIME %s (need image/jpeg|png|webp)", mime)
 	}
 	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
 
 	system, err := util.LoadSystemPrompt(DETECT, e.Name(), e.Version())
 	if err != nil {
-		return types.DetectResult{}, err
+		return types.DetectResponse{}, err
 	}
 
 	schema, err := util.LoadPromptSchema(DETECT, e.Version())
 	if err != nil {
-		return types.DetectResult{}, err
+		return types.DetectResponse{}, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
 	user, err := util.LoadUserPrompt(DETECT, e.Name(), e.Version())
 	if err != nil {
-		return types.DetectResult{}, err
+		return types.DetectResponse{}, err
 	}
 
 	userObj := map[string]any{
@@ -107,12 +107,12 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 	t := time.Since(start).Milliseconds()
 	log.Printf("detect time: %d", t)
 	if err != nil {
-		return types.DetectResult{}, err
+		return types.DetectResponse{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return types.DetectResult{}, fmt.Errorf("openai detect %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.DetectResponse{}, fmt.Errorf("openai detect %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	raw, _ := io.ReadAll(resp.Body)
@@ -123,11 +123,11 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
 	if out == "" {
-		return types.DetectResult{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+		return types.DetectResponse{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
 	}
-	var r types.DetectResult
+	var r types.DetectResponse
 	if err := json.Unmarshal([]byte(out), &r); err != nil {
-		return types.DetectResult{}, fmt.Errorf("openai detect: bad JSON: %w", err)
+		return types.DetectResponse{}, fmt.Errorf("openai detect: bad JSON: %w", err)
 	}
 	return r, nil
 }

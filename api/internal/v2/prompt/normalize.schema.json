@@ -1,16 +1,22 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "normalize.schema.json",
-  "title": "NORMALIZE_Output.v1",
+  "title": "NORMALIZE.response.v1",
   "type": "object",
+  "required": [
+    "norm_task",
+    "norm_answer"
+  ],
+  "additionalProperties": false,
   "properties": {
-    "shape": { "type": "string", "enum": ["number", "string", "list", "steps"] },
-    "value": {},
-    "units": { "type": "string" },
-    "warnings": { "type": "array", "items": { "type": "string", "pattern": "^spelling_issue:.+" }, "maxItems": 10 },
-    "needs_clarification": { "type": "boolean" },
-    "uncertain_reasons": { "type": "array", "items": { "type": "string" }, "maxItems": 3 }
-  },
-  "required": ["shape", "value"],
-  "additionalProperties": false
+    "norm_task": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Minimal normalized representation needed for checking."
+    },
+    "norm_answer": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Minimal normalized representation of student's answer."
+    }
+  }
 }

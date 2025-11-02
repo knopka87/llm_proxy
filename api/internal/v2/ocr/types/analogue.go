@@ -4,28 +4,30 @@ package types
 // Генерация аналогичного задания тем же приёмом без утечки ответа исходной задачи.
 // Соответствует схемам ANALOGUE_Input.v1.2a и AnalogueSchemas.v1.0a.
 
-// AnalogueSolutionInput — вход генерации аналога (ANALOGUE_Input.v1.2a)
-type AnalogueSolutionInput struct {
-	Subject             string `json:"subject"`               // "math" | "russian" | "generic"
-	Grade               int    `json:"grade"`                 // 1..4
-	MethodTag           string `json:"method_tag"`            // приём/метод решения
-	OriginalTaskEssence string `json:"original_task_essence"` // суть без чисел и уникальных слов
+// AnalogueRequest — вход запроса (ANALOGUE.request.v1)
+type AnalogueRequest struct {
+	TaskStruct TaskStruct     `json:"task_struct"`
+	Reason     AnalogueReason `json:"reason"`
+	Locale     string         `json:"locale,omitempty"` // "ru-RU" | "en-US"
 }
 
-// AnalogyItem — элемент массива analogies (AnalogueSchemas.v1.0a)
-type AnalogyItem struct {
-	Text    string            `json:"text"`    // ≤ 320 символов (валидируется на уровне схемы)
-	Outline string            `json:"outline"` // ≤ 160 символов
-	Mapping map[string]string `json:"mapping"` // additionalProperties: string (≤ 80), ограничение проверяется валидатором схем
+// TaskStruct — структура задачи из запроса
+type TaskStruct struct {
+	Subject           string `json:"subject"`            // "math" | "russian" | "generic"
+	Type              string `json:"type,omitempty"`     // произвольная метка, например "arithmetic", "grammar"
+	CombinedSubpoints bool   `json:"combined_subpoints"` // по схеме: const=true (валидируется на уровне схемы)
 }
 
-// AnalogueSafety — объект safety
-type AnalogueSafety struct {
-	RefusalReason string `json:"refusal_reason,omitempty"` // "oversolve_request"
-}
+// AnalogueReason — допустимые значения поля reason в запросе
+type AnalogueReason string
 
-// AnalogueSolutionResult — выход ANALOGUE
-type AnalogueSolutionResult struct {
-	Analogies []AnalogyItem   `json:"analogies"`        // minItems=1, maxItems=1 (валидируется на уровне схемы)
-	Safety    *AnalogueSafety `json:"safety,omitempty"` // опционально
+const (
+	ReasonAfter3Hints    AnalogueReason = "after_3_hints"
+	ReasonAfterIncorrect AnalogueReason = "after_incorrect"
+)
+
+// AnalogueResponse — выход (ANALOGUE.response.v1)
+type AnalogueResponse struct {
+	ExampleTask   string   `json:"example_task"`
+	SolutionSteps []string `json:"solution_steps"`
 }

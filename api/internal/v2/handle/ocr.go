@@ -10,19 +10,17 @@ import (
 	"llm-proxy/api/internal/v2/ocr/types"
 )
 
-// --- NORMALIZE ---------------------------------------------------------------
-
-type normalizeReq struct {
+type OcrRequest struct {
 	LLMName string `json:"llm_name"`
-	types.NormalizeRequest
+	types.OCRRequest
 }
 
-func (h *Handle) Normalize(w http.ResponseWriter, r *http.Request) {
+func (h *Handle) Ocr(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "POST only", http.StatusMethodNotAllowed)
 		return
 	}
-	var req normalizeReq
+	var req OcrRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "bad json: "+err.Error(), http.StatusBadRequest)
 		return
@@ -41,17 +39,17 @@ func (h *Handle) Normalize(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
-	var out types.NormalizeResponse
+	var out types.OCRResponse
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
-		http.Error(w, "normalize error: "+err.Error(), http.StatusBadGateway)
+		http.Error(w, "Ocr error: "+err.Error(), http.StatusBadGateway)
 		return
 	}
 
-	out, err = engine.Normalize(ctx, req.NormalizeRequest)
+	out, err = engine.OCR(ctx, req.OCRRequest)
 	if err != nil {
-		http.Error(w, "normalize error: "+err.Error(), http.StatusBadGateway)
+		http.Error(w, "Ocr error: "+err.Error(), http.StatusBadGateway)
 		return
 	}
 

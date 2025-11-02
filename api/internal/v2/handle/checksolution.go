@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"llm-proxy/api/internal/v2/ocr/types"
@@ -15,7 +14,7 @@ import (
 
 type checkReq struct {
 	LLMName string `json:"llm_name"`
-	types.CheckSolutionInput
+	types.CheckRequest
 }
 
 func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {
@@ -26,12 +25,6 @@ func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {
 	var req checkReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "bad json: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Минимальные проверки входа
-	if strings.TrimSpace(req.StudentNormalized.Shape) == "" {
-		http.Error(w, "student_normalized.shape is required", http.StatusBadRequest)
 		return
 	}
 
@@ -54,7 +47,7 @@ func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := engine.CheckSolution(ctx, req.CheckSolutionInput)
+	out, err := engine.CheckSolution(ctx, req.CheckRequest)
 	if err != nil {
 		http.Error(w, "check error: "+err.Error(), http.StatusBadGateway)
 		return

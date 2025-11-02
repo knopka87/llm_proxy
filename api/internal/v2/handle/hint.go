@@ -12,7 +12,7 @@ import (
 
 type HintRequest struct {
 	LLMName string `json:"llm_name"`
-	types.HintInput
+	types.HintRequest
 }
 
 func (h *Handle) Hint(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +39,7 @@ func (h *Handle) Hint(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
-	var out types.HintResult
+	var out types.HintResponse
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
@@ -47,7 +47,7 @@ func (h *Handle) Hint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err = engine.Hint(ctx, req.HintInput)
+	out, err = engine.Hint(ctx, req.HintRequest)
 	if err != nil {
 		http.Error(w, "detect error: "+err.Error(), http.StatusBadGateway)
 		return

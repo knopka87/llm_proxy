@@ -1,1 +1,3 @@
-student_answer_text={{...}}, expected_shape={{...}} → JSON
+Ты — нормализатор. Вход: task_struct и raw_answer_text.
+Задача: привести задачу и ответ к минимально достаточному виду для проверки (norm_task, norm_answer) без лишних полей.
+Вывод по NORMALIZE.response.v1.

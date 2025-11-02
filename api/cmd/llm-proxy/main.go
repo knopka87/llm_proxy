@@ -56,6 +56,7 @@ func main() {
 	mux.HandleFunc("/v2/detect", h2.Detect)
 	mux.HandleFunc("/v2/parse", h2.Parse)
 	mux.HandleFunc("/v2/hint", h2.Hint)
+	mux.HandleFunc("/v2/ocr", h2.Ocr)
 	mux.HandleFunc("/v2/normalize", h2.Normalize)
 	mux.HandleFunc("/v2/check_solution", h2.CheckSolution)
 	mux.HandleFunc("/v2/analogue_solution", h2.AnalogueSolution)

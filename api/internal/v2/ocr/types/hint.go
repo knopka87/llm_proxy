@@ -8,22 +8,18 @@ const (
 	HintL3 HintLevel = "L3"
 )
 
-// HintInput соответствует HINT_Input.v1.1b
-// required: level, grade, subject, raw_task_text; optional: shown_levels (<=2)
-type HintInput struct {
-	Level       HintLevel   `json:"level"`   // "L1" | "L2" | "L3"
-	Grade       int         `json:"grade"`   // 1..4
-	Subject     string      `json:"subject"` // "math" | "russian" | "generic"
-	RawTaskText string      `json:"raw_task_text"`
-	ShownLevels []HintLevel `json:"shown_levels,omitempty"` // max 2
+// HintRequest — вход запроса (HINT.request.v1)
+// required: task_struct, level; optional: previous_hints (<=2), locale
+type HintRequest struct {
+	TaskStruct    TaskStruct `json:"task_struct"`
+	Level         HintLevel  `json:"level"`                    // "L1" | "L2" | "L3"
+	PreviousHints []string   `json:"previous_hints,omitempty"` // max 2 (валидируется схемой)
+	Locale        string     `json:"locale,omitempty"`         // "ru-RU" | "en-US"
 }
 
-// HintResult соответствует HintSchema.v1.1b
-// required: level, hints; optional: debug
-type HintResult struct {
-	Level HintLevel `json:"level"` // "L1" | "L2" | "L3"
-	Hints []string  `json:"hints"` // exactly 1 item by contract
-	Debug *struct {
-		Reason string `json:"reason"` // max 120 chars
-	} `json:"debug,omitempty"`
+// HintResponse — выход (HINT.response.v1)
+// required: level, hint_text
+type HintResponse struct {
+	Level    HintLevel `json:"level"`     // "L1" | "L2" | "L3"
+	HintText string    `json:"hint_text"` // непустая строка
 }

@@ -13,33 +13,31 @@ import (
 	"llm-proxy/api/internal/v2/ocr/types"
 )
 
-const CHECK = "check"
+const OCR = "ocr"
 
-func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, error) {
+func (e *Engine) OCR(ctx context.Context, in types.OCRRequest) (types.OCRResponse, error) {
 	if e.APIKey == "" {
-		return types.CheckResponse{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.OCRResponse{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
-	if strings.TrimSpace(model) == "" {
-		model = "gpt-4o-mini"
-	}
+
 	// TODO переделать на отдельный env
-	model = "gpt-4o"
+	model = "gpt-4.1-mini"
 
-	system, err := util.LoadSystemPrompt(CHECK, e.Name(), e.Version())
+	system, err := util.LoadSystemPrompt(OCR, e.Name(), e.Version())
 	if err != nil {
-		return types.CheckResponse{}, err
+		return types.OCRResponse{}, err
 	}
 
-	schema, err := util.LoadPromptSchema(CHECK, e.Version())
+	schema, err := util.LoadPromptSchema(OCR, e.Version())
 	if err != nil {
-		return types.CheckResponse{}, err
+		return types.OCRResponse{}, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
-	user, err := util.LoadUserPrompt(CHECK, e.Name(), e.Version())
+	user, err := util.LoadUserPrompt(OCR, e.Name(), e.Version())
 	if err != nil {
-		return types.CheckResponse{}, err
+		return types.OCRResponse{}, err
 	}
 
 	userObj := map[string]any{
@@ -68,7 +66,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 		"text": map[string]any{
 			"format": map[string]any{
 				"type":   "json_schema",
-				"name":   "check_solution",
+				"name":   OCR,
 				"strict": true,
 				"schema": schema,
 			},
@@ -85,12 +83,12 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return types.CheckResponse{}, err
+		return types.OCRResponse{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return types.CheckResponse{}, fmt.Errorf("openai check %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.OCRResponse{}, fmt.Errorf("openai OCR %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	raw, _ := io.ReadAll(resp.Body)
@@ -100,11 +98,11 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
 	if out == "" {
-		return types.CheckResponse{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+		return types.OCRResponse{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
 	}
-	var cr types.CheckResponse
-	if err := json.Unmarshal([]byte(out), &cr); err != nil {
-		return types.CheckResponse{}, fmt.Errorf("openai check: bad JSON: %w", err)
+	var pr types.OCRResponse
+	if err := json.Unmarshal([]byte(out), &pr); err != nil {
+		return types.OCRResponse{}, fmt.Errorf("openai OCR: bad JSON: %w", err)
 	}
-	return cr, nil
+	return pr, nil
 }

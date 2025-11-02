@@ -1,1 +1,0 @@
-level={{L1|L2|L3}}, grade={{1..4}}, subject={{...}} → JSON

@@ -15,9 +15,9 @@ import (
 
 const NORMALIZE = "normalize"
 
-func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.NormalizeResult, error) {
+func (e *Engine) Normalize(ctx context.Context, in types.NormalizeRequest) (types.NormalizeResponse, error) {
 	if e.APIKey == "" {
-		return types.NormalizeResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.NormalizeResponse{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
 	if strings.TrimSpace(model) == "" {
@@ -27,24 +27,24 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 	// TODO переделать на отдельный env
 	model = "gpt-4o"
 
-	if strings.TrimSpace(in.StudentAnswerText) == "" {
-		return types.NormalizeResult{}, fmt.Errorf("openai normalize: answer.text is empty")
+	if strings.TrimSpace(in.RawAnswerText) == "" {
+		return types.NormalizeResponse{}, fmt.Errorf("openai normalize: answer.text is empty")
 	}
 
 	system, err := util.LoadSystemPrompt(NORMALIZE, e.Name(), e.Version())
 	if err != nil {
-		return types.NormalizeResult{}, err
+		return types.NormalizeResponse{}, err
 	}
 
 	schema, err := util.LoadPromptSchema(NORMALIZE, e.Version())
 	if err != nil {
-		return types.NormalizeResult{}, err
+		return types.NormalizeResponse{}, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
 	user, err := util.LoadUserPrompt(NORMALIZE, e.Name(), e.Version())
 	if err != nil {
-		return types.NormalizeResult{}, err
+		return types.NormalizeResponse{}, err
 	}
 
 	userObj := map[string]any{
@@ -90,12 +90,12 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return types.NormalizeResult{}, err
+		return types.NormalizeResponse{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return types.NormalizeResult{}, fmt.Errorf("openai normalize %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.NormalizeResponse{}, fmt.Errorf("openai normalize %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	raw, _ := io.ReadAll(resp.Body)
@@ -105,11 +105,11 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
 	if out == "" {
-		return types.NormalizeResult{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+		return types.NormalizeResponse{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
 	}
-	var nr types.NormalizeResult
+	var nr types.NormalizeResponse
 	if err := json.Unmarshal([]byte(out), &nr); err != nil {
-		return types.NormalizeResult{}, fmt.Errorf("openai normalize: bad JSON: %w", err)
+		return types.NormalizeResponse{}, fmt.Errorf("openai normalize: bad JSON: %w", err)
 	}
 	return nr, nil
 }

@@ -35,19 +35,19 @@ func (e *Engine) GetModel() string { return e.Model }
 // --------------------------- DETECT ---------------------------
 
 // Detect Возвращает JSON по detect.schema.json.
-func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.DetectResult, error) {
+func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.DetectResponse, error) {
 	if e.APIKey == "" {
-		return types.DetectResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.DetectResponse{}, errors.New("GEMINI_API_KEY is empty")
 	}
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return types.DetectResult{}, err
+		return types.DetectResponse{}, err
 	}
 	defer cl.Close()
 
 	m := cl.GenerativeModel(strings.TrimSpace(e.Model))
 	if m == nil {
-		return types.DetectResult{}, fmt.Errorf("gemini: model is nil")
+		return types.DetectResponse{}, fmt.Errorf("gemini: model is nil")
 	}
 	// Возвращаем строго JSON
 	m.GenerationConfig = genai.GenerationConfig{
@@ -101,9 +101,9 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 	// Пользовательский промпт: подсказки и картинка
 	userText := "Ответ строго JSON по detect.schema.json (DETECT v5). Без комментариев."
 
-	imgBytes, mimeFromDataURL, err := util.DecodeBase64MaybeDataURL(in.ImageRef)
+	imgBytes, mimeFromDataURL, err := util.DecodeBase64MaybeDataURL(in.Image)
 	if err != nil {
-		return types.DetectResult{}, fmt.Errorf("gemini detect: bad base64: %w", err)
+		return types.DetectResponse{}, fmt.Errorf("gemini detect: bad base64: %w", err)
 	}
 	finalMIME := util.PickMIME("", mimeFromDataURL, imgBytes)
 
@@ -123,36 +123,36 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectInput) (types.Detect
 		}
 		txt := firstText(resp)
 		if txt == "" {
-			return types.DetectResult{}, fmt.Errorf("gemini detect: empty response")
+			return types.DetectResponse{}, fmt.Errorf("gemini detect: empty response")
 		}
 		txt = util.StripCodeFences(strings.TrimSpace(txt))
 
-		var out types.DetectResult
+		var out types.DetectResponse
 		if err := json.Unmarshal([]byte(txt), &out); err != nil {
-			return types.DetectResult{}, fmt.Errorf("gemini detect: bad JSON: %w", err)
+			return types.DetectResponse{}, fmt.Errorf("gemini detect: bad JSON: %w", err)
 		}
 		return out, nil
 	}
-	return types.DetectResult{}, lastErr
+	return types.DetectResponse{}, lastErr
 }
 
 // --------------------------- PARSE ---------------------------
 
 // Parse Переписывает текст задания + вопрос. Возвращает JSON по parse.schema.json.
-func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseResult, error) {
+func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, error) {
 	if e.APIKey == "" {
-		return types.ParseResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.ParseResponse{}, errors.New("GEMINI_API_KEY is empty")
 	}
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return types.ParseResult{}, err
+		return types.ParseResponse{}, err
 	}
 	defer cl.Close()
 
 	model := strings.TrimSpace(e.Model)
 	m := cl.GenerativeModel(model)
 	if m == nil {
-		return types.ParseResult{}, fmt.Errorf("gemini: model is nil")
+		return types.ParseResponse{}, fmt.Errorf("gemini: model is nil")
 	}
 	m.GenerationConfig = genai.GenerationConfig{
 		Temperature:      ptrFloat32(0),
@@ -200,35 +200,35 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseInput) (types.ParseRes
 		}
 		txt := firstText(resp)
 		if txt == "" {
-			return types.ParseResult{}, fmt.Errorf("gemini parse: empty response")
+			return types.ParseResponse{}, fmt.Errorf("gemini parse: empty response")
 		}
 		txt = util.StripCodeFences(strings.TrimSpace(txt))
 
-		var pr types.ParseResult
+		var pr types.ParseResponse
 		if err := json.Unmarshal([]byte(txt), &pr); err != nil {
-			return types.ParseResult{}, fmt.Errorf("gemini parse: bad JSON: %w", err)
+			return types.ParseResponse{}, fmt.Errorf("gemini parse: bad JSON: %w", err)
 		}
 		return pr, nil
 	}
-	return types.ParseResult{}, lastErr
+	return types.ParseResponse{}, lastErr
 }
 
 // --------------------------- HINT ---------------------------
 
 // Hint Генерирует L1/L2/L3 подсказку. Возвращает JSON по hint.schema.json.
-func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult, error) {
+func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, error) {
 	if e.APIKey == "" {
-		return types.HintResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.HintResponse{}, errors.New("GEMINI_API_KEY is empty")
 	}
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return types.HintResult{}, err
+		return types.HintResponse{}, err
 	}
 	defer cl.Close()
 
 	m := cl.GenerativeModel(strings.TrimSpace(e.Model))
 	if m == nil {
-		return types.HintResult{}, fmt.Errorf("gemini: model is nil")
+		return types.HintResponse{}, fmt.Errorf("gemini: model is nil")
 	}
 	m.GenerationConfig = genai.GenerationConfig{
 		Temperature:      ptrFloat32(0),
@@ -265,35 +265,39 @@ func (e *Engine) Hint(ctx context.Context, in types.HintInput) (types.HintResult
 		}
 		txt := firstText(resp)
 		if txt == "" {
-			return types.HintResult{}, fmt.Errorf("gemini hint: empty response")
+			return types.HintResponse{}, fmt.Errorf("gemini hint: empty response")
 		}
 		txt = util.StripCodeFences(strings.TrimSpace(txt))
 
-		var hr types.HintResult
+		var hr types.HintResponse
 		if err := json.Unmarshal([]byte(txt), &hr); err != nil {
-			return types.HintResult{}, fmt.Errorf("gemini hint: bad JSON: %w", err)
+			return types.HintResponse{}, fmt.Errorf("gemini hint: bad JSON: %w", err)
 		}
 		return hr, nil
 	}
-	return types.HintResult{}, lastErr
+	return types.HintResponse{}, lastErr
+}
+
+func (e *Engine) OCR(ctx context.Context, in types.OCRRequest) (types.OCRResponse, error) {
+	panic("OCR not implemented")
 }
 
 // Normalize приводит ответ ученика к однозначной форме без догадок и без решения задачи.
 // Строго возвращает JSON по normalize.schema.json (см. NORMALIZE_ANSWER v1.2).
-func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.NormalizeResult, error) {
+func (e *Engine) Normalize(ctx context.Context, in types.NormalizeRequest) (types.NormalizeResponse, error) {
 	if e.APIKey == "" {
-		return types.NormalizeResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.NormalizeResponse{}, errors.New("GEMINI_API_KEY is empty")
 	}
 
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return types.NormalizeResult{}, err
+		return types.NormalizeResponse{}, err
 	}
 	defer cl.Close()
 
 	m := cl.GenerativeModel(strings.TrimSpace(e.Model))
 	if m == nil {
-		return types.NormalizeResult{}, fmt.Errorf("gemini: model is nil")
+		return types.NormalizeResponse{}, fmt.Errorf("gemini: model is nil")
 	}
 	m.GenerationConfig = genai.GenerationConfig{
 		Temperature:      ptrFloat32(0),
@@ -341,33 +345,33 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeInput) (types.
 		}
 		raw := firstText(resp)
 		if raw == "" {
-			return types.NormalizeResult{}, fmt.Errorf("gemini normalize: empty response")
+			return types.NormalizeResponse{}, fmt.Errorf("gemini normalize: empty response")
 		}
 		raw = util.StripCodeFences(strings.TrimSpace(raw))
 
-		var nr types.NormalizeResult
+		var nr types.NormalizeResponse
 		if err := json.Unmarshal([]byte(raw), &nr); err != nil {
-			return types.NormalizeResult{}, fmt.Errorf("gemini normalize: bad JSON: %w", err)
+			return types.NormalizeResponse{}, fmt.Errorf("gemini normalize: bad JSON: %w", err)
 		}
 		return nr, nil
 	}
-	return types.NormalizeResult{}, lastErr
+	return types.NormalizeResponse{}, lastErr
 }
 
-func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput) (types.CheckSolutionResult, error) {
+func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, error) {
 	if e.APIKey == "" {
-		return types.CheckSolutionResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.CheckResponse{}, errors.New("GEMINI_API_KEY is empty")
 	}
 
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return types.CheckSolutionResult{}, err
+		return types.CheckResponse{}, err
 	}
 	defer cl.Close()
 
 	m := cl.GenerativeModel(strings.TrimSpace(e.Model))
 	if m == nil {
-		return types.CheckSolutionResult{}, fmt.Errorf("gemini: model is nil")
+		return types.CheckResponse{}, fmt.Errorf("gemini: model is nil")
 	}
 	m.GenerationConfig = genai.GenerationConfig{
 		Temperature:      ptrFloat32(0),
@@ -414,33 +418,33 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckSolutionInput)
 		}
 		out := firstText(resp)
 		if strings.TrimSpace(out) == "" {
-			return types.CheckSolutionResult{}, fmt.Errorf("gemini check: empty response")
+			return types.CheckResponse{}, fmt.Errorf("gemini check: empty response")
 		}
 		out = util.StripCodeFences(strings.TrimSpace(out))
 
-		var cr types.CheckSolutionResult
+		var cr types.CheckResponse
 		if err := json.Unmarshal([]byte(out), &cr); err != nil {
-			return types.CheckSolutionResult{}, fmt.Errorf("gemini check: bad JSON: %w", err)
+			return types.CheckResponse{}, fmt.Errorf("gemini check: bad JSON: %w", err)
 		}
 		return cr, nil
 	}
-	return types.CheckSolutionResult{}, lastErr
+	return types.CheckResponse{}, lastErr
 }
 
-func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolutionInput) (types.AnalogueSolutionResult, error) {
+func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, error) {
 	if e.APIKey == "" {
-		return types.AnalogueSolutionResult{}, errors.New("GEMINI_API_KEY is empty")
+		return types.AnalogueResponse{}, errors.New("GEMINI_API_KEY is empty")
 	}
 
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.APIKey))
 	if err != nil {
-		return types.AnalogueSolutionResult{}, err
+		return types.AnalogueResponse{}, err
 	}
 	defer cl.Close()
 
 	m := cl.GenerativeModel(strings.TrimSpace(e.Model))
 	if m == nil {
-		return types.AnalogueSolutionResult{}, fmt.Errorf("gemini: model is nil")
+		return types.AnalogueResponse{}, fmt.Errorf("gemini: model is nil")
 	}
 	m.GenerationConfig = genai.GenerationConfig{
 		Temperature:      ptrFloat32(0),
@@ -484,17 +488,17 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 		}
 		out := firstText(resp)
 		if strings.TrimSpace(out) == "" {
-			return types.AnalogueSolutionResult{}, fmt.Errorf("gemini analogue: empty response")
+			return types.AnalogueResponse{}, fmt.Errorf("gemini analogue: empty response")
 		}
 		out = util.StripCodeFences(strings.TrimSpace(out))
 
-		var ar types.AnalogueSolutionResult
+		var ar types.AnalogueResponse
 		if err := json.Unmarshal([]byte(out), &ar); err != nil {
-			return types.AnalogueSolutionResult{}, fmt.Errorf("gemini analogue: bad JSON: %w", err)
+			return types.AnalogueResponse{}, fmt.Errorf("gemini analogue: bad JSON: %w", err)
 		}
 		return ar, nil
 	}
-	return types.AnalogueSolutionResult{}, lastErr
+	return types.AnalogueResponse{}, lastErr
 }
 
 // --------------------------- helpers ---------------------------
