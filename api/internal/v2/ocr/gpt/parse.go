@@ -3,6 +3,7 @@ package gpt
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -46,6 +47,21 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	}
 	userJSON, _ := json.Marshal(userObj)
 
+	// accept raw base64 or data: URL
+	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.Image)
+	if len(imgBytes) == 0 {
+		raw, err := base64.StdEncoding.DecodeString(in.Image)
+		if err != nil {
+			return types.ParseResponse{}, fmt.Errorf("openai parse: invalid image base64")
+		}
+		imgBytes = raw
+	}
+	mime := util.PickMIME("", mimeFromDataURL, imgBytes)
+	if !isOpenAIImageMIME(mime) {
+		return types.ParseResponse{}, fmt.Errorf("openai parse: unsupported MIME %s (need image/jpeg|png|webp)", mime)
+	}
+	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
+
 	body := map[string]any{
 		"model": model,
 		"input": []any{
@@ -58,7 +74,8 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 			map[string]any{
 				"role": "user",
 				"content": []any{
-					map[string]any{"type": "input_text", "text": string(userJSON)},
+					map[string]any{"type": "input_text", "text": "INPUT_JSON:\n" + string(userJSON)},
+					map[string]any{"type": "input_image", "image_url": dataURL},
 				},
 			},
 		},
