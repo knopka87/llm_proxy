@@ -29,7 +29,8 @@
           "label": {
             "type": "string"
           }
-        }
+        },
+        "additionalProperties": false
       }
     },
     "confidence": {
