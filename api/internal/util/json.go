@@ -38,7 +38,7 @@ func loadPrompt(name, tp, provider, version string) (string, error) {
 		return strings.TrimSpace(string(b)), nil
 	}
 
-	return "", fmt.Errorf("prompt %q not found in %s (provider=%q) or legacy prompt dir", name, baseRoot, provider)
+	return "", fmt.Errorf("prompt %q not found in %s (provider=%q) or legacy prompt dir", name, p, provider)
 }
 
 // Загружаем <name>.schema.json из PROMPT_SCHEMA_DIR, иначе берём из встроенных prompt.*.
