@@ -21,8 +21,8 @@ COPY . .
 RUN --mount=type=cache,target=/root/.cache/go-build \
     go build -trimpath -ldflags="-s -w" -o /out/server ./api/cmd/llm-proxy
 
-RUN mkdir -p /out/prompts/v1/ocr/gpt/prompt && cp -r api/internal/v1/ocr/gpt/prompt /out/prompts/v1/ocr/gpt/prompt
-RUN mkdir -p /out/prompts/v2/ocr/gpt/prompt && cp -r api/internal/v2/ocr/gpt/prompt /out/prompts/v2/ocr/gpt/prompt
+RUN mkdir -p /out/prompts/v1/ocr/gpt/prompt && cp -r api/internal/v1/ocr/gpt/prompt/. /out/prompts/v1/ocr/gpt/prompt/
+RUN mkdir -p /out/prompts/v2/ocr/gpt/prompt && cp -r api/internal/v2/ocr/gpt/prompt/. /out/prompts/v2/ocr/gpt/prompt/
 
 ########################
 # Runtime stage
