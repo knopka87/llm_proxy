@@ -10,12 +10,12 @@
   "properties": {
     "norm_task": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "description": "Minimal normalized representation needed for checking."
     },
     "norm_answer": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
       "description": "Minimal normalized representation of student's answer."
     }
   }
