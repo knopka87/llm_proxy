@@ -18,15 +18,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-      "value": {
-        "type": ["number", "string", "array", "null", "boolean"],
-        "items": {
-          "type": ["number", "string", "boolean", "null"]
-        }
-      },
-      "units": { "type": "string" }
-      },
-    "required": ["value"]
+        "value": {
+          "type": ["number", "string", "array", "null", "boolean"],
+          "items": {
+            "type": ["number", "string", "boolean", "null"]
+          }
+        },
+        "units": { "type": "string" }
+      }
     }
   }
 }
