@@ -10,8 +10,8 @@ type NormalizeRequest struct {
 // NormTask соответствует полю norm_task в NORMALIZE.response.v1
 // Kind: "math" | "ru" | "generic"
 type NormTask struct {
-	Kind string                 `json:"kind"`
-	Data map[string]interface{} `json:"data"`
+	Kind string `json:"kind"`
+	Data any    `json:"data"`
 }
 
 // NormAnswer соответствует полю norm_answer в NORMALIZE.response.v1
