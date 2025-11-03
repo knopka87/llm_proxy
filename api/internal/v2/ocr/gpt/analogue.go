@@ -65,7 +65,7 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 				},
 			},
 		},
-		"temperature": 0,
+		"temperature": 1,
 		"text": map[string]any{
 			"format": map[string]any{
 				"type":   "json_schema",

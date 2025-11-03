@@ -63,7 +63,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 				},
 			},
 		},
-		"temperature": 0,
+		"temperature": 1,
 		"text": map[string]any{
 			"format": map[string]any{
 				"type":   "json_schema",
