@@ -2,21 +2,35 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "NORMALIZE.response.v1",
   "type": "object",
-  "required": [
-    "norm_task",
-    "norm_answer"
-  ],
+  "required": ["norm_task", "norm_answer"],
   "additionalProperties": false,
   "properties": {
     "norm_task": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Minimal normalized representation needed for checking."
+      "properties": {
+        "kind": { "type": "string", "enum": ["math", "ru", "generic"] },
+        "data": { "type": "object", "additionalProperties": false }
+      },
+      "required": ["kind", "data"]
     },
     "norm_answer": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Minimal normalized representation of student's answer."
+      "properties": {
+      "value": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          { "type": "array" },
+          { "type": "object", "additionalProperties": false },
+          { "type": "null" }
+        ]
+      },
+      "units": { "type": "string" }
+      },
+    "required": ["value"]
     }
   }
 }
