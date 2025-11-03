@@ -33,7 +33,7 @@ func loadPrompt(name, tp, provider, version string) (string, error) {
 		baseRoot = filepath.Join("api", "internal")
 	}
 
-	p := filepath.Join(baseRoot, version, "ocr", strings.ToLower(provider), "prompt", fmt.Sprintf("%s.%s.txt", tp, name))
+	p := filepath.Join(baseRoot, version, "ocr", strings.ToLower(provider), "prompt", fmt.Sprintf("%s.%s.txt", name, tp))
 	if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
 		return strings.TrimSpace(string(b)), nil
 	}
