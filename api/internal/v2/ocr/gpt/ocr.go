@@ -61,6 +61,7 @@ func (e *Engine) OCR(ctx context.Context, in types.OCRRequest) (types.OCRRespons
 		return types.OCRResponse{}, fmt.Errorf("openai ocr: unsupported MIME %s (need image/jpeg|png|webp)", mime)
 	}
 	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
+	in.Image = ""
 
 	body := map[string]any{
 		"model": model,

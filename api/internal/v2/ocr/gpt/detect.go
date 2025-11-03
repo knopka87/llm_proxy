@@ -41,6 +41,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 		return types.DetectResponse{}, fmt.Errorf("openai detect: unsupported MIME %s (need image/jpeg|png|webp)", mime)
 	}
 	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
+	in.Image = ""
 
 	system, err := util.LoadSystemPrompt(DETECT, e.Name(), e.Version())
 	if err != nil {
