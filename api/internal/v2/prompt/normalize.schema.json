@@ -10,9 +10,14 @@
       "additionalProperties": false,
       "properties": {
         "kind": { "type": "string", "enum": ["math", "ru", "generic"] },
-        "data": { "type": "object", "additionalProperties": false }
+        "data": {
+          "type": ["number", "string", "array", "null", "boolean"],
+          "items": {
+            "type": ["number", "string", "boolean", "null"]
+          }
+        }
       },
-      "required": ["kind", "data"]
+      "required": ["kind"]
     },
     "norm_answer": {
       "type": "object",
