@@ -3,7 +3,6 @@ package gpt
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -28,19 +27,19 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 	model = "gpt-4.1-mini"
 
 	// accept raw base64 or data: URL
-	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.Image)
-	if len(imgBytes) == 0 {
-		raw, err := base64.StdEncoding.DecodeString(in.Image)
-		if err != nil {
-			return types.DetectResponse{}, fmt.Errorf("openai detect: invalid image base64")
-		}
-		imgBytes = raw
-	}
-	mime := util.PickMIME("", mimeFromDataURL, imgBytes)
-	if !isOpenAIImageMIME(mime) {
-		return types.DetectResponse{}, fmt.Errorf("openai detect: unsupported MIME %s (need image/jpeg|png|webp)", mime)
-	}
-	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
+	// imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.Image)
+	// if len(imgBytes) == 0 {
+	// 	raw, err := base64.StdEncoding.DecodeString(in.Image)
+	// 	if err != nil {
+	// 		return types.DetectResponse{}, fmt.Errorf("openai detect: invalid image base64")
+	// 	}
+	// 	imgBytes = raw
+	// }
+	// mime := util.PickMIME("", mimeFromDataURL, imgBytes)
+	// if !isOpenAIImageMIME(mime) {
+	// 	return types.DetectResponse{}, fmt.Errorf("openai detect: unsupported MIME %s (need image/jpeg|png|webp)", mime)
+	// }
+	// dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
 
 	system, err := util.LoadSystemPrompt(DETECT, e.Name(), e.Version())
 	if err != nil {
@@ -77,7 +76,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 				"role": "user",
 				"content": []any{
 					map[string]any{"type": "input_text", "text": string(userJSON)},
-					map[string]any{"type": "input_image", "image_url": dataURL},
+					// map[string]any{"type": "input_image", "image_url": dataURL},
 				},
 			},
 		},

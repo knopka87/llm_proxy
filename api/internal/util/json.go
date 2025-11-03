@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,7 +44,8 @@ func loadPrompt(name, tp, provider, version string) (string, error) {
 
 // Загружаем <name>.schema.json из PROMPT_SCHEMA_DIR, иначе берём из встроенных prompt.*.
 func LoadPromptSchema(name, version string) (map[string]any, error) {
-	p := filepath.Join("../", version, "/prompt", name+".schema.json")
+	p := filepath.Join("..", version, "prompt", name+".schema.json")
+	log.Printf("schema path: %s", p)
 	if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
 		var m map[string]any
 		if err := json.Unmarshal(b, &m); err != nil {
