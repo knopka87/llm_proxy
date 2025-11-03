@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"llm-proxy/api/internal/v1/prompt"
+	prompt1 "llm-proxy/api/internal/v1/prompt"
+	prompt2 "llm-proxy/api/internal/v2/prompt"
 )
 
 func LoadSystemPrompt(name, provider, version string) (string, error) {
@@ -44,7 +45,11 @@ func loadPrompt(name, tp, provider, version string) (string, error) {
 
 // Загружаем <name>.schema.json из PROMPT_SCHEMA_DIR, иначе берём из встроенных prompt.*.
 func LoadPromptSchema(name, version string) (map[string]any, error) {
-	p := filepath.Join("..", version, "prompt", name+".schema.json")
+	baseRoot := os.Getenv("PROMPT_DIR")
+	if baseRoot == "" {
+		baseRoot = filepath.Join("api", "internal")
+	}
+	p := filepath.Join(baseRoot, version, "prompt", name+".schema.json")
 	log.Printf("schema path: %s", p)
 	if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
 		var m map[string]any
@@ -58,17 +63,41 @@ func LoadPromptSchema(name, version string) (map[string]any, error) {
 	var raw []byte
 	switch name {
 	case "detect":
-		raw = []byte(prompt.DetectSchema)
+		if version == "v2" {
+			raw = []byte(prompt2.DetectSchema)
+		} else {
+			raw = []byte(prompt1.DetectSchema)
+		}
 	case "parse":
-		raw = []byte(prompt.ParseSchema)
+		if version == "v2" {
+			raw = []byte(prompt2.ParseSchema)
+		} else {
+			raw = []byte(prompt1.ParseSchema)
+		}
 	case "hint":
-		raw = []byte(prompt.HintSchema)
+		if version == "v2" {
+			raw = []byte(prompt2.HintSchema)
+		} else {
+			raw = []byte(prompt1.HintSchema)
+		}
 	case "normalize":
-		raw = []byte(prompt.NormalizeSchema)
+		if version == "v2" {
+			raw = []byte(prompt2.NormalizeSchema)
+		} else {
+			raw = []byte(prompt1.NormalizeSchema)
+		}
 	case "check":
-		raw = []byte(prompt.CheckSolutionSchema)
+		if version == "v2" {
+			raw = []byte(prompt2.CheckSolutionSchema)
+		} else {
+			raw = []byte(prompt1.CheckSolutionSchema)
+		}
 	case "analogue":
-		raw = []byte(prompt.AnalogueSolutionSchema)
+		if version == "v2" {
+			raw = []byte(prompt2.AnalogueSolutionSchema)
+		} else {
+			raw = []byte(prompt1.AnalogueSolutionSchema)
+		}
 	default:
 		return nil, fmt.Errorf("unknown schema name: %s", name)
 	}
