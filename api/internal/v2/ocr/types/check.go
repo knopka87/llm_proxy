@@ -5,8 +5,8 @@ package types
 
 // CheckRequest — вход запроса (CHECK.request.v1)
 type CheckRequest struct {
-	NormTask   map[string]interface{} `json:"norm_task"`   // Минимальная нормализованная форма задания
-	NormAnswer map[string]interface{} `json:"norm_answer"` // Минимальная нормализованная форма ответа ученика
+	NormTask   NormTask   `json:"norm_task"`   // Минимальная нормализованная форма задания
+	NormAnswer NormAnswer `json:"norm_answer"` // Минимальная нормализованная форма ответа ученика
 }
 
 // ErrorSpan — диапазон ошибки в исходном ответе
