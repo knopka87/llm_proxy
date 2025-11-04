@@ -12,14 +12,12 @@ type NormalizeRequest struct {
 // Kind: "math" | "ru" | "generic"
 type NormTask struct {
 	Kind string `json:"kind"`
-	Data any    `json:"data"`
+	Data string `json:"data"`
 }
 
 // NormAnswer соответствует полю norm_answer в NORMALIZE.response.v1
-// Value допускает string | float64 | bool | []any | map[string]any | nil
-// Units — необязательное поле
 type NormAnswer struct {
-	Value any     `json:"value"`
+	Value string  `json:"value"`
 	Units *string `json:"units,omitempty"`
 }
 
@@ -28,8 +26,8 @@ type NormAnswer struct {
 // Schema: normalize.schema.json
 //
 //	norm_task.kind ∈ {"math","ru","generic"}
-//	norm_task.data — object (no additional properties expected)
-//	norm_answer.value — string | number | boolean | array | object | null
+//	norm_task.data — JSON object
+//	norm_answer.value — string
 //	norm_answer.units — optional string
 type NormalizeResponse struct {
 	NormTask   NormTask   `json:"norm_task"`

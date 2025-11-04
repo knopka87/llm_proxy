@@ -10,27 +10,20 @@
       "additionalProperties": false,
       "properties": {
         "kind": { "type": "string", "enum": ["math", "ru", "generic"] },
-        "data": {
-          "type": ["number", "string", "array", "null", "boolean"],
-          "items": {
-            "type": ["number", "string", "boolean", "null"]
-          }
-        }
+        "data": { "type": "string" }
       },
-      "required": ["kind"]
+      "required": ["kind", "data"]
     },
     "norm_answer": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "value": {
-          "type": ["number", "string", "array", "null", "boolean"],
-          "items": {
-            "type": ["number", "string", "boolean", "null"]
-          }
+          "type": "string"
         },
         "units": { "type": "string" }
-      }
+      },
+      "required": ["value"]
     }
   }
 }
