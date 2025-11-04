@@ -4,6 +4,7 @@ package types
 // required: task_struct, raw_answer_text
 type NormalizeRequest struct {
 	TaskStruct    TaskStruct `json:"task_struct"`
+	RawTaskText   string     `json:"raw_task_text"`
 	RawAnswerText string     `json:"raw_answer_text"`
 }
 

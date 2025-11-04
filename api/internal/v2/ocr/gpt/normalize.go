@@ -27,6 +27,9 @@ func (e *Engine) Normalize(ctx context.Context, in types.NormalizeRequest) (type
 	// TODO переделать на отдельный env
 	model = "gpt-4o"
 
+	if strings.TrimSpace(in.RawTaskText) == "" {
+		return types.NormalizeResponse{}, fmt.Errorf("openai normalize: task.text is empty")
+	}
 	if strings.TrimSpace(in.RawAnswerText) == "" {
 		return types.NormalizeResponse{}, fmt.Errorf("openai normalize: answer.text is empty")
 	}
