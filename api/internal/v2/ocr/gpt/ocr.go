@@ -23,7 +23,7 @@ func (e *Engine) OCR(ctx context.Context, in types.OCRRequest) (types.OCRRespons
 	model := e.GetModel()
 
 	// TODO переделать на отдельный env
-	model = "gpt-4o"
+	model = "gpt-4.1-mini"
 
 	system, err := util.LoadSystemPrompt(OCR, e.Name(), e.Version())
 	if err != nil {
