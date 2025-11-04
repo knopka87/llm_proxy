@@ -12,6 +12,7 @@ const (
 // required: task_struct, level; optional: previous_hints (<=2), locale
 type HintRequest struct {
 	TaskStruct    TaskStruct `json:"task_struct"`
+	RawTaskText   string     `json:"raw_task_text"`
 	Level         HintLevel  `json:"level"`                    // "L1" | "L2" | "L3"
 	PreviousHints []string   `json:"previous_hints,omitempty"` // max 2 (валидируется схемой)
 	Locale        string     `json:"locale,omitempty"`         // "ru-RU" | "en-US"

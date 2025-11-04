@@ -6,9 +6,10 @@ package types
 
 // AnalogueRequest — вход запроса (ANALOGUE.request.v1)
 type AnalogueRequest struct {
-	TaskStruct TaskStruct     `json:"task_struct"`
-	Reason     AnalogueReason `json:"reason"`
-	Locale     string         `json:"locale,omitempty"` // "ru-RU" | "en-US"
+	TaskStruct  TaskStruct     `json:"task_struct"`
+	Reason      AnalogueReason `json:"reason"`
+	Locale      string         `json:"locale,omitempty"` // "ru-RU" | "en-US"
+	RawTaskText string         `json:"raw_task_text"`
 }
 
 // TaskStruct — структура задачи из запроса
