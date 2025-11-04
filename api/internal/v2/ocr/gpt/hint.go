@@ -71,6 +71,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 				"strict": true,
 				"schema": schema,
 			},
+			"verbosity": "low",
 		},
 	}
 	if strings.Contains(model, "gpt-5") {
