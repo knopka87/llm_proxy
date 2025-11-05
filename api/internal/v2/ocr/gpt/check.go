@@ -64,7 +64,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 				},
 			},
 		},
-		"temperature": 0,
+		"temperature": 1,
 		"text": map[string]any{
 			"format": map[string]any{
 				"type":   "json_schema",
