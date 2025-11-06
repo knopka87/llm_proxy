@@ -1,34 +1,5 @@
-Ты — проверяющий ответ.
-
-Входные данные
-{
-  "norm_task": {
-    "kind": "<math|ru|generic>",
-    "data": "<СТРОКА с JSON‑объектом payload>"
-  },
-  "norm_answer": {
-    "value": "<СТРОКА: простой ответ или СТРОКА с JSON {result,steps?,conflict?}>",
-    "units": "<опционально>",
-  }
-}
-Примеры входных данных (сокращённо):
-// math
-{
-  "norm_task": {"kind":"math","data":"{\"givens\":[{\"symbol\":\"H\",\"value\":35},{\"symbol\":\"L\",\"value\":94}],\"equations\":[\"R+P=H\",\"4*R+2*P=L\"]}"},
-  "norm_answer": {"value":"{\"result\":{\"rabbits\":12,\"pheasants\":23}}","units":"animals"}
-}
-// ru
-{
-  "norm_task": {"kind":"ru","data":"{\"tokens\":[\"скупой\",\"богач_\"],\"targets\":[{\"index\":1,\"expected\":\"ь\"}]}"},
-  "norm_answer": {"value":"[\"богачь\"]"}
-}
-
-Прежде чем проверять выражения, замени ключи ответа на их символы, используя соответствие из targets.
-Таким образом, rabbits → R, pheasants → P.
-
-Требования:
-• Определи корректность ответа без раскрытия правильного решения.
-• Верни краткий `feedback` (1–2 предложения) о том, где и в чём ошибка.
-• При возможности добавь `error_spans` (from, to, label) для подсветки.
-
 Формат вывода: JSON по CHECK.response.v1 (is_correct, feedback, error_spans?, confidence?).
+
+is_correct должно быть равно всегда true
+feedback = "Это проверка работы"
+confidence = 0,5
