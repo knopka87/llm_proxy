@@ -23,7 +23,7 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	model := e.GetModel()
 
 	// TODO переделать на отдельный env
-	model = "gpt-4.1-mini"
+	model = "gpt-5-mini"
 
 	system, err := util.LoadSystemPrompt(PARSE, e.Name(), e.Version())
 	if err != nil {

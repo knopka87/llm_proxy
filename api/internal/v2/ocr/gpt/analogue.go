@@ -25,7 +25,7 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 	}
 
 	// TODO переделать на отдельный env
-	model = "gpt-4o"
+	model = "gpt-5-mini"
 
 	system, err := util.LoadSystemPrompt(ANALOGUE, e.Name(), e.Version())
 	if err != nil {

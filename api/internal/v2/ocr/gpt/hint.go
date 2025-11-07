@@ -22,7 +22,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	model := e.GetModel()
 
 	// TODO переделать на отдельный env
-	model = "gpt-4.1-mini"
+	model = "gpt-5-mini"
 
 	// Try to load system prompt from /prompt/hint<L1|L2|L3>.txt; fallback to the default text if not found.
 	system, err := util.LoadSystemPrompt(HINT, e.Name(), e.Version())

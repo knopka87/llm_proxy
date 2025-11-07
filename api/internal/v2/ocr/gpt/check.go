@@ -24,7 +24,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 		model = "gpt-4o-mini"
 	}
 	// TODO переделать на отдельный env
-	model = "gpt-4.1-mini"
+	model = "gpt-5-mini"
 
 	system, err := util.LoadSystemPrompt(CHECK, e.Name(), e.Version())
 	if err != nil {
