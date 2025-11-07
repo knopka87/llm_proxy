@@ -60,7 +60,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 			map[string]any{
 				"role": "user",
 				"content": []any{
-					map[string]any{"type": "input_text", "text": string(userJSON)},
+					map[string]any{"type": "input_text", "text": "INPUT_JSON:\n" + string(userJSON)},
 				},
 			},
 		},
@@ -68,7 +68,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 		"text": map[string]any{
 			"format": map[string]any{
 				"type":   "json_schema",
-				"name":   "check_solution",
+				"name":   CHECK,
 				"strict": true,
 				"schema": schema,
 			},
