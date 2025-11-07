@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"llm-proxy/api/internal/v2/ocr/types"
@@ -54,14 +55,14 @@ func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Normalize engine output to CheckSchema v1.2 (drop unknown fields, enforce required ones)
-	if b, err := json.Marshal(out); err == nil {
-		var raw map[string]any
-		if err := json.Unmarshal(b, &raw); err == nil {
-			normalized := normalizeCheckV12(raw)
-			writeJSON(w, http.StatusOK, normalized)
-			return
-		}
-	}
+	// if b, err := json.Marshal(out); err == nil {
+	// 	var raw map[string]any
+	// 	if err := json.Unmarshal(b, &raw); err == nil {
+	// 		normalized := normalizeCheckV12(raw)
+	// 		writeJSON(w, http.StatusOK, normalized)
+	// 		return
+	// 	}
+	// }
 
 	// Fallback: if normalization failed for any reason, return raw output
 	writeJSON(w, http.StatusOK, out)
@@ -70,32 +71,158 @@ func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {
 // normalizeCheckV12 converts arbitrary engine output into the strict CheckSchema v1.2 shape.
 // It enforces required fields, clamps values, truncates strings, and drops unknown properties.
 func normalizeCheckV12(m map[string]any) map[string]any {
-	res := map[string]any{}
+	// CHECK.response.v1: { is_correct: bool, feedback: string, error_spans?: [{from:int,to:int,label?:string}], confidence?: [0..1] }
+	// additionalProperties: false → only include these keys.
 
-	// version (const)
-	res["version"] = "1.2"
+	out := map[string]any{}
 
-	// branch (enum)
-	branch := "generic_branch"
-	if v, ok := m["branch"].(string); ok {
+	// ---- is_correct ----
+	isCorrect := false
+	if v, ok := m["is_correct"].(bool); ok {
+		isCorrect = v
+	} else if v, ok := m["verdict"].(string); ok {
 		switch v {
-		case "math_branch", "ru_branch", "generic_branch":
-			branch = v
+		case "pass", "correct", "ok", "true":
+			isCorrect = true
+		default:
+			isCorrect = false
+		}
+	} else if v, ok := m["result"].(string); ok {
+		switch v {
+		case "pass", "correct", "ok", "true":
+			isCorrect = true
+		default:
+			isCorrect = false
+		}
+	} else {
+		// Conservative default: if issues present → false, otherwise false (never assume correctness).
+		if issues, ok := m["issues"].([]any); ok && len(issues) > 0 {
+			isCorrect = false
+		} else {
+			isCorrect = false
 		}
 	}
-	res["branch"] = branch
+	out["is_correct"] = isCorrect
 
-	// verdict (enum)
-	verdict := "needs_more_info"
-	if v, ok := m["verdict"].(string); ok {
-		switch v {
-		case "pass", "fail", "needs_more_info":
-			verdict = v
+	// ---- feedback ----
+	feedback := ""
+	if v, ok := m["feedback"].(string); ok && v != "" {
+		feedback = v
+	} else {
+		if isCorrect {
+			feedback = "Решение выглядит корректным."
+		} else {
+			// Try to summarize issues.reason (1–2 краткие фразы, без раскрытия ответа)
+			if issues, ok := m["issues"].([]any); ok && len(issues) > 0 {
+				parts := make([]string, 0, 2)
+				for _, it := range issues {
+					if obj, ok := it.(map[string]any); ok {
+						if rs, _ := obj["reason"].(string); rs != "" {
+							parts = append(parts, rs)
+							if len(parts) >= 2 {
+								break
+							}
+						}
+					}
+				}
+				if len(parts) > 0 {
+					feedback = strings.Join(parts, " ")
+				}
+			}
+			if feedback == "" {
+				if v, ok := m["verdict"].(string); ok && v == "needs_more_info" {
+					feedback = "Недостаточно данных: уточните шаги решения или исходные условия."
+				} else {
+					feedback = "В ответе обнаружены неточности. Укажите, где допущена ошибка, и пересчитайте без раскрытия финального результата."
+				}
+			}
 		}
 	}
-	res["verdict"] = verdict
+	feedback = clampRunes(feedback, 400)
+	if feedback == "" {
+		// Keep it minimal if nothing else is available.
+		feedback = "Проверка выполнена."
+	}
+	out["feedback"] = feedback
 
-	// confidence (0..1)
+	// ---- error_spans ----
+	// Prefer exact shape if present; otherwise derive from common alternatives inside issues.
+	if raw, ok := m["error_spans"].([]any); ok {
+		spans := make([]any, 0, len(raw))
+		for _, it := range raw {
+			if obj, ok := it.(map[string]any); ok {
+				from, fok := toInt(obj["from"])
+				toV, tok := toInt(obj["to"])
+				label, _ := obj["label"].(string)
+				if fok && tok {
+					if from < 0 {
+						from = 0
+					}
+					if toV < from {
+						toV = from
+					}
+					item := map[string]any{"from": from, "to": toV}
+					if label != "" {
+						item["label"] = clampRunes(label, 120)
+					}
+					spans = append(spans, item)
+				}
+			}
+		}
+		if len(spans) > 0 {
+			out["error_spans"] = spans
+		}
+	} else if rawIssues, ok := m["issues"].([]any); ok && len(rawIssues) > 0 {
+		spans := make([]any, 0, 6)
+		for _, it := range rawIssues {
+			obj, ok := it.(map[string]any)
+			if !ok {
+				continue
+			}
+			// Accept several common shapes: from/to; span{from,to}; range{start,end}
+			from, fok := toInt(obj["from"])
+			toV, tok := toInt(obj["to"])
+			if !(fok && tok) {
+				if rng, ok := obj["span"].(map[string]any); ok {
+					from, fok = toInt(rng["from"])
+					toV, tok = toInt(rng["to"])
+				}
+			}
+			if !(fok && tok) {
+				if rng, ok := obj["range"].(map[string]any); ok {
+					from, fok = toInt(rng["start"])
+					toV, tok = toInt(rng["end"])
+				}
+			}
+			label, _ := obj["label"].(string)
+			if label == "" {
+				if s, ok := obj["reason"].(string); ok {
+					label = s
+				}
+			}
+			if fok && tok {
+				if from < 0 {
+					from = 0
+				}
+				if toV < from {
+					toV = from
+				}
+				item := map[string]any{"from": from, "to": toV}
+				if label != "" {
+					item["label"] = clampRunes(label, 120)
+				}
+				spans = append(spans, item)
+			}
+			if len(spans) >= 6 {
+				break
+			}
+		}
+		if len(spans) > 0 {
+			out["error_spans"] = spans
+		}
+	}
+
+	// ---- confidence ----
 	var conf float64
 	switch v := m["confidence"].(type) {
 	case float64:
@@ -106,8 +233,23 @@ func normalizeCheckV12(m map[string]any) map[string]any {
 		conf = float64(v)
 	case int64:
 		conf = float64(v)
+	case json.Number:
+		if f, err := strconv.ParseFloat(string(v), 64); err == nil {
+			conf = f
+		}
+	case string:
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			conf = f
+		}
 	default:
 		conf = 0
+	}
+	if conf <= 0 {
+		if isCorrect {
+			conf = 0.7
+		} else {
+			conf = 0.5
+		}
 	}
 	if conf < 0 {
 		conf = 0
@@ -115,112 +257,32 @@ func normalizeCheckV12(m map[string]any) map[string]any {
 	if conf > 1 {
 		conf = 1
 	}
-	res["confidence"] = conf
+	out["confidence"] = conf
 
-	// issues (array of up to 3)
-	if rawIssues, ok := m["issues"].([]any); ok && len(rawIssues) > 0 {
-		issues := make([]any, 0, 3)
-		for _, it := range rawIssues {
-			if len(issues) >= 3 {
-				break
-			}
-			obj, ok := it.(map[string]any)
-			if !ok {
-				continue
-			}
-			reason, _ := obj["reason"].(string)
-			if reason == "" {
-				continue // required
-			}
-			reason = clampRunes(reason, 180)
-			item := map[string]any{"reason": reason}
+	// Only allowed keys are present in `out`.
+	return out
+}
 
-			if fs, ok := obj["fix_suggestions"].([]any); ok && len(fs) > 0 {
-				fixes := make([]any, 0, 2)
-				for _, fv := range fs {
-					if len(fixes) >= 2 {
-						break
-					}
-					if s, ok := fv.(string); ok {
-						fixes = append(fixes, clampRunes(s, 240))
-					}
-				}
-				if len(fixes) > 0 {
-					item["fix_suggestions"] = fixes
-				}
-			}
-			issues = append(issues, item)
+func toInt(v any) (int, bool) {
+	switch t := v.(type) {
+	case float64:
+		return int(t), true
+	case int:
+		return t, true
+	case int32:
+		return int(t), true
+	case int64:
+		return int(t), true
+	case json.Number:
+		if i, err := strconv.Atoi(string(t)); err == nil {
+			return i, true
 		}
-		if len(issues) > 0 {
-			res["issues"] = issues
+	case string:
+		if i, err := strconv.Atoi(t); err == nil {
+			return i, true
 		}
 	}
-
-	// math_checks (boolean flags, drop unknowns)
-	if mcRaw, ok := m["math_checks"].(map[string]any); ok {
-		mc := map[string]any{}
-		if v, ok := mcRaw["units_ok"].(bool); ok {
-			mc["units_ok"] = v
-		}
-		if v, ok := mcRaw["rounding_ok"].(bool); ok {
-			mc["rounding_ok"] = v
-		}
-		if v, ok := mcRaw["substitution_ok"].(bool); ok {
-			mc["substitution_ok"] = v
-		}
-		if len(mc) > 0 {
-			res["math_checks"] = mc
-		}
-	}
-
-	// ru_checks (strings, drop unknowns)
-	if rcRaw, ok := m["ru_checks"].(map[string]any); ok {
-		rc := map[string]any{}
-		if v, ok := rcRaw["rule_ref"].(string); ok {
-			rc["rule_ref"] = v
-		}
-		if v, ok := rcRaw["counterexample"].(string); ok {
-			rc["counterexample"] = v
-		}
-		if len(rc) > 0 {
-			res["ru_checks"] = rc
-		}
-	}
-
-	// safety (required object, with required booleans)
-	safety := map[string]any{}
-	if sRaw, ok := m["safety"].(map[string]any); ok {
-		if v, ok := sRaw["pii_removed"].(bool); ok {
-			safety["pii_removed"] = v
-		} else {
-			safety["pii_removed"] = false
-		}
-		if v, ok := sRaw["banned_content"].(bool); ok {
-			safety["banned_content"] = v
-		} else {
-			safety["banned_content"] = false
-		}
-		if pcs, ok := sRaw["pii_categories"].([]any); ok {
-			out := make([]any, 0, len(pcs))
-			for _, item := range pcs {
-				if s, ok := item.(string); ok {
-					out = append(out, s)
-				}
-			}
-			if len(out) > 0 {
-				safety["pii_categories"] = out
-			}
-		}
-		if v, ok := sRaw["notes"].(string); ok {
-			safety["notes"] = v
-		}
-	} else {
-		safety["pii_removed"] = false
-		safety["banned_content"] = false
-	}
-	res["safety"] = safety
-
-	return res
+	return 0, false
 }
 
 // clampRunes ensures a string does not exceed max runes.
