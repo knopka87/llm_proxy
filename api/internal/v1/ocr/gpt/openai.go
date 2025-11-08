@@ -9,21 +9,21 @@ import (
 
 type Engine struct {
 	APIKey string
-	model  string
+	Model  string
 	httpc  *http.Client
 }
 
 func New(key, model string) *Engine {
 	return &Engine{
 		APIKey: key,
-		model:  model,
+		Model:  model,
 		httpc:  &http.Client{Timeout: 60 * time.Second},
 	}
 }
 
 func (e *Engine) Name() string     { return "gpt" }
 func (e *Engine) Version() string  { return "v1" }
-func (e *Engine) GetModel() string { return e.model }
+func (e *Engine) GetModel() string { return e.Model }
 
 // fallbackExtractResponsesText extracts model text from the Responses API envelope
 // per https://platform.openai.com/docs/api-reference/responses/object.

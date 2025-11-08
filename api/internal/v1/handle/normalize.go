@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"llm-proxy/api/internal/v1/ocr/types"
@@ -15,7 +14,7 @@ import (
 
 type normalizeReq struct {
 	LLMName string `json:"llm_name"`
-	types.NormalizeInput
+	types.NormalizeRequest
 }
 
 func (h *Handle) Normalize(w http.ResponseWriter, r *http.Request) {
@@ -26,15 +25,6 @@ func (h *Handle) Normalize(w http.ResponseWriter, r *http.Request) {
 	var req normalizeReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "bad json: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if strings.TrimSpace(req.SolutionShape) == "" {
-		http.Error(w, "solution_shape is required", http.StatusBadRequest)
-		return
-	}
-	if strings.TrimSpace(req.Answer.Source) == "" {
-		http.Error(w, "answer.source is required", http.StatusBadRequest)
 		return
 	}
 
@@ -51,7 +41,7 @@ func (h *Handle) Normalize(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
-	var out types.NormalizeResult
+	var out types.NormalizeResponse
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
@@ -59,7 +49,7 @@ func (h *Handle) Normalize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err = engine.Normalize(ctx, req.NormalizeInput)
+	out, err = engine.Normalize(ctx, req.NormalizeRequest)
 	if err != nil {
 		http.Error(w, "normalize error: "+err.Error(), http.StatusBadGateway)
 		return

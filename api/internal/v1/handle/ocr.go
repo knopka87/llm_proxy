@@ -10,17 +10,17 @@ import (
 	"llm-proxy/api/internal/v1/ocr/types"
 )
 
-type ParseRequest struct {
+type OcrRequest struct {
 	LLMName string `json:"llm_name"`
-	types.ParseRequest
+	types.OCRRequest
 }
 
-func (h *Handle) Parse(w http.ResponseWriter, r *http.Request) {
+func (h *Handle) Ocr(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "POST only", http.StatusMethodNotAllowed)
 		return
 	}
-	var req ParseRequest
+	var req OcrRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "bad json: "+err.Error(), http.StatusBadRequest)
 		return
@@ -39,17 +39,17 @@ func (h *Handle) Parse(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
-	var out types.ParseResponse
+	var out types.OCRResponse
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
-		http.Error(w, "parse error: "+err.Error(), http.StatusBadGateway)
+		http.Error(w, "Ocr error: "+err.Error(), http.StatusBadGateway)
 		return
 	}
 
-	out, err = engine.Parse(ctx, req.ParseRequest)
+	out, err = engine.OCR(ctx, req.OCRRequest)
 	if err != nil {
-		http.Error(w, "parse error: "+err.Error(), http.StatusBadGateway)
+		http.Error(w, "Ocr error: "+err.Error(), http.StatusBadGateway)
 		return
 	}
 

@@ -1,25 +1,19 @@
 package types
 
-type DetectInput struct {
-	ImageB64  string `json:"image_b64"`
-	Mime      string `json:"mime,omitempty"`
-	GradeHint int    `json:"grade_hint,omitempty"`
+// DetectRequest — DETECT.request.v1
+// Required: image. Optional: locale ("ru-RU" | "en-US"), max_tasks (const=1; default 1).
+type DetectRequest struct {
+	Image    string `json:"image"`               // Image handle (URL or base64 id)
+	Locale   string `json:"locale,omitempty"`    // "ru-RU" | "en-US"
+	MaxTasks int    `json:"max_tasks,omitempty"` // schema: minimum=1, maximum=1 (treated as const=1)
 }
 
-// DetectResult — корневой объект DETECT
-type DetectResult struct {
-	Tasks []DetectTask `json:"tasks"`
-}
-
-// DetectTask — одна «задача» на странице
-type DetectTask struct {
-	OriginalNumber        string        `json:"original_number"` // например, "№1" или "1."
-	TitleRaw              string        `json:"title_raw"`       // как распознано в заголовке
-	MultipleTasksDetected bool          `json:"multiple_tasks_detected,omitempty"`
-	Blocks                []DetectBlock `json:"blocks"`
-}
-
-// DetectBlock — структурированный блок текста/таблицы/сетки
-type DetectBlock struct {
-	BlockRaw string `json:"block_raw"` // сырой текст блока (без потери пробелов)
+// DetectResponse — DETECT.response.v1
+// Required: subject_hint, confidence.
+// Optional: grade_hint (1..4), debug_reason (≤120 chars).
+type DetectResponse struct {
+	SubjectHint string  `json:"subject_hint"`           // "math" | "russian" | "generic"
+	GradeHint   *int    `json:"grade_hint,omitempty"`   // 1..4
+	Confidence  float64 `json:"confidence"`             // 0..1
+	DebugReason string  `json:"debug_reason,omitempty"` // ≤120 chars
 }

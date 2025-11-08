@@ -15,9 +15,9 @@ import (
 
 const ANALOGUE = "analogue"
 
-func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolutionInput) (types.AnalogueSolutionResult, error) {
+func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, error) {
 	if e.APIKey == "" {
-		return types.AnalogueSolutionResult{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.AnalogueResponse{}, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
 	if strings.TrimSpace(model) == "" {
@@ -25,28 +25,26 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 	}
 
 	// TODO переделать на отдельный env
-	model = "gpt-4o"
+	model = "gpt-5-mini"
 
-	system := `Ты — педагог 1–4 классов. Объясни ТЕ ЖЕ ПРИЁМЫ на похожем задании с другими данными.
-Не используй числа/слова/единицы и сюжет исходной задачи. Не раскрывай её ответ.
-Пиши короткими шагами (одно действие — один шаг), всего 3–4 шага.
-В конце дай «мостик переноса» — как применить шаги к своей задаче.
-Когнитивная нагрузка: ≤12 слов в предложении; сложность — на пол‑ступени проще исходной.
-Мини‑проверки: yn|single_word|choice, expected_form описывает ТОЛЬКО форму ответа.
-Типовые ошибки: коды + короткие детские сообщения (допустим и старый строковый формат).
-Анти‑лик: leak_guard_passed=true; no_original_answer_leak=true; желателен отчёт no_original_overlap_report.
-Контроль «тот же приём»: method_rationale (почему это тот же приём) и contrast_note (чем аналог отличается).
-Старайся менять сюжет/единицы; distance_from_original_hint укажи как medium|high.
-Верни строго JSON по схеме analogue. Любой текст вне JSON — ошибка.
-`
+	system, err := util.LoadSystemPrompt(ANALOGUE, e.Name(), e.Version())
+	if err != nil {
+		return types.AnalogueResponse{}, err
+	}
+
 	schema, err := util.LoadPromptSchema(ANALOGUE, e.Version())
 	if err != nil {
-		return types.AnalogueSolutionResult{}, err
+		return types.AnalogueResponse{}, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
+	user, err := util.LoadUserPrompt(ANALOGUE, e.Name(), e.Version())
+	if err != nil {
+		return types.AnalogueResponse{}, err
+	}
+
 	userObj := map[string]any{
-		"task":  "Сформируй аналогичное задание тем же приёмом и верни СТРОГО JSON по схеме.",
+		"task":  user,
 		"input": in,
 	}
 	userJSON, _ := json.Marshal(userObj)
@@ -63,11 +61,11 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 			map[string]any{
 				"role": "user",
 				"content": []any{
-					map[string]any{"type": "input_text", "text": "INPUT_JSON:\n" + string(userJSON)},
+					map[string]any{"type": "input_text", "text": string(userJSON)},
 				},
 			},
 		},
-		"temperature": 0,
+		"temperature": 1,
 		"text": map[string]any{
 			"format": map[string]any{
 				"type":   "json_schema",
@@ -88,12 +86,12 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return types.AnalogueSolutionResult{}, err
+		return types.AnalogueResponse{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.AnalogueResponse{}, fmt.Errorf("openai analogue %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	raw, _ := io.ReadAll(resp.Body)
@@ -103,15 +101,12 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueSolution
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
 	if out == "" {
-		return types.AnalogueSolutionResult{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+		return types.AnalogueResponse{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
 	}
-	var ar types.AnalogueSolutionResult
+	var ar types.AnalogueResponse
 	if err := json.Unmarshal([]byte(out), &ar); err != nil {
-		return types.AnalogueSolutionResult{}, fmt.Errorf("openai analogue: bad JSON: %w", err)
+		return types.AnalogueResponse{}, fmt.Errorf("openai analogue: bad JSON: %w", err)
 	}
-	if !ar.LeakGuardPassed {
-		ar.LeakGuardPassed = true
-	}
-	ar.Safety.NoOriginalAnswerLeak = true
+
 	return ar, nil
 }

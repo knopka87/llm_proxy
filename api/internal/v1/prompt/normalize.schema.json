@@ -1,199 +1,29 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "normalize.schema.json",
-  "title": "NORMALIZE_ANSWER — MVP schema (NO PII)",
+  "title": "NORMALIZE.response.v1",
   "type": "object",
+  "required": ["norm_task", "norm_answer"],
   "additionalProperties": false,
-  "required": [
-    "success",
-    "shape"
-  ],
   "properties": {
-    "success": {
-      "type": "boolean"
-    },
-    "shape": {
-      "type": "string",
-      "enum": [
-        "number",
-        "string",
-        "steps",
-        "list"
-      ]
-    },
-    "shape_detected": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "enum": [
-        "number",
-        "string",
-        "steps",
-        "list",
-        "unknown",
-        null
-      ]
-    },
-    "value": {
-      "type": ["number", "string", "array", "null"],
-      "description": "Нормализованное значение. Фактическая форма зависит от поля `shape`: для `number` — число; для `string` — строка; для `steps` — массив строк (до 6) или null; для `list` — массив произвольных элементов (без объектов).",
-      "items": {
-        "type": ["number", "string", "boolean", "null"]
-      }
-    },
-    "units": {
+    "norm_task": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "detected": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "canonical": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "enum": [
-            "mm",
-            "cm",
-            "m",
-            "km",
-            "mg",
-            "g",
-            "kg",
-            "s",
-            "min",
-            "h",
-            "rub",
-            "uah",
-            "usd",
-            "eur",
-            "celsius",
-            "percent",
-            null
-          ]
-        },
-        "kept": {
-          "type": [
-            "boolean",
-            "null"
-          ]
-        }
-      }
+        "kind": { "type": "string", "enum": ["math", "ru", "generic"] },
+        "data": { "type": "string" }
+      },
+      "required": ["kind", "data"]
     },
-    "warnings": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "normalized": {
+    "norm_answer": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "raw": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "value": {
+          "type": "string"
         },
-        "clean": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "notes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "uncertain_reasons": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "enum": [
-          "conflicting_corrections",
-          "low_ocr_quality",
-          "shape_mismatch",
-          "too_many_candidates",
-          "partial_crop",
-          "blur",
-          "unknown"
-        ]
-      }
-    },
-    "needs_clarification": {
-      "type": [
-        "boolean",
-        "null"
-      ]
-    },
-    "needs_user_action_message": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "maxLength": 120
-    },
-    "error": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "enum": [
-        "too_many_candidates",
-        "ocr_unreadable",
-        "no_answer",
-        "shape_mismatch",
-        "internal_error",
-        null
-      ]
-    },
-    "number_kind": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "enum": [
-        "integer",
-        "decimal",
-        "fraction",
-        "mixed_fraction",
-        "range",
-        "time",
-        "approximate",
-        "inequality",
-        "unknown",
-        null
-      ]
-    },
-    "next_action_hint": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "enum": [
-        "ask_rephoto",
-        "ask_retry",
-        "none",
-        null
-      ]
-    },
-    "explanation_short": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "maxLength": 400,
-      "description": "Короткое пояснение для редких случаев (без нового shape)."
+        "units": { "type": "string" }
+      },
+      "required": ["value"]
     }
   }
 }

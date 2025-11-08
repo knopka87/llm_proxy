@@ -36,7 +36,7 @@ func (h *Handle) UpdateSystemPromptHandler(w http.ResponseWriter, r *http.Reques
 
 	baseRoot := os.Getenv("PROMPT_DIR")
 	if baseRoot == "" {
-		baseRoot = filepath.Join("api", "internal", "ocr")
+		baseRoot = filepath.Join("api", "internal", "v1", "ocr")
 	}
 	baseDir := filepath.Join(baseRoot, strings.ToLower(req.Provider), "prompt")
 	if err := os.MkdirAll(baseDir, 0o755); err != nil {

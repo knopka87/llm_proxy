@@ -1,70 +1,20 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "analogue.schema.json",
-  "title": "ANALOGUE_SOLUTION Output Schema (v1.1)",
+  "title": "ANALOGUE.response.v1",
   "type": "object",
-  "additionalProperties": false,
   "required": [
-    "analogy_title",
-    "analogy_task",
-    "solution_steps",
-    "mini_checks",
-    "transfer_bridge",
-    "safety"
+    "example_task",
+    "solution_steps"
   ],
+  "additionalProperties": false,
   "properties": {
-    "analogy_title": {
-      "type": "string",
-      "maxLength": 40
-    },
-    "analogy_task": {
-      "type": "string",
-      "maxLength": 280
+    "example_task": {
+      "type": "string"
     },
     "solution_steps": {
       "type": "array",
       "items": {
-        "type": "string",
-        "maxLength": 120
-      },
-      "minItems": 3,
-      "maxItems": 4
-    },
-    "mini_checks": {
-      "type": "array",
-      "minItems": 1,
-      "maxItems": 3,
-      "items": {
-        "type": ["string", "object"],
-        "maxLength": 100,
-        "additionalProperties": false,
-        "required": ["prompt"],
-        "properties": {
-          "prompt": { "type": "string", "maxLength": 100 }
-        }
-      }
-    },
-    "transfer_bridge": {
-      "type": "string",
-      "maxLength": 200
-    },
-    "transfer_check": {
-      "type": "string",
-      "maxLength": 120
-    },
-    "leak_guard_passed": {
-      "type": "boolean"
-    },
-    "safety": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "no_original_answer_leak"
-      ],
-      "properties": {
-       "no_original_answer_leak": {
-          "type": "boolean"
-        }
+        "type": "string"
       }
     }
   }

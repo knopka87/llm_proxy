@@ -1,45 +1,35 @@
 package types
 
-import "encoding/json"
-
-type NormalizeInput struct {
-	TaskID        string          `json:"task_id"`
-	UserIDAnon    string          `json:"user_id_anon"`
-	Grade         int             `json:"grade"`
-	Subject       string          `json:"subject"`
-	TaskType      string          `json:"task_type"`
-	SolutionShape string          `json:"solution_shape"`
-	Answer        NormalizeAnswer `json:"answer"`
-	ParseContext  json.RawMessage `json:"parse_context"`
-	Provider      string          `json:"provider,omitempty"`
+// NormalizeRequest — вход запроса (NORMALIZE.request.v1)
+// required: task_struct, raw_answer_text
+type NormalizeRequest struct {
+	TaskStruct    TaskStruct `json:"task_struct"`
+	RawTaskText   string     `json:"raw_task_text"`
+	RawAnswerText string     `json:"raw_answer_text"`
 }
 
-type NormalizeAnswer struct {
-	Source   string `json:"source"` // text | photo
-	Text     string `json:"text,omitempty"`
-	PhotoB64 string `json:"photo_b64,omitempty"` // предпочтительно base64
-	Mime     string `json:"mime,omitempty"`      // image/jpeg, image/png
+// NormTask соответствует полю norm_task в NORMALIZE.response.v1
+// Kind: "math" | "ru" | "generic"
+type NormTask struct {
+	Kind string `json:"kind"`
+	Data string `json:"data"`
 }
 
-// NormalizeResult — строгий JSON-ответ нормализации (schema v5)
-// См. normalize.schema.json
-type NormalizeResult struct {
-	Success       bool        `json:"success"`
-	Shape         string      `json:"shape"`                    // number|string|steps|list
-	ShapeDetected *string     `json:"shape_detected,omitempty"` // number|string|steps|list|unknown|null
-	Value         interface{} `json:"value"`                    // число | строка | []string | []any | null
-
-	Units *UnitsInfo `json:"units,omitempty"`
-
-	UncertainReasons       []string `json:"uncertain_reasons,omitempty"`
-	NeedsClarification     *bool    `json:"needs_clarification,omitempty"`
-	NeedsUserActionMessage *string  `json:"needs_user_action_message,omitempty"` // ≤120 символов
+// NormAnswer соответствует полю norm_answer в NORMALIZE.response.v1
+type NormAnswer struct {
+	Value string  `json:"value"`
+	Units *string `json:"units,omitempty"`
 }
 
-// UnitsInfo — обнаруженные/нормализованные единицы измерения (schema v5).
-// Detected/Canonical/System/IsCompound/Kept/Mismatch допускают null.
-type UnitsInfo struct {
-	Detected  *string `json:"detected"`
-	Canonical *string `json:"canonical"`
-	Kept      *bool   `json:"kept"`
+// NormalizeResponse — выход (NORMALIZE.response.v1)
+// required: norm_task, norm_answer
+// Schema: normalize.schema.json
+//
+//	norm_task.kind ∈ {"math","ru","generic"}
+//	norm_task.data — JSON object
+//	norm_answer.value — string
+//	norm_answer.units — optional string
+type NormalizeResponse struct {
+	NormTask   NormTask   `json:"norm_task"`
+	NormAnswer NormAnswer `json:"norm_answer"`
 }

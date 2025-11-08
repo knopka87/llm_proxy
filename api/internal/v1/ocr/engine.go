@@ -9,14 +9,13 @@ import (
 
 type Engine interface {
 	Name() string
-	Version() string
-	GetModel() string
-	Detect(ctx context.Context, in types.DetectInput) (types.DetectResult, error)
-	Parse(ctx context.Context, in types.ParseInput) (types.ParseResult, error)
-	Hint(ctx context.Context, in types.HintInput) (types.HintResult, error)
-	Normalize(ctx context.Context, in types.NormalizeInput) (types.NormalizeResult, error)
-	CheckSolution(ctx context.Context, in types.CheckSolutionInput) (types.CheckSolutionResult, error)
-	AnalogueSolution(ctx context.Context, in types.AnalogueSolutionInput) (types.AnalogueSolutionResult, error)
+	Detect(ctx context.Context, in types.DetectRequest) (types.DetectResponse, error)
+	Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, error)
+	Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, error)
+	Normalize(ctx context.Context, in types.NormalizeRequest) (types.NormalizeResponse, error)
+	CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, error)
+	AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, error)
+	OCR(ctx context.Context, request types.OCRRequest) (types.OCRResponse, error)
 }
 
 type Engines struct {

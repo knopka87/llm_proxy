@@ -1,41 +1,40 @@
 package types
 
-type ParseInput struct {
-	ImageB64 string       `json:"image_b64"`
-	Options  ParseOptions `json:"options"`
+// Subject represents a subject hint for PARSE.
+// Allowed values: "math", "russian", "generic".
+
+const (
+	SubjectMath    Subject = "math"
+	SubjectRussian Subject = "russian"
+	SubjectGeneric Subject = "generic"
+)
+
+type Subject string
+
+func (s Subject) String() string {
+	switch s {
+	case SubjectMath:
+		return string(SubjectMath)
+	case SubjectRussian:
+		return string(SubjectRussian)
+	default:
+		return string(SubjectGeneric)
+	}
 }
 
-type ParseResult struct {
-	RawText  string `json:"raw_text"`
-	Question string `json:"question"`
-
-	Confidence    float64 `json:"confidence"`
-	NeedsRescan   bool    `json:"needs_rescan"`
-	RescanReason  string  `json:"rescan_reason"`
-	Subject       string  `json:"subject"`
-	TaskType      string  `json:"task_type"`
-	SolutionShape string  `json:"solution_shape"`
-
-	ConfirmationNeeded bool   `json:"confirmation_needed"`
-	ConfirmationReason string `json:"confirmation_reason"`
-	Grade              int    `json:"grade"`
+// ParseRequest — вход запроса (PARSE.request.v1)
+// required: image; optional: locale, subject_hint, grade_hint
+type ParseRequest struct {
+	Image       string   `json:"image"`
+	Locale      string   `json:"locale,omitempty"`       // "ru-RU" | "en-US"
+	SubjectHint *Subject `json:"subject_hint,omitempty"` // "math" | "russian" | "generic"
+	GradeHint   *int     `json:"grade_hint,omitempty"`   // 1..4
 }
 
-// ParseOptions — опции для этапа Parse (подсказки модели и служебные метаданные).
-type ParseOptions struct {
-	// Подсказки для модели
-	GradeHint   int    // Предполагаемый класс (1–4), 0 если неизвестно
-	SubjectHint string // "math" | "russian" | "" — если известно из DETECT
-
-	// Метаданные для кэша/аудита
-	ChatID       int64  // Идентификатор чата
-	MediaGroupID string // Telegram MediaGroupID, пусто если одиночное фото
-	ImageHash    string // SHA-256 объединённого изображения (util.SHA256Hex)
-
-	// Дизамбигуация по выбору пользователя (если на фото несколько заданий)
-	SelectedTaskIndex int    // Индекс выбранного задания (0-based), -1 если не выбран
-	SelectedTaskBrief string // Краткое описание выбранного пункта (из DETECT), может быть пустым
-
-	// Необязательная модель (перекрывает e.model при вызове движка)
-	ModelOverride string
+// ParseResponse — выход (PARSE.response.v1)
+// required: raw_task_text, task_struct; optional: needs_user_confirmation (default true)
+type ParseResponse struct {
+	RawTaskText           string     `json:"raw_task_text"`
+	TaskStruct            TaskStruct `json:"task_struct"`
+	NeedsUserConfirmation bool       `json:"needs_user_confirmation,omitempty"` // default=true
 }
