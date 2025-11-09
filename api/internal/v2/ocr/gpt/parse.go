@@ -80,7 +80,7 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 				},
 			},
 		},
-		"temperature": 0.6,
+		"temperature": 0,
 		"text": map[string]any{
 			"format": map[string]any{
 				"type":   "json_schema",
