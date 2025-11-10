@@ -82,7 +82,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 		"text": map[string]any{
 			"format": map[string]any{
 				"type":   "json_schema",
-				"name":   "HINT.response.v1",
+				"name":   HINT,
 				"strict": true,
 				"schema": schema,
 			},
