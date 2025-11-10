@@ -27,23 +27,14 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 
 	// Параметры сэмплинга по уровням
 	temp := 0.30
-	topP := 0.85
-	presence := 0.0
-	freq := 0.30
 
 	switch in.Level {
 	case types.HintL3:
 		model = "gpt-5-mini"
-		temp = 0.45
-		topP = 0.90
-		presence = 0.0
-		freq = 0.35
+		temp = 1
 	case types.HintL2:
 		// остаёмся на gpt-4.1-mini
 		temp = 0.35
-		topP = 0.90
-		presence = 0.0
-		freq = 0.25
 	default:
 		// L1: значения по умолчанию заданы выше
 	}
@@ -87,14 +78,11 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 				},
 			},
 		},
-		"temperature":       temp,
-		"top_p":             topP,
-		"presence_penalty":  presence,
-		"frequency_penalty": freq,
+		"temperature": temp,
 		"text": map[string]any{
 			"format": map[string]any{
 				"type":   "json_schema",
-				"name":   HINT,
+				"name":   "HINT.response.v1",
 				"strict": true,
 				"schema": schema,
 			},
