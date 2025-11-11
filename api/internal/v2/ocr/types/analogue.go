@@ -10,7 +10,7 @@ type AnalogueRequest struct {
 	Reason      AnalogueReason `json:"reason"`
 	Locale      string         `json:"locale,omitempty"` // "ru-RU" | "en-US"
 	RawTaskText string         `json:"raw_task_text"`
-	Grade       int            `json:"grade"` // 1..4
+	Grade       int64          `json:"grade"` // 1..4
 }
 
 // TaskStruct — структура задачи из запроса

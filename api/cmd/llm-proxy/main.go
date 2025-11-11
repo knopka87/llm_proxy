@@ -60,7 +60,6 @@ func main() {
 	mux.HandleFunc("/v2/normalize", h2.Normalize)
 	mux.HandleFunc("/v2/check_solution", h2.CheckSolution)
 	mux.HandleFunc("/v2/analogue_solution", h2.AnalogueSolution)
-	mux.HandleFunc("/v2/system_prompt", h2.UpdateSystemPromptHandler)
 
 	addr := ":" + cfg.Port
 	srv := &http.Server{
