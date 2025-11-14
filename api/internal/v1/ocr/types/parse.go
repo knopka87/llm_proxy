@@ -28,7 +28,7 @@ type ParseRequest struct {
 	Image       string   `json:"image"`
 	Locale      string   `json:"locale,omitempty"`       // "ru-RU" | "en-US"
 	SubjectHint *Subject `json:"subject_hint,omitempty"` // "math" | "russian" | "generic"
-	GradeHint   *int     `json:"grade_hint,omitempty"`   // 1..4
+	GradeHint   *int64   `json:"grade_hint,omitempty"`   // 1..4
 }
 
 // ParseResponse — выход (PARSE.response.v1)

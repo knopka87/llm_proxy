@@ -2,6 +2,7 @@ package gpt
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -14,11 +15,38 @@ type Engine struct {
 }
 
 func New(key, model string) *Engine {
+	tr := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second, // TCP connect
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout: 10 * time.Second,
+		// Ждём первые заголовки дольше — это решает проблему context deadline exceeded на TTFB
+		ResponseHeaderTimeout: 120 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		IdleConnTimeout:       90 * time.Second,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   100,
+	}
+
 	return &Engine{
 		APIKey: key,
 		Model:  model,
-		httpc:  &http.Client{Timeout: 60 * time.Second},
+		// ВАЖНО: Timeout=0, чтобы не обрывать длительное чтение тела (особенно при streaming)
+		httpc: &http.Client{
+			Timeout:   0,
+			Transport: tr,
+		},
 	}
+}
+
+// WithHTTPClient overrides the internal HTTP client (e.g., for custom timeouts or tracing).
+func (e *Engine) WithHTTPClient(c *http.Client) *Engine {
+	if c != nil {
+		e.httpc = c
+	}
+	return e
 }
 
 func (e *Engine) Name() string     { return "gpt" }

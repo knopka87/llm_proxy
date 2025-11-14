@@ -22,9 +22,22 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	model := e.GetModel()
 
 	// TODO переделать на отдельный env
-	model = "gpt-4.1-mini"
-	if in.Level == types.HintL3 {
+	// Базовая модель по уровню: L1/L2 — gpt-4.1-mini, L3 — gpt-5-mini.
+	// model = "gpt-4.1-mini"
+	model = "gpt-5-mini"
+
+	// Параметры сэмплинга по уровням
+	temp := 0.30
+
+	switch in.Level {
+	case types.HintL3:
 		model = "gpt-5-mini"
+		temp = 1
+	case types.HintL2:
+		// остаёмся на gpt-4.1-mini
+		temp = 0.35
+	default:
+		// L1: значения по умолчанию заданы выше
 	}
 
 	// Try to load system prompt from /prompt/hint<L1|L2|L3>.txt; fallback to the default text if not found.
@@ -66,7 +79,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 				},
 			},
 		},
-		"temperature": 1,
+		"temperature": temp,
 		"text": map[string]any{
 			"format": map[string]any{
 				"type":   "json_schema",
@@ -75,9 +88,6 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 				"schema": schema,
 			},
 		},
-	}
-	if strings.Contains(model, "gpt-5") {
-		body["temperature"] = 1
 	}
 
 	payload, _ := json.Marshal(body)

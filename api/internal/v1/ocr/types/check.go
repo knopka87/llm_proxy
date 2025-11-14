@@ -7,6 +7,7 @@ package types
 type CheckRequest struct {
 	NormTask   NormTask   `json:"norm_task"`   // Минимальная нормализованная форма задания
 	NormAnswer NormAnswer `json:"norm_answer"` // Минимальная нормализованная форма ответа ученика
+	Grade      int64      `json:"grade"`       // 1..4
 }
 
 // ErrorSpan — диапазон ошибки в исходном ответе
