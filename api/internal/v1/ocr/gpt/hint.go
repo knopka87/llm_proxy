@@ -89,6 +89,9 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 			},
 		},
 	}
+	if strings.Contains(model, "gpt-5") {
+		body["temperature"] = 1
+	}
 
 	payload, _ := json.Marshal(body)
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
