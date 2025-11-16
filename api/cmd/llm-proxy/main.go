@@ -48,10 +48,10 @@ func main() {
 	mux.HandleFunc("/v1/detect", h1.Detect)
 	mux.HandleFunc("/v1/parse", h1.Parse)
 	mux.HandleFunc("/v1/hint", h1.Hint)
+	mux.HandleFunc("/v1/ocr", h2.Ocr)
 	mux.HandleFunc("/v1/normalize", h1.Normalize)
 	mux.HandleFunc("/v1/check_solution", h1.CheckSolution)
 	mux.HandleFunc("/v1/analogue_solution", h1.AnalogueSolution)
-	mux.HandleFunc("/v1/system_prompt", h1.UpdateSystemPromptHandler)
 
 	mux.HandleFunc("/v2/detect", h2.Detect)
 	mux.HandleFunc("/v2/parse", h2.Parse)
