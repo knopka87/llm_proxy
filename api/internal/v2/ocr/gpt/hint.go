@@ -27,7 +27,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	// model = "gpt-5-mini"
 
 	// Параметры сэмплинга по уровням
-	temp := 0.30
+	temp := 1
 
 	switch in.Level {
 	case types.HintL3:
@@ -35,7 +35,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 		temp = 1
 	case types.HintL2:
 		// остаёмся на gpt-4.1-mini
-		temp = 0.4
+		temp = 1
 	default:
 		// L1: значения по умолчанию заданы выше
 	}
