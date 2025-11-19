@@ -35,7 +35,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 		temp = 1
 	case types.HintL2:
 		// остаёмся на gpt-4.1-mini
-		temp = 0.35
+		temp = 0.4
 	default:
 		// L1: значения по умолчанию заданы выше
 	}
