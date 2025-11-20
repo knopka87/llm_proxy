@@ -23,22 +23,22 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 
 	// TODO переделать на отдельный env
 	// Базовая модель по уровню: L1/L2 — gpt-4.1-mini, L3 — gpt-5-mini.
-	// model = "gpt-4.1-mini"
-	model = "gpt-5-mini"
+	model = "gpt-4.1-mini"
+	// model = "gpt-5-mini"
 
 	// Параметры сэмплинга по уровням
-	temp := 1
+	temp := 0.6
 
-	switch in.Level {
-	case types.HintL3:
-		model = "gpt-5-mini"
-		temp = 1
-	case types.HintL2:
-		// остаёмся на gpt-4.1-mini
-		temp = 1
-	default:
-		// L1: значения по умолчанию заданы выше
-	}
+	// switch in.Level {
+	// case types.HintL3:
+	// 	// model = "gpt-5-mini"
+	// 	temp = 1
+	// case types.HintL2:
+	// 	// остаёмся на gpt-4.1-mini
+	// 	temp = 1
+	// default:
+	// 	// L1: значения по умолчанию заданы выше
+	// }
 
 	// Try to load system prompt from /prompt/hint<L1|L2|L3>.txt; fallback to the default text if not found.
 	system, err := util.LoadSystemPrompt(HINT, e.Name(), e.Version())
