@@ -23,11 +23,11 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 
 	// TODO переделать на отдельный env
 	// Базовая модель по уровню: L1/L2 — gpt-4.1-mini, L3 — gpt-5-mini.
-	model = "gpt-4.1-mini"
-	// model = "gpt-5-mini"
+	// model = "gpt-4.1-mini"
+	model = "gpt-5-mini"
 
 	// Параметры сэмплинга по уровням
-	temp := 0.6
+	temp := 1
 
 	// switch in.Level {
 	// case types.HintL3:
