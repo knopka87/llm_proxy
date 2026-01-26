@@ -41,12 +41,6 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 		return types.ParseResponse{}, err
 	}
 
-	userObj := map[string]any{
-		"task":  user,
-		"input": in,
-	}
-	userJSON, _ := json.Marshal(userObj)
-
 	// accept raw base64 or data: URL
 	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.Image)
 	if len(imgBytes) == 0 {
@@ -62,6 +56,12 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	}
 	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
 	in.Image = ""
+
+	userObj := map[string]any{
+		"task": user,
+		"in":   in,
+	}
+	userJSON, _ := json.Marshal(userObj)
 
 	body := map[string]any{
 		"model": model,

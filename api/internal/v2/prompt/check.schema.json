@@ -3,40 +3,151 @@
   "title": "CHECK.response.v1",
   "type": "object",
   "required": [
+    "status",
+    "can_evaluate",
     "is_correct",
-    "feedback"
+    "feedback",
+    "error_spans",
+    "confidence",
+    "photo_quality",
+    "failure_reason",
+    "debug"
   ],
   "additionalProperties": false,
   "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "evaluated",
+        "need_better_photo",
+        "no_answer",
+        "internal_error"
+      ],
+      "description": "Статус обработки: ответ проверен, нужно лучшее фото, ответа не видно, внутренняя ошибка."
+    },
+    "can_evaluate": {
+      "type": "boolean",
+      "description": "Может ли модуль честно оценить ответ (true — да, false — нет, попросит переснять или дописать ответ)."
+    },
     "is_correct": {
-      "type": "boolean"
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Результат проверки: true/false, если can_evaluate=true и status='evaluated'; null, если оценка невозможна.",
+      "default": null
     },
     "feedback": {
       "type": "string",
-      "description": "Point out where and what is wrong without giving the final answer."
+      "description": "Сообщение для ученика/родителя (коротко, простым языком)."
     },
     "error_spans": {
-      "type": "array",
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "Опциональный массив указаний, где именно ошибка в ответе.",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
           "from": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Начальная позиция диапазона ошибки (в символах или условных позициях)."
           },
           "to": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Конечная позиция диапазона ошибки."
           },
           "label": {
-            "type": "string"
+            "type": "string",
+            "description": "Краткое текстовое описание типа ошибки."
           }
         },
-        "additionalProperties": false
-      }
+        "required": [
+          "from",
+          "to",
+          "label"
+        ]
+      },
+      "default": null
     },
     "confidence": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Оценка уверенности модели в результате проверки (0–1).",
+      "default": null
+    },
+    "photo_quality": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "description": "Оценка качества фотографии ответа.",
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Числовая оценка качества фото (0–1)."
+        },
+        "label": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "description": "Качественная оценка фото: низкое, среднее, высокое качество."
+        }
+      },
+      "default": null,
+      "required": [
+        "score",
+        "label"
+      ]
+    },
+    "failure_reason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Краткий машинно-читаемый код причины, почему can_evaluate=false (например: bad_photo, no_visible_answer, unsupported_subject, task_struct_incomplete, internal_error).",
+      "default": null
+    },
+    "debug": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "description": "Диагностическая информация для логов (НЕ показывать пользователю).",
+      "properties": {
+        "raw_answer_text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Транскрипция/прочитанный текст ответа с фото (для логов, не показывать пользователю)."
+        },
+        "normalized_answer": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Нормализованный ответ в каноническом виде (для логов, не показывать пользователю)."
+        }
+      },
+      "default": null,
+      "required": [
+        "raw_answer_text",
+        "normalized_answer"
+      ]
     }
   }
 }

@@ -1,40 +1,90 @@
 package types
 
-// Subject represents a subject hint for PARSE.
-// Allowed values: "math", "russian", "generic".
+// ParseRequest — вход запроса (PARSE.request.v1)
+type ParseRequest struct {
+	Image             string `json:"image"`
+	TaskId            string `json:"task_id"`
+	Grade             int64  `json:"grade"`
+	SubjectCandidate  string `json:"subject_candidate"`
+	SubjectConfidence string `json:"subject_confidence"`
+	Locale            string `json:"locale"`
+}
+
+// H3Reason — enum for hint policy h3_reason
+type H3Reason string
 
 const (
-	SubjectMath    Subject = "math"
-	SubjectRussian Subject = "russian"
-	SubjectGeneric Subject = "generic"
+	H3ReasonNone              H3Reason = "none"
+	H3ReasonSplitLongH2       H3Reason = "split_long_h2"
+	H3ReasonLogicalChain      H3Reason = "logical_chain"
+	H3ReasonApplyToManyPlaces H3Reason = "apply_to_many_places"
 )
 
-type Subject string
-
-func (s Subject) String() string {
-	switch s {
-	case SubjectMath:
-		return string(SubjectMath)
-	case SubjectRussian:
-		return string(SubjectRussian)
-	default:
-		return string(SubjectGeneric)
-	}
+// VisualFact — факт из изображения
+type VisualFact struct {
+	Kind     string      `json:"kind"`
+	Value    interface{} `json:"value"` // string | number | null | array
+	Critical bool        `json:"critical"`
 }
 
-// ParseRequest — вход запроса (PARSE.request.v1)
-// required: image; optional: locale, subject_hint, grade_hint
-type ParseRequest struct {
-	Image       string   `json:"image"`
-	Locale      string   `json:"locale,omitempty"`       // "ru-RU" | "en-US"
-	SubjectHint *Subject `json:"subject_hint,omitempty"` // "math" | "russian" | "generic"
-	GradeHint   *int64   `json:"grade_hint,omitempty"`   // 1..4
+// ParseTaskQuality — quality flags for task
+type ParseTaskQuality struct {
+	Flags []string `json:"flags"`
 }
 
-// ParseResponse — выход (PARSE.response.v1)
-// required: raw_task_text, task_struct; optional: needs_user_confirmation (default true)
+// ParseTask — parsed task info
+type ParseTask struct {
+	TaskId        string           `json:"task_id"`
+	Subject       Subject          `json:"subject"` // uses shared Subject type from detect.go
+	Grade         int              `json:"grade"`
+	TaskTextClean string           `json:"task_text_clean"`
+	VisualFacts   []VisualFact     `json:"visual_facts"`
+	Quality       ParseTaskQuality `json:"quality"`
+}
+
+// PedKeys — pedagogical routing keys
+type PedKeys struct {
+	TemplateId     string                 `json:"template_id"`
+	TaskType       string                 `json:"task_type"`
+	Format         string                 `json:"format"`
+	UnitKind       *string                `json:"unit_kind"` // nullable
+	Constraints    []string               `json:"constraints"`
+	TemplateParams map[string]interface{} `json:"template_params"`
+}
+
+// HintPolicy — hint generation policy
+type HintPolicy struct {
+	MaxHints       int      `json:"max_hints"`
+	DefaultVisible int      `json:"default_visible"`
+	H3Reason       H3Reason `json:"h3_reason"`
+}
+
+// ItemQuality — item quality flags
+type ItemQuality struct {
+	UnsafeToFinalizeAnswer bool `json:"unsafe_to_finalize_answer"`
+}
+
+// SolutionInternal — internal solution representation
+type SolutionInternal struct {
+	Plan          []string    `json:"plan"`
+	SolutionSteps []string    `json:"solution_steps"`
+	FinalAnswer   interface{} `json:"final_answer"` // string | number | null
+}
+
+// ParseItem — parsed item (sub-task)
+type ParseItem struct {
+	ItemId           string           `json:"item_id"`
+	ItemTextClean    string           `json:"item_text_clean"`
+	PedKeys          PedKeys          `json:"ped_keys"`
+	HintPolicy       HintPolicy       `json:"hint_policy"`
+	ItemQuality      ItemQuality      `json:"item_quality"`
+	SolutionInternal SolutionInternal `json:"solution_internal"`
+}
+
+// ParseResponse — PARSE_OUTPUT
+// Required: schema_version, task, items.
 type ParseResponse struct {
-	RawTaskText           string     `json:"raw_task_text"`
-	TaskStruct            TaskStruct `json:"task_struct"`
-	NeedsUserConfirmation bool       `json:"needs_user_confirmation,omitempty"` // default=true
+	SchemaVersion string      `json:"schema_version"`
+	Task          ParseTask   `json:"task"`
+	Items         []ParseItem `json:"items"`
 }

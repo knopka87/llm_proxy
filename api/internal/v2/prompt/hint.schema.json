@@ -1,24 +1,201 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "HINT.response.v1",
+  "title": "HINT_OUTPUT",
   "type": "object",
-  "required": [
-    "level",
-    "hint_text"
-  ],
   "additionalProperties": false,
   "properties": {
-    "level": {
-      "type": "string",
-      "enum": [
-        "L1",
-        "L2",
-        "L3"
+    "schema_version": {
+      "type": "string"
+    },
+    "task_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "task_id": {
+          "type": "string"
+        },
+        "parse_schema_version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "parse_schema_version"
       ]
     },
-    "hint_text": {
-      "type": "string",
-      "minLength": 1
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subject": {
+          "type": "string",
+          "enum": [
+            "math",
+            "ru",
+            "en",
+            "world",
+            "literature",
+            "other"
+          ]
+        },
+        "grade": {
+          "type": "integer"
+        },
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "learn",
+            "rescue",
+            null
+          ]
+        },
+        "quality": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "flags": {
+              "type": "array",
+              "maxItems": 25,
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "flags"
+          ]
+        }
+      },
+      "required": [
+        "subject",
+        "grade",
+        "mode",
+        "quality"
+      ]
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "type": "string"
+          },
+          "template_id": {
+            "type": "string"
+          },
+          "applied_policy": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "max_hints": {
+                "type": "integer"
+              },
+              "default_visible": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "max_hints",
+              "default_visible"
+            ]
+          },
+          "plan_coverage": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "plan_steps_total": {
+                "type": "integer"
+              },
+              "plan_steps_covered": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "plan_steps_total",
+              "plan_steps_covered"
+            ]
+          },
+          "hints": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "level": {
+                  "type": "string",
+                  "enum": [
+                    "L1",
+                    "L2",
+                    "L3"
+                  ]
+                },
+                "hint_text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "level",
+                "hint_text"
+              ]
+            }
+          }
+        },
+        "required": [
+          "item_id",
+          "template_id",
+          "applied_policy",
+          "plan_coverage",
+          "hints"
+        ]
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "buttons": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "level": {
+                "type": "string",
+                "enum": [
+                  "L1",
+                  "L2",
+                  "L3"
+                ]
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "level",
+              "label"
+            ]
+          }
+        }
+      },
+      "required": [
+        "buttons"
+      ]
     }
-  }
+  },
+  "required": [
+    "schema_version",
+    "task_ref",
+    "task",
+    "items",
+    "ui"
+  ]
 }

@@ -60,8 +60,8 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 	}
 
 	userObj := map[string]any{
-		"task":  user,
-		"input": in,
+		"task": user,
+		"in":   in,
 	}
 	userJSON, _ := json.Marshal(userObj)
 
@@ -75,6 +75,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 				},
 			},
 			map[string]any{
+				"type": "message",
 				"role": "user",
 				"content": []any{
 					map[string]any{"type": "input_text", "text": "INPUT_JSON:\n" + string(userJSON)},
@@ -98,7 +99,6 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 	}
 
 	payload, _ := json.Marshal(body)
-	log.Print(string(payload))
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)

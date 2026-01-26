@@ -1,19 +1,56 @@
 package types
 
 // DetectRequest — DETECT.request.v1
-// Required: image. Optional: locale ("ru-RU" | "en-US"), max_tasks (const=1; default 1).
+// Required: image. Optional: locale ("ru-RU" | "en-US").
 type DetectRequest struct {
-	Image    string `json:"image"`               // Image handle (URL or base64 id)
-	Locale   string `json:"locale,omitempty"`    // "ru-RU" | "en-US"
-	MaxTasks int    `json:"max_tasks,omitempty"` // schema: minimum=1, maximum=1 (treated as const=1)
+	Image  string `json:"image"`            // Image handle (URL or base64 id)
+	Locale string `json:"locale,omitempty"` // "ru-RU" | "en-US"
 }
 
-// DetectResponse — DETECT.response.v1
-// Required: subject_hint, confidence.
-// Optional: grade_hint (1..4), debug_reason (≤120 chars).
+// Subject — enum for subject classification (shared by Detect and Parse)
+type Subject string
+
+const (
+	SubjectMath       Subject = "math"
+	SubjectRu         Subject = "ru"
+	SubjectEn         Subject = "en"
+	SubjectWorld      Subject = "world"
+	SubjectLiterature Subject = "literature"
+	SubjectOther      Subject = "other"
+)
+
+// QualityIssue — enum for quality issues
+type QualityIssue string
+
+const (
+	IssueBlur         QualityIssue = "blur"
+	IssueGlare        QualityIssue = "glare"
+	IssueLowLight     QualityIssue = "low_light"
+	IssueCutOff       QualityIssue = "cut_off"
+	IssueOccludedText QualityIssue = "occluded_text"
+	IssueTooSmallText QualityIssue = "too_small_text"
+	IssueSkewed       QualityIssue = "skewed"
+	IssueNoTextFound  QualityIssue = "no_text_found"
+	IssueMultiPages   QualityIssue = "multiple_pages"
+	IssueOther        QualityIssue = "other"
+)
+
+// Quality — image quality assessment
+type Quality struct {
+	RecommendRetake bool           `json:"recommend_retake"`
+	Issues          []QualityIssue `json:"issues"`
+}
+
+// Classification — subject classification result
+type Classification struct {
+	SubjectCandidate Subject `json:"subject_candidate"` // "math" | "ru" | "en" | "world" | "literature" | "other"
+	Confidence       float64 `json:"confidence"`
+}
+
+// DetectResponse — DETECT_OUTPUT
+// Required: schema_version, quality, classification.
 type DetectResponse struct {
-	SubjectHint Subject `json:"subject_hint"`           // "math" | "russian" | "generic"
-	GradeHint   *int64  `json:"grade_hint,omitempty"`   // 1..4
-	Confidence  float64 `json:"confidence"`             // 0..1
-	DebugReason string  `json:"debug_reason,omitempty"` // ≤120 chars
+	SchemaVersion  string         `json:"schema_version"`
+	Quality        Quality        `json:"quality"`
+	Classification Classification `json:"classification"`
 }

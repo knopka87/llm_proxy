@@ -1,48 +1,235 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "PARSE.response.v1",
+  "title": "PARSE_OUTPUT",
   "type": "object",
-  "required": [
-    "raw_task_text",
-    "task_struct"
-  ],
   "additionalProperties": false,
   "properties": {
-    "raw_task_text": {
-      "type": "string",
-      "minLength": 1,
-      "description": "OCR of the task text without student answers."
+    "schema_version": {
+      "type": "string"
     },
-    "task_struct": {
+    "task": {
       "type": "object",
-      "required": [
-        "subject",
-        "combined_subpoints"
-      ],
       "additionalProperties": false,
       "properties": {
+        "task_id": {
+          "type": "string"
+        },
         "subject": {
           "type": "string",
           "enum": [
-            "math",
-            "russian",
-            "generic"
+            "math"
           ]
         },
-        "type": {
-          "type": "string",
-          "description": "Free text type label if detectable (e.g., 'arithmetic', 'grammar')."
+        "grade": {
+          "type": "integer"
         },
-        "combined_subpoints": {
-          "type": "boolean",
-          "const": true,
-          "description": "MVP rule: treat subpoints as one task."
+        "task_text_clean": {
+          "type": "string"
+        },
+        "visual_facts": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "type": "string"
+              },
+              "value": {
+                "type": [
+                  "string",
+                  "number",
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                }
+              },
+              "critical": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "kind",
+              "value",
+              "critical"
+            ]
+          }
+        },
+        "quality": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "flags": {
+              "type": "array",
+              "maxItems": 25,
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "flags"
+          ]
         }
-      }
+      },
+      "required": [
+        "task_id",
+        "subject",
+        "grade",
+        "task_text_clean",
+        "visual_facts",
+        "quality"
+      ]
     },
-    "needs_user_confirmation": {
-      "type": "boolean",
-      "default": true
+    "items": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "type": "string"
+          },
+          "item_text_clean": {
+            "type": "string"
+          },
+          "ped_keys": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "template_id": {
+                "type": "string",
+                "description": "На этапе PARSE допускается placeholder (например UNRESOLVED_MATH/UNRESOLVED_OTHER). Реальный template_id выбирает бэкенд по routing-ключам и подставляет перед вызовом HINT."
+              },
+              "task_type": {
+                "type": "string"
+              },
+              "format": {
+                "type": "string"
+              },
+              "unit_kind": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "constraints": {
+                "type": "array",
+                "maxItems": 30,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "template_params": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {},
+                "required": []
+              }
+            },
+            "required": [
+              "template_id",
+              "task_type",
+              "format",
+              "unit_kind",
+              "constraints",
+              "template_params"
+            ]
+          },
+          "hint_policy": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "max_hints": {
+                "type": "integer"
+              },
+              "default_visible": {
+                "type": "integer"
+              },
+              "h3_reason": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "split_long_h2",
+                  "logical_chain",
+                  "apply_to_many_places"
+                ]
+              }
+            },
+            "required": [
+              "max_hints",
+              "default_visible",
+              "h3_reason"
+            ]
+          },
+          "item_quality": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "unsafe_to_finalize_answer": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "unsafe_to_finalize_answer"
+            ]
+          },
+          "solution_internal": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "plan": {
+                "type": "array",
+                "maxItems": 25,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "solution_steps": {
+                "type": "array",
+                "maxItems": 40,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "final_answer": {
+                "type": [
+                  "string",
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "plan",
+              "solution_steps",
+              "final_answer"
+            ]
+          }
+        },
+        "required": [
+          "item_id",
+          "item_text_clean",
+          "ped_keys",
+          "hint_policy",
+          "item_quality",
+          "solution_internal"
+        ]
+      }
     }
-  }
+  },
+  "required": [
+    "schema_version",
+    "task",
+    "items"
+  ]
 }
