@@ -80,12 +80,6 @@ func LoadPromptSchema(name, version string) (map[string]any, error) {
 		} else {
 			raw = []byte(prompt1.HintSchema)
 		}
-	case "normalize":
-		if version == "v2" {
-			raw = []byte(prompt2.NormalizeSchema)
-		} else {
-			raw = []byte(prompt1.NormalizeSchema)
-		}
 	case "check":
 		if version == "v2" {
 			raw = []byte(prompt2.CheckSolutionSchema)
