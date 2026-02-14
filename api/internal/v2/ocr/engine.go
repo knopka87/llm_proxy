@@ -17,17 +17,14 @@ type Engine interface {
 }
 
 type Engines struct {
-	Gemini Engine
 	OpenAI Engine
 }
 
 func (e *Engines) GetEngine(llmName string) (Engine, error) {
 	switch llmName {
-	case "gemini", "google":
-		return e.Gemini, nil
 	case "gpt", "openai":
 		return e.OpenAI, nil
 	default:
-		return nil, errors.New("unknown llm_name; use 'gemini' or 'gpt'")
+		return nil, errors.New("unknown llm_name; use 'gpt'")
 	}
 }

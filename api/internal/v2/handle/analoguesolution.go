@@ -13,7 +13,7 @@ import (
 // --- ANALOGUE SOLUTION (v1.1) ----------------------------------------------
 
 // analogueReq — входной контракт ручки /v1/analogue
-// llm_name — явный выбор провайдера (gemini|gpt), если не задан — берётся дефолт
+// llm_name — явный выбор провайдера (gpt), если не задан — берётся дефолт
 // Поля запроса соответствуют AnalogueSolutionRequest (см. types.go)
 type analogueReq struct {
 	LLMName string `json:"llm_name"`
