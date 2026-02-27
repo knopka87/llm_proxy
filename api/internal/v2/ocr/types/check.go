@@ -5,6 +5,7 @@ package types
 
 // CheckRequest — вход запроса (CHECK.request.v1)
 type CheckRequest struct {
+	Image       string    `json:"image"` // base64-encoded answer image
 	TaskStruct  ParseTask `json:"task_struct"`
 	RawTaskText string    `json:"raw_task_text"`
 	Student     struct {

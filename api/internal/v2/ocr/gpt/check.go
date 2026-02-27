@@ -3,6 +3,7 @@ package gpt
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -42,6 +43,22 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 		return types.CheckResponse{}, err
 	}
 
+	// Decode image from base64 and create data URL for multimodal input
+	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.Image)
+	if len(imgBytes) == 0 {
+		raw, err := base64.StdEncoding.DecodeString(in.Image)
+		if err != nil {
+			return types.CheckResponse{}, fmt.Errorf("openai check: invalid image base64")
+		}
+		imgBytes = raw
+	}
+	mime := util.PickMIME("", mimeFromDataURL, imgBytes)
+	if !isOpenAIImageMIME(mime) {
+		return types.CheckResponse{}, fmt.Errorf("openai check: unsupported MIME %s (need image/jpeg|png|webp)", mime)
+	}
+	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
+	in.Image = "" // Clear from JSON since sending as separate image block
+
 	userObj := map[string]any{
 		"task":  user,
 		"input": in,
@@ -58,9 +75,11 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 				},
 			},
 			map[string]any{
+				"type": "message",
 				"role": "user",
 				"content": []any{
 					map[string]any{"type": "input_text", "text": "INPUT_JSON:\n" + string(userJSON)},
+					map[string]any{"type": "input_image", "image_url": dataURL},
 				},
 			},
 		},
@@ -75,7 +94,8 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 		},
 	}
 	if strings.Contains(model, "gpt-5") {
-		body["temperature"] = 1
+		// Lower temperature for better instruction following in check mode
+		body["temperature"] = 0.3
 	}
 
 	payload, _ := json.Marshal(body)
