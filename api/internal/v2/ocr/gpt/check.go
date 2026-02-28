@@ -88,7 +88,6 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 				},
 			},
 		},
-		"temperature": 0.5,
 		"text": map[string]any{
 			"format": map[string]any{
 				"type":   "json_schema",
@@ -98,9 +97,9 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 			},
 		},
 	}
-	if strings.Contains(model, "gpt-5") {
-		// Lower temperature for better instruction following in check mode
-		body["temperature"] = 0.3
+	// gpt-5 models don't support temperature parameter
+	if !strings.Contains(model, "gpt-5") {
+		body["temperature"] = 0.5
 	}
 
 	payload, _ := json.Marshal(body)
