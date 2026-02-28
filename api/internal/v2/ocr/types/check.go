@@ -3,17 +3,26 @@ package types
 // --- CHECK (v1) ----------------------------------------------------
 // Соответствует схемам CHECK.request.v1 и CHECK.response.v1.
 
+type StudentCheck struct {
+	Grade   int64  `json:"grade"`
+	Subject string `json:"subject"`
+	Locale  string `json:"locale"`
+}
+
+type TaskStructCheck struct {
+	TaskTextClean string           `json:"task_text_clean"`
+	VisualFacts   []VisualFact     `json:"visual_facts"`
+	QualityFlags  ParseTaskQuality `json:"quality_flags"`
+	Items         []ParseItem      `json:"items"`
+}
+
 // CheckRequest — вход запроса (CHECK.request.v1)
 type CheckRequest struct {
-	Image       string    `json:"image"` // base64-encoded answer image
-	TaskStruct  ParseTask `json:"task_struct"`
-	RawTaskText string    `json:"raw_task_text"`
-	Student     struct {
-		Grade   int64   `json:"grade"`
-		Subject Subject `json:"subject"`
-		Locale  string  `json:"locale"`
-	} `json:"student"`
-	PhotoQualityHint string `json:"photo_quality_hint"`
+	Image            string          `json:"image"`
+	TaskStruct       TaskStructCheck `json:"task_struct"`
+	RawTaskText      string          `json:"raw_task_text"`
+	Student          StudentCheck    `json:"student"`
+	PhotoQualityHint string          `json:"photo_quality_hint"`
 }
 
 // CheckStatus — статус обработки
