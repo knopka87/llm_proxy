@@ -75,8 +75,9 @@ SCOPE
    • Если финального ответа PARSE нет:
      – Решите задачу самостоятельно и подтвердите ответ проверкой (3.3.1).
 
-   • Если final_answer от PARSE противоречит solution_steps от PARSE:
-     – верните decision="invalid_expected", can_evaluate=false, failure_reason="parse_inconsistency".
+   • Если final_answer от PARSE ЯВНО И ОЧЕВИДНО противоречит solution_steps (например, solution_steps говорят "ответ 42", а final_answer = 100):
+     – НЕ используйте final_answer как эталон, а выполните независимую проверку (3.3.1).
+     – ВАЖНО: промежуточные шаги вычислений НЕ являются противоречием финальному ответу. Только прямое несовпадение итогового ответа в шагах и в final_answer — это противоречие.
 
    • Если независимая проверка не получается честно (задача слишком логическая/олимпиадная, не удаётся доказать ответ):
      верните decision="cannot_evaluate", can_evaluate=false, status="internal_error", failure_reason="ground_truth_unverified".
