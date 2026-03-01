@@ -122,5 +122,7 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	if err := json.Unmarshal([]byte(out), &pr); err != nil {
 		return types.ParseResponse{}, fmt.Errorf("openai parse: bad JSON: %w", err)
 	}
+	// P0.1: Validate final_answer ↔ solution_steps consistency
+	pr.ValidateItems()
 	return pr, nil
 }

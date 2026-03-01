@@ -61,18 +61,66 @@ type PhotoQuality struct {
 type CheckDebug struct {
 	RawAnswerText    *string `json:"raw_answer_text"`
 	NormalizedAnswer *string `json:"normalized_answer"`
+	ExpectedAnswer   *string `json:"expected_answer,omitempty"` // P2.2: что сравниваем
+	DecisionReason   *string `json:"decision_reason,omitempty"` // P2.2: причина решения
 }
 
+// CheckDecision — результат проверки ответа (P0.3: enum вместо nullable bool)
+type CheckDecision string
+
+const (
+	CheckDecisionCorrect         CheckDecision = "correct"          // ответ верный
+	CheckDecisionIncorrect       CheckDecision = "incorrect"        // ответ неверный
+	CheckDecisionNeedAnnotation  CheckDecision = "need_annotation"  // нужна аннотация/подпись
+	CheckDecisionInvalidExpected CheckDecision = "invalid_expected" // противоречие в эталоне
+	CheckDecisionCannotEvaluate  CheckDecision = "cannot_evaluate"  // невозможно честно проверить
+)
+
 // CheckResponse — CHECK.response.v1
-// Required: status, can_evaluate, is_correct, feedback, error_spans, confidence, photo_quality, failure_reason, debug.
+// Required: status, can_evaluate, decision, feedback, error_spans, confidence, photo_quality, failure_reason, debug.
 type CheckResponse struct {
 	Status        CheckStatus   `json:"status"` // "evaluated" | "need_better_photo" | "no_answer" | "internal_error"
 	CanEvaluate   bool          `json:"can_evaluate"`
-	IsCorrect     *bool         `json:"is_correct"` // nullable
+	Decision      CheckDecision `json:"decision"`   // P0.3: enum вместо is_correct
+	IsCorrect     *bool         `json:"is_correct"` // deprecated: для обратной совместимости
 	Feedback      string        `json:"feedback"`
 	ErrorSpans    []ErrorSpan   `json:"error_spans"`    // nullable array
 	Confidence    *float64      `json:"confidence"`     // nullable, 0-1
 	PhotoQuality  *PhotoQuality `json:"photo_quality"`  // nullable
 	FailureReason *string       `json:"failure_reason"` // nullable
 	Debug         *CheckDebug   `json:"debug"`          // nullable
+}
+
+// NormalizeDecision заполняет Decision из IsCorrect для обратной совместимости
+func (r *CheckResponse) NormalizeDecision() {
+	if r.Decision != "" {
+		return // Decision уже установлен
+	}
+	if !r.CanEvaluate {
+		r.Decision = CheckDecisionCannotEvaluate
+		return
+	}
+	if r.IsCorrect == nil {
+		r.Decision = CheckDecisionCannotEvaluate
+		return
+	}
+	if *r.IsCorrect {
+		r.Decision = CheckDecisionCorrect
+	} else {
+		r.Decision = CheckDecisionIncorrect
+	}
+}
+
+// SetIsCorrectFromDecision заполняет IsCorrect из Decision для обратной совместимости
+func (r *CheckResponse) SetIsCorrectFromDecision() {
+	switch r.Decision {
+	case CheckDecisionCorrect:
+		t := true
+		r.IsCorrect = &t
+	case CheckDecisionIncorrect:
+		f := false
+		r.IsCorrect = &f
+	default:
+		r.IsCorrect = nil
+	}
 }

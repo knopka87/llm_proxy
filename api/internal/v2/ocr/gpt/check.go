@@ -143,7 +143,13 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 		return types.CheckResponse{}, fmt.Errorf("openai check: bad JSON: %w", err)
 	}
 
-	log.Printf("[check] success: status=%s, can_evaluate=%v, is_correct=%v", cr.Status, cr.CanEvaluate, cr.IsCorrect)
+	// P0.3: Нормализация Decision из IsCorrect для обратной совместимости
+	cr.NormalizeDecision()
+	// Заполняем IsCorrect из Decision для обратной совместимости с клиентами
+	cr.SetIsCorrectFromDecision()
+
+	log.Printf("[check] success: status=%s, can_evaluate=%v, decision=%s, is_correct=%v",
+		cr.Status, cr.CanEvaluate, cr.Decision, cr.IsCorrect)
 	return cr, nil
 }
 

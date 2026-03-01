@@ -5,7 +5,7 @@
   "required": [
     "status",
     "can_evaluate",
-    "is_correct",
+    "decision",
     "feedback",
     "error_spans",
     "confidence",
@@ -29,17 +29,28 @@
       "type": "boolean",
       "description": "Может ли модуль честно оценить ответ (true — да, false — нет, попросит переснять или дописать ответ)."
     },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "correct",
+        "incorrect",
+        "need_annotation",
+        "invalid_expected",
+        "cannot_evaluate"
+      ],
+      "description": "P0.3: Результат проверки: correct/incorrect при can_evaluate=true; cannot_evaluate/need_annotation/invalid_expected при невозможности оценки."
+    },
     "is_correct": {
       "type": [
         "boolean",
         "null"
       ],
-      "description": "Результат проверки: true/false, если can_evaluate=true и status='evaluated'; null, если оценка невозможна.",
+      "description": "DEPRECATED: используйте decision. Для обратной совместимости: true/false при decision=correct/incorrect; null в остальных случаях.",
       "default": null
     },
     "feedback": {
       "type": "string",
-      "description": "Сообщение для ученика/родителя (коротко, простым языком)."
+      "description": "Сообщение для ученика/родителя (коротко, простым языком). P1.1: При incorrect НЕ давать полное решение — только подсказку."
     },
     "error_spans": {
       "type": [
@@ -79,7 +90,7 @@
       ],
       "minimum": 0.0,
       "maximum": 1.0,
-      "description": "Оценка уверенности модели в результате проверки (0–1).",
+      "description": "Оценка уверенности модели в результате проверки (0–1). null если can_evaluate=false.",
       "default": null
     },
     "photo_quality": {
@@ -117,7 +128,17 @@
         "string",
         "null"
       ],
-      "description": "Краткий машинно-читаемый код причины, почему can_evaluate=false (например: bad_photo, no_visible_answer, unsupported_subject, task_struct_incomplete, internal_error).",
+      "enum": [
+        "bad_photo",
+        "no_visible_answer",
+        "unsupported_subject",
+        "task_struct_incomplete",
+        "ground_truth_unverified",
+        "parse_inconsistency",
+        "internal_error",
+        null
+      ],
+      "description": "Машинно-читаемый код причины, почему can_evaluate=false. P0.1: parse_inconsistency при противоречии final_answer и solution_steps. ground_truth_unverified при невозможности доказать эталон.",
       "default": null
     },
     "debug": {
@@ -133,14 +154,28 @@
             "string",
             "null"
           ],
-          "description": "Транскрипция/прочитанный текст ответа с фото (для логов, не показывать пользователю)."
+          "description": "Транскрипция/прочитанный текст ответа с фото."
         },
         "normalized_answer": {
           "type": [
             "string",
             "null"
           ],
-          "description": "Нормализованный ответ в каноническом виде (для логов, не показывать пользователю)."
+          "description": "Нормализованный ответ в каноническом виде."
+        },
+        "expected_answer": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "P2.2: Эталонный ответ, с которым сравнивали (из PARSE или вычисленный)."
+        },
+        "decision_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "P2.2: Причина решения (matched_parse, independent_verification, parse_inconsistency и т.д.)."
         }
       },
       "default": null,
