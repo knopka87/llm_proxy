@@ -10,10 +10,11 @@ type StudentCheck struct {
 }
 
 type TaskStructCheck struct {
-	TaskTextClean string           `json:"task_text_clean"`
-	VisualFacts   []VisualFact     `json:"visual_facts"`
-	QualityFlags  ParseTaskQuality `json:"quality_flags"`
-	Items         []ParseItem      `json:"items"`
+	TaskTextClean   string           `json:"task_text_clean"`
+	VisualReasoning *string          `json:"visual_reasoning,omitempty"` // описание визуальных элементов из PARSE
+	VisualFacts     []VisualFact     `json:"visual_facts"`
+	QualityFlags    ParseTaskQuality `json:"quality_flags"`
+	Items           []ParseItem      `json:"items"`
 }
 
 // CheckRequest — вход запроса (CHECK.request.v1)

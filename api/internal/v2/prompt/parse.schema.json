@@ -26,6 +26,10 @@
         "task_text_clean": {
           "type": "string"
         },
+        "visual_reasoning": {
+          "type": ["string", "null"],
+          "description": "Развёрнутое описание визуальных элементов: что видно на рисунке, как считал, как проверял. Null если нет визуальных элементов."
+        },
         "visual_facts": {
           "type": "array",
           "maxItems": 50,
@@ -85,6 +89,7 @@
         "subject",
         "grade",
         "task_text_clean",
+        "visual_reasoning",
         "visual_facts",
         "quality"
       ]
