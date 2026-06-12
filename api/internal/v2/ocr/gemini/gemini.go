@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +15,7 @@ import (
 	"llm-proxy/api/internal/v2/ocr/types"
 
 	"github.com/google/generative-ai-go/genai"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 )
 
@@ -268,7 +272,38 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 
 // ─── внутренние хелперы ───────────────────────────────────────────────────────
 
-// call создаёт Gemini клиент, настраивает модель и выполняет запрос с retry.
+// retryAfterRe ищет "retry in Xs" в тексте googleapi-ошибки Gemini.
+var retryAfterRe = regexp.MustCompile(`retry in (\d+)s`)
+
+// is429 проверяет, что ошибка — HTTP 429 (rate limit / quota exceeded).
+func is429(err error) bool {
+	var apiErr *googleapi.Error
+	if errors.As(err, &apiErr) {
+		return apiErr.Code == 429
+	}
+	// Fallback: строковая проверка для gRPC-пути
+	return strings.Contains(err.Error(), "429") ||
+		strings.Contains(err.Error(), "QuotaFailure") ||
+		strings.Contains(err.Error(), "RESOURCE_EXHAUSTED")
+}
+
+// retryDelay возвращает паузу перед следующим retry:
+//   - 429: берём значение из "retry in Xs" (+ 2 сек запас) или 30 сек по умолчанию
+//   - другие транзиентные ошибки: экспоненциальный backoff 0.5 / 1 / 2 / 4 сек
+func retryDelay(err error, attempt int) time.Duration {
+	if is429(err) {
+		if m := retryAfterRe.FindStringSubmatch(err.Error()); len(m) > 1 {
+			if secs, e := strconv.Atoi(m[1]); e == nil && secs > 0 {
+				return time.Duration(secs+2) * time.Second
+			}
+		}
+		return 30 * time.Second
+	}
+	return time.Duration(1<<uint(attempt-1)) * 500 * time.Millisecond // 0.5, 1, 2, 4 сек
+}
+
+// call создаёт Gemini клиент, настраивает модель и выполняет запрос с умным retry.
+// Для 429 (quota exceeded) ждёт retry-after из ответа Gemini, а не фиксированные мс.
 func (e *Engine) call(
 	ctx context.Context,
 	model string,
@@ -297,20 +332,32 @@ func (e *Engine) call(
 		},
 	}
 
+	const maxAttempts = 4
 	var lastErr error
-	for attempt := 1; attempt <= 3; attempt++ {
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		resp, err := m.GenerateContent(ctx, parts...)
 		if err != nil {
 			lastErr = err
-			time.Sleep(time.Duration(attempt) * 300 * time.Millisecond)
+			delay := retryDelay(err, attempt)
+			if attempt < maxAttempts {
+				select {
+				case <-ctx.Done():
+					return fmt.Errorf("gemini %s: context cancelled while waiting retry: %w", op, ctx.Err())
+				case <-time.After(delay):
+				}
+			}
 			continue
 		}
+
 		txt := firstText(resp)
 		if strings.TrimSpace(txt) == "" {
 			lastErr = fmt.Errorf("gemini %s: empty response", op)
-			time.Sleep(time.Duration(attempt) * 300 * time.Millisecond)
+			if attempt < maxAttempts {
+				time.Sleep(500 * time.Millisecond)
+			}
 			continue
 		}
+
 		txt = util.StripCodeFences(strings.TrimSpace(txt))
 		if err := json.Unmarshal([]byte(txt), dst); err != nil {
 			return fmt.Errorf("gemini %s: bad JSON: %w", op, err)
