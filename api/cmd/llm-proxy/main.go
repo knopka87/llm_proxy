@@ -14,7 +14,9 @@ import (
 	gpt1 "llm-proxy/api/internal/v1/ocr/gpt"
 	handle2 "llm-proxy/api/internal/v2/handle"
 	ocr2 "llm-proxy/api/internal/v2/ocr"
+	gemini2 "llm-proxy/api/internal/v2/ocr/gemini"
 	gpt2 "llm-proxy/api/internal/v2/ocr/gpt"
+	mixed2 "llm-proxy/api/internal/v2/ocr/mixed"
 )
 
 func main() {
@@ -38,8 +40,14 @@ func main() {
 	}
 	h1 := handle1.New(engines1)
 
+	gptV2 := gpt2.New(cfg.OpenAIAPIKey, cfg.OpenAIModel)
+	geminiV2 := gemini2.New(cfg.GeminiAPIKey, cfg.GeminiDetectModel, cfg.GeminiParseModel)
+	mixedV2 := mixed2.New(geminiV2, gptV2)
+
 	engines2 := &ocr2.Engines{
-		OpenAI: gpt2.New(cfg.OpenAIAPIKey, cfg.OpenAIModel),
+		OpenAI: gptV2,
+		Gemini: geminiV2,
+		Mixed:  mixedV2,
 	}
 	h2 := handle2.New(engines2)
 
