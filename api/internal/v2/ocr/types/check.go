@@ -77,19 +77,29 @@ const (
 	CheckDecisionCannotEvaluate  CheckDecision = "cannot_evaluate"  // невозможно честно проверить
 )
 
+// CheckErrorDetails — технические детали ошибки для родительского отчёта.
+// Заполняется только при decision=incorrect и can_evaluate=true.
+type CheckErrorDetails struct {
+	Topic                  string `json:"topic"`                   // математическая тема
+	ErrorType              string `json:"error_type"`              // тип ошибки
+	BriefForReport         string `json:"brief_for_report"`        // для родителя
+	PracticeRecommendation string `json:"practice_recommendation"` // что потренировать
+}
+
 // CheckResponse — CHECK.response.v1
-// Required: status, can_evaluate, decision, feedback, error_spans, confidence, photo_quality, failure_reason, debug.
+// Required: status, can_evaluate, decision, feedback, error_spans, confidence, photo_quality, failure_reason, debug, error_details.
 type CheckResponse struct {
-	Status        CheckStatus   `json:"status"` // "evaluated" | "need_better_photo" | "no_answer" | "internal_error"
-	CanEvaluate   bool          `json:"can_evaluate"`
-	Decision      CheckDecision `json:"decision"`   // P0.3: enum вместо is_correct
-	IsCorrect     *bool         `json:"is_correct"` // deprecated: для обратной совместимости
-	Feedback      string        `json:"feedback"`
-	ErrorSpans    []ErrorSpan   `json:"error_spans"`    // nullable array
-	Confidence    *float64      `json:"confidence"`     // nullable, 0-1
-	PhotoQuality  *PhotoQuality `json:"photo_quality"`  // nullable
-	FailureReason *string       `json:"failure_reason"` // nullable
-	Debug         *CheckDebug   `json:"debug"`          // nullable
+	Status        CheckStatus        `json:"status"` // "evaluated" | "need_better_photo" | "no_answer" | "internal_error"
+	CanEvaluate   bool               `json:"can_evaluate"`
+	Decision      CheckDecision      `json:"decision"`   // P0.3: enum вместо is_correct
+	IsCorrect     *bool              `json:"is_correct"` // deprecated: для обратной совместимости
+	Feedback      string             `json:"feedback"`
+	ErrorSpans    []ErrorSpan        `json:"error_spans"`    // nullable array
+	Confidence    *float64           `json:"confidence"`     // nullable, 0-1
+	PhotoQuality  *PhotoQuality      `json:"photo_quality"`  // nullable
+	FailureReason *string            `json:"failure_reason"` // nullable
+	Debug         *CheckDebug        `json:"debug"`          // nullable
+	ErrorDetails  *CheckErrorDetails `json:"error_details"`  // технические детали для отчёта родителю
 }
 
 // NormalizeDecision заполняет Decision из IsCorrect для обратной совместимости

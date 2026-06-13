@@ -11,7 +11,8 @@
     "confidence",
     "photo_quality",
     "failure_reason",
-    "debug"
+    "debug",
+    "error_details"
   ],
   "additionalProperties": false,
   "properties": {
@@ -140,6 +141,51 @@
       ],
       "description": "Машинно-читаемый код причины, почему can_evaluate=false. P0.1: parse_inconsistency при противоречии final_answer и solution_steps. ground_truth_unverified при невозможности доказать эталон.",
       "default": null
+    },
+    "error_details": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Технические детали ошибки для родительского отчёта. Заполняется ТОЛЬКО при decision=incorrect и can_evaluate=true. null в остальных случаях.",
+      "additionalProperties": false,
+      "default": null,
+      "properties": {
+        "topic": {
+          "type": "string",
+          "enum": [
+            "addition", "subtraction", "multiplication", "division",
+            "word_problems", "fractions", "geometry", "equations",
+            "measurement", "comparison", "place_value", "other_math"
+          ],
+          "description": "Математическая тема, по которой допущена ошибка."
+        },
+        "error_type": {
+          "type": "string",
+          "enum": [
+            "arithmetic_error",
+            "conceptual_error",
+            "process_error",
+            "reading_error",
+            "incomplete_solution"
+          ],
+          "description": "Тип ошибки: вычислительная, концептуальная (неверный подход), ошибка в процессе решения, неправильно прочитано условие, незаконченное решение."
+        },
+        "brief_for_report": {
+          "type": "string",
+          "description": "1–2 предложения для родительского отчёта: что именно сделал ребёнок неверно. Язык простой, без математических терминов 'вычислительная ошибка'."
+        },
+        "practice_recommendation": {
+          "type": "string",
+          "description": "Короткая рекомендация родителю: что стоит потренировать (1 предложение)."
+        }
+      },
+      "required": [
+        "topic",
+        "error_type",
+        "brief_for_report",
+        "practice_recommendation"
+      ]
     },
     "debug": {
       "type": [
