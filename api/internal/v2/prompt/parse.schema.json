@@ -26,6 +26,34 @@
         "task_text_clean": {
           "type": "string"
         },
+        "topic": {
+          "type": ["string", "null"],
+          "description": "Код математической темы задачи. Выбери ОДИН наиболее точный код из списка. null если тема не определяется (нематематическая задача, плохое качество).",
+          "enum": [
+            "addition_within_10", "addition_within_20", "addition_within_100",
+            "addition_within_1000", "addition_large_numbers",
+            "subtraction_within_10", "subtraction_within_20", "subtraction_within_100",
+            "subtraction_within_1000", "subtraction_large_numbers",
+            "multiplication_table", "multiplication_by_1digit",
+            "multiplication_by_2digit", "multiplication_by_3digit",
+            "division_table", "division_by_1digit",
+            "division_with_remainder", "division_by_2digit",
+            "numbers_within_10", "numbers_within_20", "numbers_within_100",
+            "numbers_within_1000", "large_numbers",
+            "number_comparison", "even_odd", "rounding", "number_series",
+            "order_of_operations", "numeric_expressions", "letter_expressions",
+            "equations",
+            "word_problem_1step", "word_problem_2step", "word_problem_3step",
+            "word_problem_cost", "word_problem_motion", "word_problem_work",
+            "word_problem_shares", "word_problem_comparison",
+            "fractions_concept", "fractions_comparison", "fractions_of_number",
+            "geometric_figures", "perimeter", "area", "angles", "symmetry", "coordinates",
+            "length_units", "mass_units", "time_units", "money",
+            "area_units", "volume_units", "speed_time_distance",
+            "tables_charts", "logic_puzzles", "combinatorics",
+            null
+          ]
+        },
         "visual_reasoning": {
           "type": ["string", "null"],
           "description": "Развёрнутое описание визуальных элементов: что видно на рисунке, как считал, как проверял. Null если нет визуальных элементов."
@@ -89,6 +117,7 @@
         "subject",
         "grade",
         "task_text_clean",
+        "topic",
         "visual_reasoning",
         "visual_facts",
         "quality"

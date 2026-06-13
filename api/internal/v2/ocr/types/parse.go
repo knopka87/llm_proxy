@@ -44,6 +44,7 @@ type ParseTask struct {
 	Subject         Subject          `json:"subject"` // uses shared Subject type from detect.go
 	Grade           int              `json:"grade"`
 	TaskTextClean   string           `json:"task_text_clean"`
+	Topic           *string          `json:"topic"` // код темы из math_topics.code; null если не определена
 	VisualReasoning *string          `json:"visual_reasoning"` // nullable, описание визуальных элементов
 	VisualFacts     []VisualFact     `json:"visual_facts"`
 	Quality         ParseTaskQuality `json:"quality"`
