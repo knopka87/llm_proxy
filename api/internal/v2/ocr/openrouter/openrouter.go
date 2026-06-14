@@ -292,6 +292,15 @@ type chatResponse struct {
 	} `json:"usage"`
 }
 
+// isGeminiModel проверяет, является ли модель Google Gemini.
+// Gemini использует constrained decoding для json_schema, который не справляется
+// со сложными схемами (много enum-значений, глубокая вложенность).
+// Для таких моделей используем json_object — мягкий JSON-режим без компиляции схемы.
+func isGeminiModel(model string) bool {
+	m := strings.ToLower(model)
+	return strings.Contains(m, "gemini") || strings.Contains(m, "google/")
+}
+
 func (e *Engine) call(
 	ctx context.Context,
 	model, op string,
@@ -311,17 +320,44 @@ func (e *Engine) call(
 		util.FixJSONSchemaStrict(schema)
 	}
 
-	reqBody := chatRequest{
-		Model:    model,
-		Messages: messages,
-		ResponseFormat: &responseFormat{
+	// Выбираем режим structured output в зависимости от модели:
+	//   OpenAI и совместимые → json_schema (strict) — точное следование схеме
+	//   Gemini → json_object — мягкий JSON-режим без компиляции схемы в конечный автомат.
+	//     Gemini использует constrained decoding, и сложные схемы (54 enum + вложенные
+	//     объекты) вызывают ошибку "too many states for serving". Схема уже есть в
+	//     system-промпте, поэтому модель всё равно вернёт правильную структуру.
+	var rf *responseFormat
+	if isGeminiModel(model) {
+		rf = &responseFormat{Type: "json_object"}
+	} else {
+		rf = &responseFormat{
 			Type: "json_schema",
 			JSONSchema: &jsonSchema{
 				Name:   op,
 				Strict: true,
 				Schema: schema,
 			},
-		},
+		}
+	}
+
+	reqBody := chatRequest{
+		Model:          model,
+		Messages:       messages,
+		ResponseFormat: rf,
+	}
+
+	// Для Gemini добавляем явную инструкцию в конец user-сообщения,
+	// чтобы модель вернула строго JSON без markdown-оберток.
+	if isGeminiModel(model) && len(reqBody.Messages) > 0 {
+		last := &reqBody.Messages[len(reqBody.Messages)-1]
+		switch c := last.Content.(type) {
+		case string:
+			last.Content = c + "\n\nВЕРНИ ТОЛЬКО ВАЛИДНЫЙ JSON. БЕЗ markdown, без ```json, без пояснений."
+		case []contentPart:
+			if len(c) > 0 {
+				c[0].Text += "\n\nВЕРНИ ТОЛЬКО ВАЛИДНЫЙ JSON. БЕЗ markdown, без ```json, без пояснений."
+			}
+		}
 	}
 
 	payload, _ := json.Marshal(reqBody)
