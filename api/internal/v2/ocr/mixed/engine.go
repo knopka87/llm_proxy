@@ -22,22 +22,22 @@ func New(gemini, openai ocr.Engine) *Engine {
 
 func (e *Engine) Name() string { return "mixed" }
 
-func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.DetectResponse, error) {
+func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.DetectResponse, *types.LLMStats, error) {
 	return e.gemini.Detect(ctx, in)
 }
 
-func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, error) {
+func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, *types.LLMStats, error) {
 	return e.gemini.Parse(ctx, in)
 }
 
-func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, error) {
+func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, *types.LLMStats, error) {
 	return e.openai.Hint(ctx, in)
 }
 
-func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, error) {
+func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, *types.LLMStats, error) {
 	return e.openai.CheckSolution(ctx, in)
 }
 
-func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, error) {
+func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, *types.LLMStats, error) {
 	return e.openai.AnalogueSolution(ctx, in)
 }

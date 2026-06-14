@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"llm-proxy/api/internal/util"
 	"llm-proxy/api/internal/v2/ocr/types"
@@ -17,13 +18,13 @@ import (
 
 const CHECK = "check"
 
-func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, error) {
+func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, *types.LLMStats, error) {
 	log.Printf("[check] started, image_len=%d, task_text=%q, items_count=%d",
 		len(in.Image), truncateStr(in.RawTaskText, 50), len(in.TaskStruct.Items))
 
 	if e.APIKey == "" {
 		log.Printf("[check] ERROR: OPENAI_API_KEY is empty")
-		return types.CheckResponse{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.CheckResponse{}, nil, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
 	if strings.TrimSpace(model) == "" {
@@ -34,18 +35,18 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 
 	system, err := util.LoadSystemPrompt(CHECK, e.Name(), e.Version())
 	if err != nil {
-		return types.CheckResponse{}, err
+		return types.CheckResponse{}, nil, err
 	}
 
 	schema, err := util.LoadPromptSchema(CHECK, e.Version())
 	if err != nil {
-		return types.CheckResponse{}, err
+		return types.CheckResponse{}, nil, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
 	user, err := util.LoadUserPrompt(CHECK, e.Name(), e.Version())
 	if err != nil {
-		return types.CheckResponse{}, err
+		return types.CheckResponse{}, nil, err
 	}
 
 	// Decode image from base64 and create data URL for multimodal input
@@ -53,13 +54,13 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	if len(imgBytes) == 0 {
 		raw, err := base64.StdEncoding.DecodeString(in.Image)
 		if err != nil {
-			return types.CheckResponse{}, fmt.Errorf("openai check: invalid image base64")
+			return types.CheckResponse{}, nil, fmt.Errorf("openai check: invalid image base64")
 		}
 		imgBytes = raw
 	}
 	mime := util.PickMIME("", mimeFromDataURL, imgBytes)
 	if !isOpenAIImageMIME(mime) {
-		return types.CheckResponse{}, fmt.Errorf("openai check: unsupported MIME %s (need image/jpeg|png|webp)", mime)
+		return types.CheckResponse{}, nil, fmt.Errorf("openai check: unsupported MIME %s (need image/jpeg|png|webp)", mime)
 	}
 	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
 	in.Image = "" // Clear from JSON since sending as separate image block
@@ -109,10 +110,11 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
 
+	start := time.Now()
 	resp, err := e.httpc.Do(req)
 	if err != nil {
 		log.Printf("[check] ERROR: HTTP request failed: %v", err)
-		return types.CheckResponse{}, err
+		return types.CheckResponse{}, nil, err
 	}
 	defer resp.Body.Close()
 
@@ -121,10 +123,13 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
 		log.Printf("[check] ERROR: OpenAI returned %d: %s", resp.StatusCode, truncateStr(string(x), 500))
-		return types.CheckResponse{}, fmt.Errorf("openai check %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.CheckResponse{}, nil, fmt.Errorf("openai check %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	raw, _ := io.ReadAll(resp.Body)
+	t := time.Since(start).Milliseconds()
+	inTok, outTok := parseUsage(raw)
+	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t}
 	log.Printf("[check] OpenAI response body_len=%d", len(raw))
 
 	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
@@ -134,13 +139,13 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	out = util.StripCodeFences(strings.TrimSpace(out))
 	if out == "" {
 		log.Printf("[check] ERROR: empty output from OpenAI, body=%s", truncateBytes(raw, 500))
-		return types.CheckResponse{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+		return types.CheckResponse{}, stats, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
 	}
 
 	var cr types.CheckResponse
 	if err := json.Unmarshal([]byte(out), &cr); err != nil {
 		log.Printf("[check] ERROR: bad JSON from OpenAI: %v, out=%s", err, truncateStr(out, 500))
-		return types.CheckResponse{}, fmt.Errorf("openai check: bad JSON: %w", err)
+		return types.CheckResponse{}, stats, fmt.Errorf("openai check: bad JSON: %w", err)
 	}
 
 	// P0.3: Нормализация Decision из IsCorrect для обратной совместимости
@@ -150,7 +155,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 
 	log.Printf("[check] success: status=%s, can_evaluate=%v, decision=%s, is_correct=%v",
 		cr.Status, cr.CanEvaluate, cr.Decision, cr.IsCorrect)
-	return cr, nil
+	return cr, stats, nil
 }
 
 func truncateStr(s string, maxLen int) string {

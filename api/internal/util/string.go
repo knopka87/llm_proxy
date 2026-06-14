@@ -18,6 +18,20 @@ type ResponsesEnvelope struct {
 			Text string `json:"text"`
 		} `json:"content"`
 	} `json:"output"`
+	Usage struct {
+		InputTokens  int `json:"input_tokens"`
+		OutputTokens int `json:"output_tokens"`
+	} `json:"usage"`
+}
+
+// ExtractResponsesUsage парсит количество токенов из тела ответа OpenAI Responses API.
+// Вызывается после чтения raw-тела, до ExtractResponsesText.
+func ExtractResponsesUsage(raw []byte) (inputTokens, outputTokens int) {
+	var env ResponsesEnvelope
+	if err := json.Unmarshal(raw, &env); err != nil {
+		return 0, 0
+	}
+	return env.Usage.InputTokens, env.Usage.OutputTokens
 }
 
 // ExtractResponsesText reads the OpenAI Responses API JSON and returns the first output_text text.

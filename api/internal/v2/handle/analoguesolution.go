@@ -54,10 +54,16 @@ func (h *Handle) AnalogueSolution(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := engine.AnalogueSolution(ctx, req.AnalogueRequest)
+	out, stats, err := engine.AnalogueSolution(ctx, req.AnalogueRequest)
 	if err != nil {
 		http.Error(w, "analogue error: "+err.Error(), http.StatusBadGateway)
 		return
+	}
+
+	if stats != nil {
+		w.Header().Set("X-LLM-Input-Tokens", strconv.Itoa(stats.InputTokens))
+		w.Header().Set("X-LLM-Output-Tokens", strconv.Itoa(stats.OutputTokens))
+		w.Header().Set("X-LLM-Latency-Ms", strconv.FormatInt(stats.LatencyMs, 10))
 	}
 
 	writeJSON(w, http.StatusOK, out)

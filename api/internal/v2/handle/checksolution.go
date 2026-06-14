@@ -48,7 +48,7 @@ func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := engine.CheckSolution(ctx, req.CheckRequest)
+	out, stats, err := engine.CheckSolution(ctx, req.CheckRequest)
 	if err != nil {
 		http.Error(w, "check error: "+err.Error(), http.StatusBadGateway)
 		return
@@ -63,6 +63,12 @@ func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {
 	// 		return
 	// 	}
 	// }
+
+	if stats != nil {
+		w.Header().Set("X-LLM-Input-Tokens", strconv.Itoa(stats.InputTokens))
+		w.Header().Set("X-LLM-Output-Tokens", strconv.Itoa(stats.OutputTokens))
+		w.Header().Set("X-LLM-Latency-Ms", strconv.FormatInt(stats.LatencyMs, 10))
+	}
 
 	// Fallback: if normalization failed for any reason, return raw output
 	writeJSON(w, http.StatusOK, out)

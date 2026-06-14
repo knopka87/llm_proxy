@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"llm-proxy/api/internal/util"
 )
 
 type Engine struct {
@@ -97,6 +99,11 @@ func fallbackExtractResponsesText(raw []byte) string {
 		}
 	}
 	return b.String()
+}
+
+// parseUsage извлекает количество токенов из raw-тела ответа OpenAI Responses API.
+func parseUsage(raw []byte) (inputTokens, outputTokens int) {
+	return util.ExtractResponsesUsage(raw)
 }
 
 func truncateBytes(b []byte, n int) string {

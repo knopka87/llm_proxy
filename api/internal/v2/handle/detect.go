@@ -49,6 +49,7 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	var out types.DetectResponse
+	var stats *types.LLMStats
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
@@ -56,10 +57,16 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err = engine.Detect(ctx, req.DetectRequest)
+	out, stats, err = engine.Detect(ctx, req.DetectRequest)
 	if err != nil {
 		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "detect error: " + err.Error()})
 		return
+	}
+
+	if stats != nil {
+		w.Header().Set("X-LLM-Input-Tokens", strconv.Itoa(stats.InputTokens))
+		w.Header().Set("X-LLM-Output-Tokens", strconv.Itoa(stats.OutputTokens))
+		w.Header().Set("X-LLM-Latency-Ms", strconv.FormatInt(stats.LatencyMs, 10))
 	}
 
 	writeJSON(w, http.StatusOK, out)

@@ -9,11 +9,11 @@ import (
 
 type Engine interface {
 	Name() string
-	Detect(ctx context.Context, in types.DetectRequest) (types.DetectResponse, error)
-	Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, error)
-	Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, error)
-	CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, error)
-	AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, error)
+	Detect(ctx context.Context, in types.DetectRequest) (types.DetectResponse, *types.LLMStats, error)
+	Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, *types.LLMStats, error)
+	Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, *types.LLMStats, error)
+	CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, *types.LLMStats, error)
+	AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, *types.LLMStats, error)
 }
 
 type Engines struct {

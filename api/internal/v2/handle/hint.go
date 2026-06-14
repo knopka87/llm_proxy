@@ -40,6 +40,7 @@ func (h *Handle) Hint(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	var out types.HintResponse
+	var stats *types.LLMStats
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
@@ -47,10 +48,16 @@ func (h *Handle) Hint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err = engine.Hint(ctx, req.HintRequest)
+	out, stats, err = engine.Hint(ctx, req.HintRequest)
 	if err != nil {
 		http.Error(w, "detect error: "+err.Error(), http.StatusBadGateway)
 		return
+	}
+
+	if stats != nil {
+		w.Header().Set("X-LLM-Input-Tokens", strconv.Itoa(stats.InputTokens))
+		w.Header().Set("X-LLM-Output-Tokens", strconv.Itoa(stats.OutputTokens))
+		w.Header().Set("X-LLM-Latency-Ms", strconv.FormatInt(stats.LatencyMs, 10))
 	}
 
 	writeJSON(w, http.StatusOK, out)

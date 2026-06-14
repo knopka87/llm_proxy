@@ -57,14 +57,14 @@ func (e *Engine) Name() string { return "gemini" }
 
 // Detect оценивает качество фото и определяет учебный предмет.
 // Модель: detectModel (gemini-2.0-flash-lite) — задача простая, нужна скорость.
-func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.DetectResponse, error) {
+func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.DetectResponse, *types.LLMStats, error) {
 	if e.apiKey == "" {
-		return types.DetectResponse{}, fmt.Errorf("GEMINI_API_KEY not set")
+		return types.DetectResponse{}, nil, fmt.Errorf("GEMINI_API_KEY not set")
 	}
 
 	system, schema, err := loadSystemWithSchema("detect")
 	if err != nil {
-		return types.DetectResponse{}, fmt.Errorf("gemini detect: %w", err)
+		return types.DetectResponse{}, nil, fmt.Errorf("gemini detect: %w", err)
 	}
 
 	userPrompt, _ := util.LoadUserPrompt("detect", promptSource, apiVersion)
@@ -74,7 +74,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 
 	imgBytes, mime, err := decodeImage(in.Image)
 	if err != nil {
-		return types.DetectResponse{}, fmt.Errorf("gemini detect: %w", err)
+		return types.DetectResponse{}, nil, fmt.Errorf("gemini detect: %w", err)
 	}
 
 	parts := []genai.Part{
@@ -83,29 +83,30 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 	}
 
 	var out types.DetectResponse
-	if err := e.call(ctx, e.detectModel, system, schema, 0, parts, &out, "detect"); err != nil {
-		return types.DetectResponse{}, err
+	stats, err := e.call(ctx, e.detectModel, system, schema, 0, parts, &out, "detect")
+	if err != nil {
+		return types.DetectResponse{}, stats, err
 	}
-	return out, nil
+	return out, stats, nil
 }
 
 // ─── PARSE ────────────────────────────────────────────────────────────────────
 
 // Parse читает задание с фото и строит структурированный JSON с планом решения.
 // Модель: parseModel (gemini-2.5-flash) — лучший OCR рукописного текста + русский.
-func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, error) {
+func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, *types.LLMStats, error) {
 	if e.apiKey == "" {
-		return types.ParseResponse{}, fmt.Errorf("GEMINI_API_KEY not set")
+		return types.ParseResponse{}, nil, fmt.Errorf("GEMINI_API_KEY not set")
 	}
 
 	system, schema, err := loadSystemWithSchema("parse")
 	if err != nil {
-		return types.ParseResponse{}, fmt.Errorf("gemini parse: %w", err)
+		return types.ParseResponse{}, nil, fmt.Errorf("gemini parse: %w", err)
 	}
 
 	imgBytes, mime, err := decodeImage(in.Image)
 	if err != nil {
-		return types.ParseResponse{}, fmt.Errorf("gemini parse: %w", err)
+		return types.ParseResponse{}, nil, fmt.Errorf("gemini parse: %w", err)
 	}
 
 	// Контекст запроса (grade, subject и т.д.) передаём в user-части
@@ -132,25 +133,26 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	}
 
 	var pr types.ParseResponse
-	if err := e.call(ctx, e.parseModel, system, schema, 0.1, parts, &pr, "parse"); err != nil {
-		return types.ParseResponse{}, err
+	stats, err := e.call(ctx, e.parseModel, system, schema, 0.1, parts, &pr, "parse")
+	if err != nil {
+		return types.ParseResponse{}, stats, err
 	}
 	pr.ValidateItems()
-	return pr, nil
+	return pr, stats, nil
 }
 
 // ─── HINT ─────────────────────────────────────────────────────────────────────
 
 // Hint генерирует педагогические подсказки L1/L2/L3 на основе разобранного задания.
 // Модель: parseModel — text-only, требует качественный русский педагогический текст.
-func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, error) {
+func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, *types.LLMStats, error) {
 	if e.apiKey == "" {
-		return types.HintResponse{}, fmt.Errorf("GEMINI_API_KEY not set")
+		return types.HintResponse{}, nil, fmt.Errorf("GEMINI_API_KEY not set")
 	}
 
 	system, schema, err := loadSystemWithSchema("hint")
 	if err != nil {
-		return types.HintResponse{}, fmt.Errorf("gemini hint: %w", err)
+		return types.HintResponse{}, nil, fmt.Errorf("gemini hint: %w", err)
 	}
 
 	inJSON, _ := json.Marshal(in)
@@ -170,29 +172,30 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	parts := []genai.Part{genai.Text(userText)}
 
 	var hr types.HintResponse
-	if err := e.call(ctx, e.parseModel, system, schema, 1, parts, &hr, "hint"); err != nil {
-		return types.HintResponse{}, err
+	stats, err := e.call(ctx, e.parseModel, system, schema, 1, parts, &hr, "hint")
+	if err != nil {
+		return types.HintResponse{}, stats, err
 	}
-	return hr, nil
+	return hr, stats, nil
 }
 
 // ─── CHECK ────────────────────────────────────────────────────────────────────
 
 // CheckSolution проверяет ответ ученика на фото против условия задачи.
 // Модель: parseModel — vision + математическое рассуждение.
-func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, error) {
+func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, *types.LLMStats, error) {
 	if e.apiKey == "" {
-		return types.CheckResponse{}, fmt.Errorf("GEMINI_API_KEY not set")
+		return types.CheckResponse{}, nil, fmt.Errorf("GEMINI_API_KEY not set")
 	}
 
 	system, schema, err := loadSystemWithSchema("check")
 	if err != nil {
-		return types.CheckResponse{}, fmt.Errorf("gemini check: %w", err)
+		return types.CheckResponse{}, nil, fmt.Errorf("gemini check: %w", err)
 	}
 
 	imgBytes, mime, err := decodeImage(in.Image)
 	if err != nil {
-		return types.CheckResponse{}, fmt.Errorf("gemini check: %w", err)
+		return types.CheckResponse{}, nil, fmt.Errorf("gemini check: %w", err)
 	}
 
 	// Формируем запрос без поля image (передаётся как Blob)
@@ -229,26 +232,27 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	}
 
 	var cr types.CheckResponse
-	if err := e.call(ctx, e.parseModel, system, schema, 0, parts, &cr, "check"); err != nil {
-		return types.CheckResponse{}, err
+	stats, err := e.call(ctx, e.parseModel, system, schema, 0, parts, &cr, "check")
+	if err != nil {
+		return types.CheckResponse{}, stats, err
 	}
 	cr.NormalizeDecision()
 	cr.SetIsCorrectFromDecision()
-	return cr, nil
+	return cr, stats, nil
 }
 
 // ─── ANALOGUE ─────────────────────────────────────────────────────────────────
 
 // AnalogueSolution генерирует аналогичное задание тем же приёмом.
 // Модель: parseModel — text-only, генерация на русском языке.
-func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, error) {
+func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, *types.LLMStats, error) {
 	if e.apiKey == "" {
-		return types.AnalogueResponse{}, fmt.Errorf("GEMINI_API_KEY not set")
+		return types.AnalogueResponse{}, nil, fmt.Errorf("GEMINI_API_KEY not set")
 	}
 
 	system, schema, err := loadSystemWithSchema("analogue")
 	if err != nil {
-		return types.AnalogueResponse{}, fmt.Errorf("gemini analogue: %w", err)
+		return types.AnalogueResponse{}, nil, fmt.Errorf("gemini analogue: %w", err)
 	}
 
 	inJSON, _ := json.Marshal(in)
@@ -264,10 +268,11 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 	parts := []genai.Part{genai.Text(userText)}
 
 	var ar types.AnalogueResponse
-	if err := e.call(ctx, e.parseModel, system, schema, 1, parts, &ar, "analogue"); err != nil {
-		return types.AnalogueResponse{}, err
+	stats, err := e.call(ctx, e.parseModel, system, schema, 1, parts, &ar, "analogue")
+	if err != nil {
+		return types.AnalogueResponse{}, stats, err
 	}
-	return ar, nil
+	return ar, stats, nil
 }
 
 // ─── внутренние хелперы ───────────────────────────────────────────────────────
@@ -313,10 +318,10 @@ func (e *Engine) call(
 	parts []genai.Part,
 	dst any,
 	op string,
-) error {
+) (*types.LLMStats, error) {
 	cl, err := genai.NewClient(ctx, option.WithAPIKey(e.apiKey))
 	if err != nil {
-		return fmt.Errorf("gemini %s: new client: %w", op, err)
+		return nil, fmt.Errorf("gemini %s: new client: %w", op, err)
 	}
 	defer cl.Close()
 
@@ -335,14 +340,16 @@ func (e *Engine) call(
 	const maxAttempts = 4
 	var lastErr error
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		start := time.Now()
 		resp, err := m.GenerateContent(ctx, parts...)
+		t := time.Since(start).Milliseconds()
 		if err != nil {
 			lastErr = err
 			delay := retryDelay(err, attempt)
 			if attempt < maxAttempts {
 				select {
 				case <-ctx.Done():
-					return fmt.Errorf("gemini %s: context cancelled while waiting retry: %w", op, ctx.Err())
+					return nil, fmt.Errorf("gemini %s: context cancelled while waiting retry: %w", op, ctx.Err())
 				case <-time.After(delay):
 				}
 			}
@@ -360,11 +367,18 @@ func (e *Engine) call(
 
 		txt = util.StripCodeFences(strings.TrimSpace(txt))
 		if err := json.Unmarshal([]byte(txt), dst); err != nil {
-			return fmt.Errorf("gemini %s: bad JSON: %w", op, err)
+			return nil, fmt.Errorf("gemini %s: bad JSON: %w", op, err)
 		}
-		return nil
+
+		var inTok, outTok int
+		if resp.UsageMetadata != nil {
+			inTok = int(resp.UsageMetadata.PromptTokenCount)
+			outTok = int(resp.UsageMetadata.CandidatesTokenCount)
+		}
+		stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t}
+		return stats, nil
 	}
-	return lastErr
+	return nil, lastErr
 }
 
 // loadSystemWithSchema загружает system-промпт и схему, возвращает их как строки.

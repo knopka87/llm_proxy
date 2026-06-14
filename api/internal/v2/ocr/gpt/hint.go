@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"llm-proxy/api/internal/util"
 	"llm-proxy/api/internal/v2/ocr/types"
@@ -15,9 +16,9 @@ import (
 
 const HINT = "hint"
 
-func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, error) {
+func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, *types.LLMStats, error) {
 	if e.APIKey == "" {
-		return types.HintResponse{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.HintResponse{}, nil, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
 
@@ -43,18 +44,18 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	// Try to load system prompt from /prompt/hint<L1|L2|L3>.txt; fallback to the default text if not found.
 	system, err := util.LoadSystemPrompt(HINT, e.Name(), e.Version())
 	if err != nil {
-		return types.HintResponse{}, err
+		return types.HintResponse{}, nil, err
 	}
 
 	schema, err := util.LoadPromptSchema(HINT, e.Version())
 	if err != nil {
-		return types.HintResponse{}, err
+		return types.HintResponse{}, nil, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
 	userTask, err := util.LoadUserPrompt(HINT, e.Name(), e.Version())
 	if err != nil {
-		return types.HintResponse{}, err
+		return types.HintResponse{}, nil, err
 	}
 
 	userObj := map[string]any{
@@ -98,28 +99,32 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
 
+	start := time.Now()
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return types.HintResponse{}, err
+		return types.HintResponse{}, nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return types.HintResponse{}, fmt.Errorf("openai hint %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.HintResponse{}, nil, fmt.Errorf("openai hint %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	raw, _ := io.ReadAll(resp.Body)
+	t := time.Since(start).Milliseconds()
+	inTok, outTok := parseUsage(raw)
+	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t}
 	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
 	if err != nil || strings.TrimSpace(out) == "" {
 		out = fallbackExtractResponsesText(raw)
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
 	if out == "" {
-		return types.HintResponse{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+		return types.HintResponse{}, stats, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
 	}
 	var hr types.HintResponse
 	if err := json.Unmarshal([]byte(out), &hr); err != nil {
-		return types.HintResponse{}, fmt.Errorf("openai hint: bad JSON: %w", err)
+		return types.HintResponse{}, stats, fmt.Errorf("openai hint: bad JSON: %w", err)
 	}
-	return hr, nil
+	return hr, stats, nil
 }

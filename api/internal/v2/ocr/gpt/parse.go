@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"llm-proxy/api/internal/util"
 	"llm-proxy/api/internal/v2/ocr/types"
@@ -16,9 +17,9 @@ import (
 
 const PARSE = "parse"
 
-func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, error) {
+func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, *types.LLMStats, error) {
 	if e.APIKey == "" {
-		return types.ParseResponse{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.ParseResponse{}, nil, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
 
@@ -27,18 +28,18 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 
 	system, err := util.LoadSystemPrompt(PARSE, e.Name(), e.Version())
 	if err != nil {
-		return types.ParseResponse{}, err
+		return types.ParseResponse{}, nil, err
 	}
 
 	schema, err := util.LoadPromptSchema(PARSE, e.Version())
 	if err != nil {
-		return types.ParseResponse{}, err
+		return types.ParseResponse{}, nil, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
 	user, err := util.LoadUserPrompt(PARSE, e.Name(), e.Version())
 	if err != nil {
-		return types.ParseResponse{}, err
+		return types.ParseResponse{}, nil, err
 	}
 
 	// accept raw base64 or data: URL
@@ -46,13 +47,13 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	if len(imgBytes) == 0 {
 		raw, err := base64.StdEncoding.DecodeString(in.Image)
 		if err != nil {
-			return types.ParseResponse{}, fmt.Errorf("openai parse: invalid image base64")
+			return types.ParseResponse{}, nil, fmt.Errorf("openai parse: invalid image base64")
 		}
 		imgBytes = raw
 	}
 	mime := util.PickMIME("", mimeFromDataURL, imgBytes)
 	if !isOpenAIImageMIME(mime) {
-		return types.ParseResponse{}, fmt.Errorf("openai parse: unsupported MIME %s (need image/jpeg|png|webp)", mime)
+		return types.ParseResponse{}, nil, fmt.Errorf("openai parse: unsupported MIME %s (need image/jpeg|png|webp)", mime)
 	}
 	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
 	in.Image = ""
@@ -99,30 +100,34 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
 
+	start := time.Now()
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return types.ParseResponse{}, err
+		return types.ParseResponse{}, nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return types.ParseResponse{}, fmt.Errorf("openai parse %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.ParseResponse{}, nil, fmt.Errorf("openai parse %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	raw, _ := io.ReadAll(resp.Body)
+	t := time.Since(start).Milliseconds()
+	inTok, outTok := parseUsage(raw)
+	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t}
 	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
 	if err != nil || strings.TrimSpace(out) == "" {
 		out = fallbackExtractResponsesText(raw)
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
 	if out == "" {
-		return types.ParseResponse{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+		return types.ParseResponse{}, stats, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
 	}
 	var pr types.ParseResponse
 	if err := json.Unmarshal([]byte(out), &pr); err != nil {
-		return types.ParseResponse{}, fmt.Errorf("openai parse: bad JSON: %w", err)
+		return types.ParseResponse{}, stats, fmt.Errorf("openai parse: bad JSON: %w", err)
 	}
 	// P0.1: Validate final_answer ↔ solution_steps consistency
 	pr.ValidateItems()
-	return pr, nil
+	return pr, stats, nil
 }

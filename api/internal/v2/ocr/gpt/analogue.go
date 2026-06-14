@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"llm-proxy/api/internal/util"
 	"llm-proxy/api/internal/v2/ocr/types"
@@ -15,9 +16,9 @@ import (
 
 const ANALOGUE = "analogue"
 
-func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, error) {
+func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, *types.LLMStats, error) {
 	if e.APIKey == "" {
-		return types.AnalogueResponse{}, fmt.Errorf("OPENAI_API_KEY is empty")
+		return types.AnalogueResponse{}, nil, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
 	if strings.TrimSpace(model) == "" {
@@ -29,18 +30,18 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 
 	system, err := util.LoadSystemPrompt(ANALOGUE, e.Name(), e.Version())
 	if err != nil {
-		return types.AnalogueResponse{}, err
+		return types.AnalogueResponse{}, nil, err
 	}
 
 	schema, err := util.LoadPromptSchema(ANALOGUE, e.Version())
 	if err != nil {
-		return types.AnalogueResponse{}, err
+		return types.AnalogueResponse{}, nil, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
 	user, err := util.LoadUserPrompt(ANALOGUE, e.Name(), e.Version())
 	if err != nil {
-		return types.AnalogueResponse{}, err
+		return types.AnalogueResponse{}, nil, err
 	}
 
 	userObj := map[string]any{
@@ -84,29 +85,33 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+e.APIKey)
 
+	start := time.Now()
 	resp, err := e.httpc.Do(req)
 	if err != nil {
-		return types.AnalogueResponse{}, err
+		return types.AnalogueResponse{}, nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		x, _ := io.ReadAll(resp.Body)
-		return types.AnalogueResponse{}, fmt.Errorf("openai analogue %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
+		return types.AnalogueResponse{}, nil, fmt.Errorf("openai analogue %d: %s", resp.StatusCode, strings.TrimSpace(string(x)))
 	}
 
 	raw, _ := io.ReadAll(resp.Body)
+	t := time.Since(start).Milliseconds()
+	inTok, outTok := parseUsage(raw)
+	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t}
 	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
 	if err != nil || strings.TrimSpace(out) == "" {
 		out = fallbackExtractResponsesText(raw)
 	}
 	out = util.StripCodeFences(strings.TrimSpace(out))
 	if out == "" {
-		return types.AnalogueResponse{}, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
+		return types.AnalogueResponse{}, stats, fmt.Errorf("responses: empty output; body=%s", truncateBytes(raw, 1024))
 	}
 	var ar types.AnalogueResponse
 	if err := json.Unmarshal([]byte(out), &ar); err != nil {
-		return types.AnalogueResponse{}, fmt.Errorf("openai analogue: bad JSON: %w", err)
+		return types.AnalogueResponse{}, stats, fmt.Errorf("openai analogue: bad JSON: %w", err)
 	}
 
-	return ar, nil
+	return ar, stats, nil
 }
