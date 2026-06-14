@@ -471,10 +471,12 @@ func decodeImage(image string) ([]byte, string, error) {
 // относится к заведомо-массивным именам.
 func fixGeminiEmptyArrays(s string) string {
 	// Список полей, которые всегда должны быть массивами в наших схемах.
+	// Только поля, которые точно являются массивами во всех наших схемах.
+	// template_params — map[string]interface{}, НЕ массив.
+	// feedback — string в check schema, НЕ массив.
 	arrayFields := []string{
 		"visual_facts", "items", "plan", "solution_steps",
-		"flags", "constraints", "issues", "hints", "error_spans",
-		"feedback", "buttons", "template_params",
+		"flags", "constraints", "issues", "hints", "error_spans", "buttons",
 	}
 	for _, f := range arrayFields {
 		// "fieldName": {} → "fieldName": []  (с пробелом и без)
