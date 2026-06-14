@@ -82,13 +82,11 @@ items = [{
 
 - **template_id**: всегда "UNRESOLVED_MATH"
 - **task_type**: одно из: "word_problems" | "equations" | "expressions" | "geometry" | "tables" | "fractions" | "comparison" | "other_math"
-- **format**: "plain_text" или "table"/"diagram" если явно требуется
 - **unit_kind**: "none" или "time"/"money"/"length"/"mass"/"area"
 - **constraints**: массив тегов:
   - "multi_step" — если 2+ смысловых шага или есть подпункты
   - "needs_visual" — если ответ зависит от рисунка
   - другие по смыслу: within_10, within_100, with_carry, has_subparts
-- **template_params**: {} если не нужно
 
 ## 4. hint_policy
 
