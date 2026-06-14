@@ -17,15 +17,17 @@ type Engine interface {
 }
 
 type Engines struct {
-	OpenAI Engine // OpenAI GPT — hint, check, analogue
-	Gemini Engine // Gemini    — detect, parse
-	Mixed  Engine // detect+parse→Gemini, hint+check→OpenAI
+	OpenAI     Engine // OpenAI GPT — hint, check, analogue
+	Gemini     Engine // Gemini    — detect, parse
+	Mixed      Engine // detect+parse→Gemini, hint+check→OpenAI
+	OpenRouter Engine // все шаги через OpenRouter; модели из env
 }
 
 // GetEngine возвращает движок по llm_name из запроса:
-//   - "gpt" / "openai" → чистый OpenAI (все шаги через GPT)
-//   - "gemini"         → чистый Gemini (все шаги через Gemini)
-//   - "mixed"          → detect+parse через Gemini, hint+check через OpenAI
+//   - "gpt" / "openai"  → OpenAI (все шаги через GPT)
+//   - "gemini"           → Gemini (все шаги через Gemini)
+//   - "mixed"            → detect+parse→Gemini, hint+check→OpenAI
+//   - "openrouter"       → все шаги через OpenRouter; модели из OPENROUTER_*_MODEL
 func (e *Engines) GetEngine(llmName string) (Engine, error) {
 	switch llmName {
 	case "gpt", "openai":
@@ -43,7 +45,12 @@ func (e *Engines) GetEngine(llmName string) (Engine, error) {
 			return nil, errors.New("Mixed engine not initialized")
 		}
 		return e.Mixed, nil
+	case "openrouter":
+		if e.OpenRouter == nil {
+			return nil, errors.New("OpenRouter engine not initialized (set OPENROUTER_API_KEY)")
+		}
+		return e.OpenRouter, nil
 	default:
-		return nil, errors.New("unknown llm_name; use 'gpt', 'gemini' or 'mixed'")
+		return nil, errors.New("unknown llm_name; use 'gpt', 'gemini', 'mixed' or 'openrouter'")
 	}
 }

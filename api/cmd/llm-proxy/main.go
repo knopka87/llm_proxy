@@ -17,6 +17,7 @@ import (
 	gemini2 "llm-proxy/api/internal/v2/ocr/gemini"
 	gpt2 "llm-proxy/api/internal/v2/ocr/gpt"
 	mixed2 "llm-proxy/api/internal/v2/ocr/mixed"
+	or2 "llm-proxy/api/internal/v2/ocr/openrouter"
 )
 
 func main() {
@@ -44,10 +45,27 @@ func main() {
 	geminiV2 := gemini2.New(cfg.GeminiAPIKey, cfg.GeminiDetectModel, cfg.GeminiParseModel)
 	mixedV2 := mixed2.New(geminiV2, gptV2)
 
+	// OpenRouter инициализируется только если задан ключ.
+	// Модели для каждого шага берутся из env-переменных — без хардкода в коде.
+	var openRouterV2 ocr2.Engine
+	if cfg.OpenRouterAPIKey != "" {
+		openRouterV2 = or2.New(cfg.OpenRouterAPIKey, or2.StepModels{
+			Detect:   cfg.OpenRouterDetectModel,
+			Parse:    cfg.OpenRouterParseModel,
+			Hint:     cfg.OpenRouterHintModel,
+			Check:    cfg.OpenRouterCheckModel,
+			Analogue: cfg.OpenRouterAnalogueModel,
+		})
+		log.Printf("OpenRouter engine initialized (detect=%s parse=%s hint=%s check=%s)",
+			cfg.OpenRouterDetectModel, cfg.OpenRouterParseModel,
+			cfg.OpenRouterHintModel, cfg.OpenRouterCheckModel)
+	}
+
 	engines2 := &ocr2.Engines{
-		OpenAI: gptV2,
-		Gemini: geminiV2,
-		Mixed:  mixedV2,
+		OpenAI:     gptV2,
+		Gemini:     geminiV2,
+		Mixed:      mixedV2,
+		OpenRouter: openRouterV2,
 	}
 	h2 := handle2.New(engines2)
 
