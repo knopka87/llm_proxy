@@ -465,25 +465,61 @@ func decodeImage(image string) ([]byte, string, error) {
 	return imgBytes, mime, nil
 }
 
-// fixGeminiEmptyArrays исправляет типичную ошибку Gemini в json_object режиме:
-// пустые массивы возвращаются как {} вместо [].
-// Ищем паттерн "fieldName":{} и заменяем на "fieldName":[] только если поле
-// относится к заведомо-массивным именам.
+// fixGeminiJSON исправляет два вида ошибок Gemini в json_object режиме:
+//
+//  1. Пустые массивы: {} → [] для известных array-полей
+//  2. Объекты вместо строк в plan/solution_steps:
+//     Gemini иногда возвращает [{...}, ...] вместо ["...", ...]
+//     Каждый объект-элемент сериализуется в JSON-строку.
 func fixGeminiEmptyArrays(s string) string {
-	// Список полей, которые всегда должны быть массивами в наших схемах.
-	// Только поля, которые точно являются массивами во всех наших схемах.
-	// template_params — map[string]interface{}, НЕ массив.
-	// feedback — string в check schema, НЕ массив.
+	// Быстрая замена пустых {} → [] для array-полей
 	arrayFields := []string{
 		"visual_facts", "items", "plan", "solution_steps",
 		"flags", "constraints", "issues", "hints", "error_spans", "buttons",
 	}
 	for _, f := range arrayFields {
-		// "fieldName": {} → "fieldName": []  (с пробелом и без)
 		s = strings.ReplaceAll(s, `"`+f+`":{}`, `"`+f+`":[]`)
 		s = strings.ReplaceAll(s, `"`+f+`": {}`, `"`+f+`": []`)
 	}
+
+	// Глубокая нормализация: объекты в string-массивах → строки
+	var doc interface{}
+	if err := json.Unmarshal([]byte(s), &doc); err != nil {
+		return s
+	}
+	fixStringArrayElements(doc)
+	if fixed, err := json.Marshal(doc); err == nil {
+		return string(fixed)
+	}
 	return s
+}
+
+// fixStringArrayElements рекурсивно конвертирует объекты-элементы
+// в массивах plan/solution_steps в JSON-строки.
+func fixStringArrayElements(v interface{}) {
+	stringArrayFields := map[string]bool{"plan": true, "solution_steps": true}
+	switch node := v.(type) {
+	case map[string]interface{}:
+		for key, val := range node {
+			if stringArrayFields[key] {
+				if arr, ok := val.([]interface{}); ok {
+					for i, elem := range arr {
+						if _, isStr := elem.(string); !isStr {
+							if b, err := json.Marshal(elem); err == nil {
+								arr[i] = string(b)
+							}
+						}
+					}
+				}
+			} else {
+				fixStringArrayElements(val)
+			}
+		}
+	case []interface{}:
+		for _, elem := range node {
+			fixStringArrayElements(elem)
+		}
+	}
 }
 
 func truncate(b []byte, n int) string {
