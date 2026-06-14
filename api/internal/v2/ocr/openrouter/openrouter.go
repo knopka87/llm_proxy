@@ -395,6 +395,13 @@ func (e *Engine) call(
 	}
 
 	text := util.StripCodeFences(strings.TrimSpace(cr.Choices[0].Message.Content))
+
+	// Gemini в json_object режиме иногда возвращает {} вместо [] для пустых массивов.
+	// Исправляем до анмаршалинга.
+	if isGeminiModel(model) {
+		text = fixGeminiEmptyArrays(text)
+	}
+
 	if err := json.Unmarshal([]byte(text), dst); err != nil {
 		return stats, fmt.Errorf("openrouter %s: bad JSON: %w", op, err)
 	}
@@ -456,6 +463,25 @@ func decodeImage(image string) ([]byte, string, error) {
 		mime = "image/jpeg"
 	}
 	return imgBytes, mime, nil
+}
+
+// fixGeminiEmptyArrays исправляет типичную ошибку Gemini в json_object режиме:
+// пустые массивы возвращаются как {} вместо [].
+// Ищем паттерн "fieldName":{} и заменяем на "fieldName":[] только если поле
+// относится к заведомо-массивным именам.
+func fixGeminiEmptyArrays(s string) string {
+	// Список полей, которые всегда должны быть массивами в наших схемах.
+	arrayFields := []string{
+		"visual_facts", "items", "plan", "solution_steps",
+		"flags", "constraints", "issues", "hints", "error_spans",
+		"feedback", "buttons", "template_params",
+	}
+	for _, f := range arrayFields {
+		// "fieldName": {} → "fieldName": []  (с пробелом и без)
+		s = strings.ReplaceAll(s, `"`+f+`":{}`, `"`+f+`":[]`)
+		s = strings.ReplaceAll(s, `"`+f+`": {}`, `"`+f+`": []`)
+	}
+	return s
 }
 
 func truncate(b []byte, n int) string {
