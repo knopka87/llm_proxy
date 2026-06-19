@@ -396,11 +396,10 @@ func (e *Engine) call(
 
 	text := util.StripCodeFences(strings.TrimSpace(cr.Choices[0].Message.Content))
 
-	// Gemini в json_object режиме иногда возвращает {} вместо [] для пустых массивов.
-	// Исправляем до анмаршалинга.
-	if isGeminiModel(model) {
-		text = fixGeminiEmptyArrays(text)
-	}
+	// Исправляем частую ошибку LLM: {} вместо [] для array-полей.
+	// Gemini в json_object режиме делает это систематически,
+	// но другие модели тоже иногда возвращают объект вместо массива.
+	text = fixEmptyArrayFields(text)
 
 	if err := json.Unmarshal([]byte(text), dst); err != nil {
 		return stats, fmt.Errorf("openrouter %s: bad JSON: %w", op, err)
@@ -465,13 +464,14 @@ func decodeImage(image string) ([]byte, string, error) {
 	return imgBytes, mime, nil
 }
 
-// fixGeminiJSON исправляет два вида ошибок Gemini в json_object режиме:
+// fixEmptyArrayFields исправляет два вида ошибок LLM в JSON:
 //
 //  1. Пустые массивы: {} → [] для известных array-полей
-//  2. Объекты вместо строк в plan/solution_steps:
-//     Gemini иногда возвращает [{...}, ...] вместо ["...", ...]
+//  2. Объекты вместо массивов: {"key":"val"} → [] (если поле должно быть массивом)
+//  3. Объекты вместо строк в plan/solution_steps:
+//     LLM иногда возвращает [{...}, ...] вместо ["...", ...]
 //     Каждый объект-элемент сериализуется в JSON-строку.
-func fixGeminiEmptyArrays(s string) string {
+func fixEmptyArrayFields(s string) string {
 	// Быстрая замена пустых {} → [] для array-полей
 	arrayFields := []string{
 		"visual_facts", "items", "plan", "solution_steps",
@@ -482,16 +482,42 @@ func fixGeminiEmptyArrays(s string) string {
 		s = strings.ReplaceAll(s, `"`+f+`": {}`, `"`+f+`": []`)
 	}
 
-	// Глубокая нормализация: объекты в string-массивах → строки
+	// Глубокая нормализация: объекты вместо массивов → пустые массивы,
+	// объекты в string-массивах → строки
 	var doc interface{}
 	if err := json.Unmarshal([]byte(s), &doc); err != nil {
 		return s
 	}
+	fixArrayFields(doc, arrayFields)
 	fixStringArrayElements(doc)
 	if fixed, err := json.Marshal(doc); err == nil {
 		return string(fixed)
 	}
 	return s
+}
+
+// fixArrayFields заменяет объекты на пустые [] для полей, которые должны быть массивами.
+func fixArrayFields(v interface{}, arrayFields []string) {
+	fieldSet := make(map[string]bool, len(arrayFields))
+	for _, f := range arrayFields {
+		fieldSet[f] = true
+	}
+	switch node := v.(type) {
+	case map[string]interface{}:
+		for key, val := range node {
+			if fieldSet[key] {
+				if _, isObj := val.(map[string]interface{}); isObj {
+					node[key] = []interface{}{}
+				}
+			} else {
+				fixArrayFields(val, arrayFields)
+			}
+		}
+	case []interface{}:
+		for _, elem := range node {
+			fixArrayFields(elem, arrayFields)
+		}
+	}
 }
 
 // fixStringArrayElements рекурсивно конвертирует объекты-элементы
