@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+// Pre-compiled regexes for answer extraction (compiled once, not per-call).
+var (
+	reEquals = regexp.MustCompile(`=\s*([\d.,]+)\s*$`)
+	reAnswer = regexp.MustCompile(`(?i)ответ[:\s]+(.+?)(?:\.|$)`)
+	reTotal  = regexp.MustCompile(`(?i)итого\s+([\d.,]+)`)
+)
+
 // ParseRequest — вход запроса (PARSE.request.v1)
 type ParseRequest struct {
 	Image             string `json:"image"`
@@ -144,20 +151,14 @@ func (pr *ParseResponse) ValidateItems() {
 // extractAnswerFromStep extracts final numeric/text answer from a solution step.
 // Looks for patterns like "= 42", "Ответ: 42", "итого 42" etc.
 func extractAnswerFromStep(step string) string {
-	// Pattern: "= <number>" at the end
-	reEquals := regexp.MustCompile(`=\s*([\d.,]+)\s*$`)
 	if m := reEquals.FindStringSubmatch(step); len(m) > 1 {
 		return m[1]
 	}
 
-	// Pattern: "Ответ: <value>" or "ответ: <value>"
-	reAnswer := regexp.MustCompile(`(?i)ответ[:\s]+(.+?)(?:\.|$)`)
 	if m := reAnswer.FindStringSubmatch(step); len(m) > 1 {
 		return strings.TrimSpace(m[1])
 	}
 
-	// Pattern: "итого <number>"
-	reTotal := regexp.MustCompile(`(?i)итого\s+([\d.,]+)`)
 	if m := reTotal.FindStringSubmatch(step); len(m) > 1 {
 		return m[1]
 	}

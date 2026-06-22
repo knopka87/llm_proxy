@@ -3,11 +3,10 @@ package handle
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"llm-proxy/api/internal/v2/ocr/types"
 )
@@ -23,8 +22,8 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req DetectRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad json: " + err.Error()})
+	if err := readAndLimitBody(w, r, &req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad json"})
 		return
 	}
 
@@ -35,16 +34,7 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deadline := 180 * time.Second
-	if ts := r.Header.Get("X-Request-Timeout"); ts != "" {
-		if v, _ := strconv.Atoi(ts); v > 0 {
-			deadline = time.Duration(v) * time.Second
-		}
-	} else if ts := r.URL.Query().Get("timeoutSec"); ts != "" {
-		if v, _ := strconv.Atoi(ts); v > 0 {
-			deadline = time.Duration(v) * time.Second
-		}
-	}
+	deadline := parseDeadline(r)
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
@@ -53,13 +43,15 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
-		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "detect error: " + err.Error()})
+		log.Printf("[detect] engine error: %v", err)
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "engine not available"})
 		return
 	}
 
 	out, stats, err = engine.Detect(ctx, req.DetectRequest)
 	if err != nil {
-		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "detect error: " + err.Error()})
+		log.Printf("[detect] LLM error: %v", err)
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "detect processing failed"})
 		return
 	}
 

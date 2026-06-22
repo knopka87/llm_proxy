@@ -11,7 +11,7 @@ import (
 )
 
 type Engine struct {
-	APIKey string
+	apiKey string
 	Model  string
 	httpc  *http.Client
 }
@@ -23,8 +23,7 @@ func New(key, model string) *Engine {
 			Timeout:   10 * time.Second, // TCP connect
 			KeepAlive: 30 * time.Second,
 		}).DialContext,
-		TLSHandshakeTimeout: 10 * time.Second,
-		// Ждём первые заголовки дольше — это решает проблему context deadline exceeded на TTFB
+		TLSHandshakeTimeout:   10 * time.Second,
 		ResponseHeaderTimeout: 120 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		IdleConnTimeout:       90 * time.Second,
@@ -33,7 +32,7 @@ func New(key, model string) *Engine {
 	}
 
 	return &Engine{
-		APIKey: key,
+		apiKey: key,
 		Model:  model,
 		// ВАЖНО: Timeout=0, чтобы не обрывать длительное чтение тела (особенно при streaming)
 		httpc: &http.Client{

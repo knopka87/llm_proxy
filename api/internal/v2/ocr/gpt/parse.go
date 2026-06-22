@@ -18,13 +18,13 @@ import (
 const PARSE = "parse"
 
 func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, *types.LLMStats, error) {
-	if e.APIKey == "" {
+	if e.apiKey == "" {
 		return types.ParseResponse{}, nil, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
-
-	// TODO переделать на отдельный env
-	model = "gpt-4.1-mini"
+	if model == "" {
+		model = "gpt-4.1-mini"
+	}
 
 	system, err := util.LoadSystemPrompt(PARSE, e.Name(), e.Version())
 	if err != nil {
@@ -98,7 +98,7 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	payload, _ := json.Marshal(body)
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+e.APIKey)
+	req.Header.Set("Authorization", "Bearer "+e.apiKey)
 
 	start := time.Now()
 	resp, err := e.httpc.Do(req)

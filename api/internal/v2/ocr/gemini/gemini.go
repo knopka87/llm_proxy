@@ -360,7 +360,11 @@ func (e *Engine) call(
 		if strings.TrimSpace(txt) == "" {
 			lastErr = fmt.Errorf("gemini %s: empty response", op)
 			if attempt < maxAttempts {
-				time.Sleep(500 * time.Millisecond)
+				select {
+				case <-ctx.Done():
+					return nil, ctx.Err()
+				case <-time.After(500 * time.Millisecond):
+				}
 			}
 			continue
 		}

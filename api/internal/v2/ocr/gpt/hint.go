@@ -17,15 +17,13 @@ import (
 const HINT = "hint"
 
 func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, *types.LLMStats, error) {
-	if e.APIKey == "" {
+	if e.apiKey == "" {
 		return types.HintResponse{}, nil, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
-
-	// TODO переделать на отдельный env
-	// Базовая модель по уровню: L1/L2 — gpt-4.1-mini, L3 — gpt-5-mini.
-	// model = "gpt-4.1-mini"
-	model = "gpt-5-mini"
+	if model == "" {
+		model = "gpt-5-mini"
+	}
 
 	// Параметры сэмплинга по уровням
 	temp := 1
@@ -97,7 +95,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	payload, _ := json.Marshal(body)
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+e.APIKey)
+	req.Header.Set("Authorization", "Bearer "+e.apiKey)
 
 	start := time.Now()
 	resp, err := e.httpc.Do(req)

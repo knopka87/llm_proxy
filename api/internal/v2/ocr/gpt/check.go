@@ -22,16 +22,14 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	log.Printf("[check] started, image_len=%d, task_text=%q, items_count=%d",
 		len(in.Image), truncateStr(in.RawTaskText, 50), len(in.TaskStruct.Items))
 
-	if e.APIKey == "" {
+	if e.apiKey == "" {
 		log.Printf("[check] ERROR: OPENAI_API_KEY is empty")
 		return types.CheckResponse{}, nil, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
-	if strings.TrimSpace(model) == "" {
-		model = "gpt-4o-mini"
+	if model == "" {
+		model = "gpt-5-mini"
 	}
-	// TODO переделать на отдельный env
-	model = "gpt-5-mini"
 
 	system, err := util.LoadSystemPrompt(CHECK, e.Name(), e.Version())
 	if err != nil {
@@ -108,7 +106,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+e.APIKey)
+	req.Header.Set("Authorization", "Bearer "+e.apiKey)
 
 	start := time.Now()
 	resp, err := e.httpc.Do(req)

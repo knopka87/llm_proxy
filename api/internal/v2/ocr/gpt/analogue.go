@@ -17,16 +17,13 @@ import (
 const ANALOGUE = "analogue"
 
 func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, *types.LLMStats, error) {
-	if e.APIKey == "" {
+	if e.apiKey == "" {
 		return types.AnalogueResponse{}, nil, fmt.Errorf("OPENAI_API_KEY is empty")
 	}
 	model := e.GetModel()
-	if strings.TrimSpace(model) == "" {
-		model = "gpt-4o-mini"
+	if model == "" {
+		model = "gpt-5-mini"
 	}
-
-	// TODO переделать на отдельный env
-	model = "gpt-5-mini"
 
 	system, err := util.LoadSystemPrompt(ANALOGUE, e.Name(), e.Version())
 	if err != nil {
@@ -83,7 +80,7 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 	payload, _ := json.Marshal(body)
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+e.APIKey)
+	req.Header.Set("Authorization", "Bearer "+e.apiKey)
 
 	start := time.Now()
 	resp, err := e.httpc.Do(req)

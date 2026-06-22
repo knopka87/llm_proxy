@@ -19,13 +19,14 @@ import (
 const DETECT = "detect"
 
 func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.DetectResponse, *types.LLMStats, error) {
-	if e.APIKey == "" {
+	if e.apiKey == "" {
 		return types.DetectResponse{}, nil, fmt.Errorf("OPENAI_API_KEY not set")
 	}
 
 	model := e.GetModel()
-	// TODO переделать на отдельный env
-	model = "gpt-4.1-mini"
+	if model == "" {
+		model = "gpt-4.1-mini"
+	}
 
 	// accept raw base64 or data: URL
 	imgBytes, mimeFromDataURL, _ := util.DecodeBase64MaybeDataURL(in.Image)
@@ -101,7 +102,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 	payload, _ := json.Marshal(body)
 	req, _ := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/responses", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+e.APIKey)
+	req.Header.Set("Authorization", "Bearer "+e.apiKey)
 
 	start := time.Now()
 	resp, err := e.httpc.Do(req)

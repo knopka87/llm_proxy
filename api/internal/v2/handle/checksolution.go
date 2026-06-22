@@ -3,10 +3,10 @@ package handle
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"llm-proxy/api/internal/v2/ocr/types"
 )
@@ -24,33 +24,26 @@ func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req checkReq
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "bad json: "+err.Error(), http.StatusBadRequest)
+	if err := readAndLimitBody(w, r, &req); err != nil {
+		http.Error(w, "bad json", http.StatusBadRequest)
 		return
 	}
 
-	deadline := 180 * time.Second
-	if ts := r.Header.Get("X-Request-Timeout"); ts != "" {
-		if v, _ := strconv.Atoi(ts); v > 0 {
-			deadline = time.Duration(v) * time.Second
-		}
-	} else if ts := r.URL.Query().Get("timeoutSec"); ts != "" {
-		if v, _ := strconv.Atoi(ts); v > 0 {
-			deadline = time.Duration(v) * time.Second
-		}
-	}
+	deadline := parseDeadline(r)
 	ctx, cancel := context.WithTimeout(r.Context(), deadline)
 	defer cancel()
 
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
-		http.Error(w, "check error: "+err.Error(), http.StatusBadGateway)
+		log.Printf("[check] engine error: %v", err)
+		http.Error(w, "engine not available", http.StatusBadGateway)
 		return
 	}
 
 	out, stats, err := engine.CheckSolution(ctx, req.CheckRequest)
 	if err != nil {
-		http.Error(w, "check error: "+err.Error(), http.StatusBadGateway)
+		log.Printf("[check] LLM error: %v", err)
+		http.Error(w, "check processing failed", http.StatusBadGateway)
 		return
 	}
 
