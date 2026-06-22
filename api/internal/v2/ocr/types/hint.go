@@ -1,5 +1,7 @@
 package types
 
+import "encoding/json"
+
 // HintLevel — уровень подсказки
 type HintLevel string
 
@@ -19,11 +21,11 @@ const (
 
 // HintRequest — вход запроса (HINT.request.v1)
 type HintRequest struct {
-	Task          ParseTask   `json:"task"`
-	Mode          string      `json:"mode"`
-	Items         []ParseItem `json:"items"`
-	AppliedPolicy HintPolicy  `json:"applied_policy"`
-	Template      string      `json:"template"`
+	Task          ParseTask       `json:"task"`
+	Mode          string          `json:"mode"`
+	Items         []ParseItem     `json:"items"`
+	AppliedPolicy HintPolicy      `json:"applied_policy"`
+	Template      json.RawMessage `json:"template,omitempty"` // selected pedagogical template, resolved by child_bot backend
 }
 
 // TaskRef — reference to parsed task
