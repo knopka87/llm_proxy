@@ -1,7 +1,5 @@
 package types
 
-import "encoding/json"
-
 // HintLevel — уровень подсказки
 type HintLevel string
 
@@ -25,7 +23,7 @@ type HintRequest struct {
 	Mode          string          `json:"mode"`
 	Items         []ParseItem     `json:"items"`
 	AppliedPolicy HintPolicy      `json:"applied_policy"`
-	Template      json.RawMessage `json:"template,omitempty"` // selected pedagogical template, resolved by child_bot backend
+	Template      string `json:"template,omitempty"` // selected pedagogical template profile, resolved by child_bot backend
 }
 
 // TaskRef — reference to parsed task
