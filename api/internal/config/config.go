@@ -54,10 +54,10 @@ func Load() *Config {
 
 		// OpenRouter необязателен: если ключ не задан, движок просто недоступен.
 		OpenRouterAPIKey:        getEnv("OPENROUTER_API_KEY", ""),
-		OpenRouterDetectModel:   getEnv("OPENROUTER_DETECT_MODEL", ""),
-		OpenRouterParseModel:    getEnv("OPENROUTER_PARSE_MODEL", ""),
-		OpenRouterHintModel:     getEnv("OPENROUTER_HINT_MODEL", ""),
-		OpenRouterCheckModel:    getEnv("OPENROUTER_CHECK_MODEL", ""),
+		OpenRouterDetectModel:   getEnv("OPENROUTER_DETECT_MODEL", "xiaomi/mimo-v2.5"),
+		OpenRouterParseModel:    getEnv("OPENROUTER_PARSE_MODEL", "xiaomi/mimo-v2.5-pro"),
+		OpenRouterHintModel:     getEnv("OPENROUTER_HINT_MODEL", "xiaomi/mimo-v2.5-pro"),
+		OpenRouterCheckModel:    getEnv("OPENROUTER_CHECK_MODEL", "xiaomi/mimo-v2.5-pro"),
 		OpenRouterAnalogueModel: getEnv("OPENROUTER_ANALOGUE_MODEL", ""),
 	}
 }
