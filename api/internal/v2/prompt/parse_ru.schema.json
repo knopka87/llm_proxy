@@ -1,0 +1,351 @@
+{
+  "name": "parse_ru_response_v2_6_6",
+  "strict": true,
+  "schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "parse_meta",
+      "action_plan"
+    ],
+    "properties": {
+      "parse_meta": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "readable",
+          "recommend_retake",
+          "task_text_clean",
+          "has_child_answer",
+          "has_handwriting"
+        ],
+        "properties": {
+          "readable": {
+            "type": "boolean"
+          },
+          "recommend_retake": {
+            "type": "boolean"
+          },
+          "task_text_clean": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "has_child_answer": {
+            "type": "boolean"
+          },
+          "has_handwriting": {
+            "type": "boolean"
+          }
+        }
+      },
+      "action_plan": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "task_kind",
+          "coverage",
+          "actions"
+        ],
+        "properties": {
+          "task_kind": {
+            "type": "string",
+            "enum": [
+              "single",
+              "compound",
+              "text",
+              "unknown"
+            ]
+          },
+          "coverage": {
+            "type": "string",
+            "enum": [
+              "full",
+              "partial",
+              "navigation_only",
+              "unsupported"
+            ]
+          },
+          "actions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "action_id",
+                "task_action",
+                "check_mode",
+                "rule_family",
+                "reliability",
+                "template_id_candidate",
+                "classification_basis",
+                "items",
+                "target_format",
+                "expected_answer_type",
+                "visual_requirement",
+                "source_text_role",
+                "sub_rule_key_hint",
+                "visual_targets"
+              ],
+              "properties": {
+                "action_id": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "task_action": {
+                  "type": "string",
+                  "enum": [
+                    "insert_letter",
+                    "pick_check_word",
+                    "mark_accent",
+                    "sound_letter_analysis",
+                    "copy_text",
+                    "find_orthogram",
+                    "word_composition",
+                    "part_of_speech",
+                    "grammar_features",
+                    "sentence_basis",
+                    "punctuation",
+                    "text_topic_idea",
+                    "classify_group",
+                    "lexical_task",
+                    "word_form_change",
+                    "correct_error",
+                    "compose_or_edit_text",
+                    "sentence_member",
+                    "restore_order",
+                    "capital_letter",
+                    "transfer_alphabet",
+                    "unknown_or_mixed"
+                  ]
+                },
+                "check_mode": {
+                  "type": "string",
+                  "enum": [
+                    "strict",
+                    "semi_strict",
+                    "contextual",
+                    "rubric",
+                    "visual"
+                  ]
+                },
+                "rule_family": {
+                  "type": "string",
+                  "enum": [
+                    "accent_position",
+                    "adjective",
+                    "adverbial_modifier",
+                    "alphabet_order",
+                    "answer_by_text",
+                    "answer_completeness",
+                    "antonym",
+                    "attribute",
+                    "base_of_word",
+                    "case",
+                    "case_change",
+                    "cha_shcha",
+                    "chu_shchu",
+                    "comma_address",
+                    "comma_complex_sentence",
+                    "comma_homogeneous_members",
+                    "conjugation",
+                    "copying_accuracy",
+                    "description_text",
+                    "dictionary_order",
+                    "editing",
+                    "ending",
+                    "ending_spelling",
+                    "extra_word",
+                    "gender",
+                    "gender_agreement",
+                    "grammar_error",
+                    "grammar_feature_group",
+                    "lexical_error",
+                    "lexical_group",
+                    "main_idea",
+                    "main_sentence_members",
+                    "mixed",
+                    "morphemics_group",
+                    "narrative_text",
+                    "not_with_words",
+                    "noun",
+                    "number",
+                    "number_change",
+                    "object",
+                    "orthogram_detection",
+                    "paired_consonant",
+                    "part_of_speech_question",
+                    "phonetics_group",
+                    "phraseological_unit",
+                    "plan",
+                    "polysemy",
+                    "predicate",
+                    "prefix",
+                    "prefix_spelling",
+                    "preposition",
+                    "preposition_vs_prefix",
+                    "pronoun",
+                    "proper_name",
+                    "punctuation_error",
+                    "reasoning_text",
+                    "related_words",
+                    "root",
+                    "secondary_sentence_members",
+                    "semantic_group",
+                    "sentence_end_mark",
+                    "sentence_order",
+                    "sentence_start_capital",
+                    "soft_hard_consonants",
+                    "soft_hard_sign",
+                    "sounds_letters_count",
+                    "speech_accuracy",
+                    "spelling_error",
+                    "spelling_group",
+                    "subject",
+                    "suffix",
+                    "suffix_spelling",
+                    "syllables",
+                    "synonym",
+                    "text_coherence",
+                    "text_logic_error",
+                    "text_structure",
+                    "text_topic",
+                    "text_type",
+                    "title",
+                    "unknown",
+                    "unpronounced_consonant",
+                    "unstressed_vowel",
+                    "verb",
+                    "verb_person",
+                    "verb_tense",
+                    "vocabulary_word",
+                    "voiced_voiceless",
+                    "vowels_consonants",
+                    "word_classification",
+                    "word_form",
+                    "word_form_vs_related_word",
+                    "word_meaning",
+                    "word_order",
+                    "word_transfer",
+                    "zhi_shi"
+                  ]
+                },
+                "reliability": {
+                  "type": "string",
+                  "enum": [
+                    "high",
+                    "medium",
+                    "low",
+                    "none"
+                  ]
+                },
+                "template_id_candidate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 80
+                },
+                "classification_basis": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 80
+                },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "maxItems": 40
+                },
+                "target_format": {
+                  "type": "string",
+                  "enum": [
+                    "letter_gap",
+                    "word",
+                    "word_group",
+                    "sentence",
+                    "text",
+                    "punctuation_marks",
+                    "visual_marking",
+                    "morpheme_marks",
+                    "sound_scheme",
+                    "table",
+                    "free_text",
+                    "unknown"
+                  ]
+                },
+                "expected_answer_type": {
+                  "type": "string",
+                  "enum": [
+                    "letter",
+                    "word",
+                    "words",
+                    "sentence",
+                    "sentences",
+                    "text",
+                    "punctuation",
+                    "visual_marking",
+                    "scheme",
+                    "classification",
+                    "free_text",
+                    "none",
+                    "unknown"
+                  ]
+                },
+                "visual_requirement": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "underline",
+                    "circle",
+                    "connect",
+                    "mark_accent",
+                    "draw_scheme",
+                    "split_morphemes",
+                    "mark_sentence_members",
+                    "fill_table",
+                    "copy_layout",
+                    "unknown"
+                  ]
+                },
+                "source_text_role": {
+                  "type": "string",
+                  "enum": [
+                    "items",
+                    "copy_source",
+                    "reading_text",
+                    "example_only",
+                    "mixed",
+                    "none",
+                    "unknown"
+                  ]
+                },
+                "sub_rule_key_hint": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 80,
+                  "description": "Low-trust parse signal for backend SubRuleKeyInferenceEngine. Backend remains source of truth. Use null when unsure."
+                },
+                "visual_targets": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "maxItems": 20
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

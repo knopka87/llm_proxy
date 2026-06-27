@@ -554,3 +554,89 @@ func truncate(b []byte, n int) string {
 	}
 	return string(b)
 }
+
+// ─── PARSE_RU ─────────────────────────────────────────────────────────────────
+
+func (e *Engine) ParseRU(ctx context.Context, in types.ParseRURequest) (types.ParseRUResponse, *types.LLMStats, error) {
+	system, schemaJSON, err := loadSystemWithSchema("parse_ru")
+	if err != nil {
+		return types.ParseRUResponse{}, nil, fmt.Errorf("openrouter parse_ru: %w", err)
+	}
+
+	imgBytes, mime, err := decodeImage(in.Image)
+	if err != nil {
+		return types.ParseRUResponse{}, nil, fmt.Errorf("openrouter parse_ru: %w", err)
+	}
+
+	in.Image = ""
+	userPrompt, _ := util.LoadUserPrompt("parse_ru", promptSource, apiVersion)
+	if strings.TrimSpace(userPrompt) == "" {
+		userPrompt = "Верни ТОЛЬКО JSON по parse_ru.output.schema."
+	}
+
+	inJSON, _ := json.Marshal(in)
+	userText := userPrompt + "\nINPUT_JSON:\n" + string(inJSON)
+
+	messages := []message{
+		systemMsg(system),
+		userMsgWithImage(userText, mime, imgBytes),
+	}
+
+	var out types.ParseRUResponse
+	stats, err := e.call(ctx, e.models.Parse, "parse_ru", messages, schemaJSON, &out)
+	return out, stats, err
+}
+
+// ─── HINT_RU ─────────────────────────────────────────────────────────────────
+
+func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types.HintRUResponse, *types.LLMStats, error) {
+	system, schemaJSON, err := loadSystemWithSchema("hint_ru")
+	if err != nil {
+		return types.HintRUResponse{}, nil, fmt.Errorf("openrouter hint_ru: %w", err)
+	}
+
+	inJSON, _ := json.Marshal(in)
+	userPrompt, _ := util.LoadUserPrompt("hint_ru", promptSource, apiVersion)
+	var userText string
+	if strings.Contains(userPrompt, "COMPACT_INPUT:") {
+		userText = strings.ReplaceAll(userPrompt, "COMPACT_INPUT:", "COMPACT_INPUT:\n"+string(inJSON))
+	} else {
+		userText = "COMPACT_INPUT:\n" + string(inJSON)
+		if strings.TrimSpace(userPrompt) != "" {
+			userText = userPrompt + "\n\n" + userText
+		}
+	}
+
+	messages := []message{systemMsg(system), userMsgText(userText)}
+
+	var out types.HintRUResponse
+	stats, err := e.call(ctx, e.models.Hint, "hint_ru", messages, schemaJSON, &out)
+	return out, stats, err
+}
+
+// ─── CHECK_RU ────────────────────────────────────────────────────────────────
+
+func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (types.CheckRUResponse, *types.LLMStats, error) {
+	system, schemaJSON, err := loadSystemWithSchema("check_ru")
+	if err != nil {
+		return types.CheckRUResponse{}, nil, fmt.Errorf("openrouter check_ru: %w", err)
+	}
+
+	inJSON, _ := json.Marshal(in)
+	userPrompt, _ := util.LoadUserPrompt("check_ru", promptSource, apiVersion)
+	var userText string
+	if strings.Contains(userPrompt, "COMPACT_INPUT:") {
+		userText = strings.ReplaceAll(userPrompt, "COMPACT_INPUT:", "COMPACT_INPUT:\n"+string(inJSON))
+	} else {
+		userText = "COMPACT_INPUT:\n" + string(inJSON)
+		if strings.TrimSpace(userPrompt) != "" {
+			userText = userPrompt + "\n\n" + userText
+		}
+	}
+
+	messages := []message{systemMsg(system), userMsgText(userText)}
+
+	var out types.CheckRUResponse
+	stats, err := e.call(ctx, e.models.Check, "check_ru", messages, schemaJSON, &out)
+	return out, stats, err
+}

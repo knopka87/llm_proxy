@@ -1,0 +1,153 @@
+{
+  "name": "check_ru_response_v2_6_4",
+  "strict": true,
+  "schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "status",
+      "confidence",
+      "child_message",
+      "checked_actions",
+      "error_groups",
+      "rule_buttons",
+      "anti_gdz_violation_risk"
+    ],
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "correct",
+          "almost",
+          "needs_fix",
+          "cannot_check"
+        ]
+      },
+      "confidence": {
+        "type": "string",
+        "enum": [
+          "high",
+          "medium",
+          "low",
+          "none"
+        ]
+      },
+      "child_message": {
+        "type": "string",
+        "maxLength": 350
+      },
+      "checked_actions": {
+        "type": "array",
+        "minItems": 0,
+        "maxItems": 6,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action_id",
+            "result",
+            "short_comment"
+          ],
+          "properties": {
+            "action_id": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "result": {
+              "type": "string",
+              "enum": [
+                "correct",
+                "has_issue",
+                "unclear"
+              ]
+            },
+            "short_comment": {
+              "type": "string",
+              "maxLength": 180
+            }
+          }
+        }
+      },
+      "error_groups": {
+        "type": "array",
+        "minItems": 0,
+        "maxItems": 3,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action_id",
+            "rule_family",
+            "location_hint",
+            "feedback",
+            "self_check_question",
+            "rule_ids"
+          ],
+          "properties": {
+            "action_id": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "rule_family": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "location_hint": {
+              "type": "string",
+              "maxLength": 180
+            },
+            "feedback": {
+              "type": "string",
+              "maxLength": 260
+            },
+            "self_check_question": {
+              "type": "string",
+              "maxLength": 220
+            },
+            "rule_ids": {
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 3,
+              "items": {
+                "type": "string",
+                "maxLength": 80
+              }
+            }
+          }
+        }
+      },
+      "rule_buttons": {
+        "type": "array",
+        "minItems": 0,
+        "maxItems": 3,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "rule_id",
+            "title",
+            "action_id"
+          ],
+          "properties": {
+            "rule_id": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "action_id": {
+              "type": "string",
+              "maxLength": 40
+            }
+          }
+        }
+      },
+      "anti_gdz_violation_risk": {
+        "type": "boolean"
+      }
+    },
+    "description": "CHECK_RU output schema remains frontend-compatible. No partial_check status; partial/visual uncertainty is encoded as almost/cannot_check plus checked_actions.result=unclear."
+  }
+}

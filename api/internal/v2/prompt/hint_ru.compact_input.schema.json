@@ -1,0 +1,179 @@
+{
+  "name": "hint_ru_compact_input_v2_6_3",
+  "strict": true,
+  "schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "grade",
+      "flow_status",
+      "actions_payload",
+      "limits"
+    ],
+    "properties": {
+      "grade": {
+        "type": "integer",
+        "enum": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "flow_status": {
+        "type": "string",
+        "enum": [
+          "ready",
+          "need_retake",
+          "unsupported",
+          "cannot_help"
+        ]
+      },
+      "actions_payload": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 6,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action_id",
+            "template_id",
+            "task_action",
+            "rule_family",
+            "sub_rule_key",
+            "reliability",
+            "help_strategy",
+            "relevant_rules",
+            "anti_gdz_bans",
+            "source_items"
+          ],
+          "properties": {
+            "action_id": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "template_id": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "task_action": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "rule_family": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "sub_rule_key": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 80
+            },
+            "reliability": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low",
+                "none"
+              ]
+            },
+            "help_strategy": {
+              "type": "string",
+              "maxLength": 900
+            },
+            "relevant_rules": {
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 3,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "rule_id",
+                  "title",
+                  "short_rule",
+                  "when_applies",
+                  "example_other"
+                ],
+                "properties": {
+                  "rule_id": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "short_rule": {
+                    "type": "string",
+                    "maxLength": 420
+                  },
+                  "when_applies": {
+                    "type": "string",
+                    "maxLength": 360
+                  },
+                  "example_other": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 260
+                  }
+                }
+              }
+            },
+            "anti_gdz_bans": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 10,
+              "items": {
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "source_items": {
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 12,
+              "items": {
+                "type": "string",
+                "maxLength": 200
+              }
+            }
+          }
+        }
+      },
+      "limits": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "max_hint_cards",
+          "max_rule_buttons"
+        ],
+        "properties": {
+          "max_hint_cards": {
+            "type": "integer",
+            "enum": [
+              1,
+              2,
+              3
+            ]
+          },
+          "max_rule_buttons": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ]
+          }
+        }
+      }
+    }
+  }
+}
