@@ -437,3 +437,100 @@ func firstText(resp *genai.GenerateContentResponse) string {
 }
 
 func ptrFloat32(v float32) *float32 { return &v }
+
+// ─── PARSE_RU ────────────────────────────────────────────────────────────────
+
+func (e *Engine) ParseRU(ctx context.Context, in types.ParseRURequest) (types.ParseRUResponse, *types.LLMStats, error) {
+	if e.apiKey == "" {
+		return types.ParseRUResponse{}, nil, fmt.Errorf("GEMINI_API_KEY not set")
+	}
+
+	system, schema, err := loadSystemWithSchema("parse_ru")
+	if err != nil {
+		return types.ParseRUResponse{}, nil, fmt.Errorf("gemini parse_ru: %w", err)
+	}
+
+	imgBytes, mime, err := decodeImage(in.Image)
+	if err != nil {
+		return types.ParseRUResponse{}, nil, fmt.Errorf("gemini parse_ru: %w", err)
+	}
+
+	in.Image = ""
+	inJSON, _ := json.Marshal(in)
+	userPrompt, _ := util.LoadUserPrompt("parse_ru", promptSource, apiVersion)
+	if strings.TrimSpace(userPrompt) == "" {
+		userPrompt = "Верни ТОЛЬКО JSON по parse_ru.output.schema."
+	}
+	userText := userPrompt + "\nINPUT_JSON:\n" + string(inJSON)
+
+	parts := []genai.Part{
+		genai.Text(userText),
+		&genai.Blob{MIMEType: mime, Data: imgBytes},
+	}
+
+	var out types.ParseRUResponse
+	stats, err := e.call(ctx, e.parseModel, system, schema, 0, parts, &out, "parse_ru")
+	return out, stats, err
+}
+
+// ─── HINT_RU ────────────────────────────────────────────────────────────────
+
+func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types.HintRUResponse, *types.LLMStats, error) {
+	if e.apiKey == "" {
+		return types.HintRUResponse{}, nil, fmt.Errorf("GEMINI_API_KEY not set")
+	}
+
+	system, schema, err := loadSystemWithSchema("hint_ru")
+	if err != nil {
+		return types.HintRUResponse{}, nil, fmt.Errorf("gemini hint_ru: %w", err)
+	}
+
+	inJSON, _ := json.Marshal(in)
+	userPrompt, _ := util.LoadUserPrompt("hint_ru", promptSource, apiVersion)
+	var userText string
+	if strings.Contains(userPrompt, "COMPACT_INPUT:") {
+		userText = strings.ReplaceAll(userPrompt, "COMPACT_INPUT:", "COMPACT_INPUT:\n"+string(inJSON))
+	} else {
+		userText = "COMPACT_INPUT:\n" + string(inJSON)
+		if strings.TrimSpace(userPrompt) != "" {
+			userText = userPrompt + "\n\n" + userText
+		}
+	}
+
+	parts := []genai.Part{genai.Text(userText)}
+
+	var out types.HintRUResponse
+	stats, err := e.call(ctx, e.parseModel, system, schema, 1, parts, &out, "hint_ru")
+	return out, stats, err
+}
+
+// ─── CHECK_RU ────────────────────────────────────────────────────────────────
+
+func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (types.CheckRUResponse, *types.LLMStats, error) {
+	if e.apiKey == "" {
+		return types.CheckRUResponse{}, nil, fmt.Errorf("GEMINI_API_KEY not set")
+	}
+
+	system, schema, err := loadSystemWithSchema("check_ru")
+	if err != nil {
+		return types.CheckRUResponse{}, nil, fmt.Errorf("gemini check_ru: %w", err)
+	}
+
+	inJSON, _ := json.Marshal(in)
+	userPrompt, _ := util.LoadUserPrompt("check_ru", promptSource, apiVersion)
+	var userText string
+	if strings.Contains(userPrompt, "COMPACT_INPUT:") {
+		userText = strings.ReplaceAll(userPrompt, "COMPACT_INPUT:", "COMPACT_INPUT:\n"+string(inJSON))
+	} else {
+		userText = "COMPACT_INPUT:\n" + string(inJSON)
+		if strings.TrimSpace(userPrompt) != "" {
+			userText = userPrompt + "\n\n" + userText
+		}
+	}
+
+	parts := []genai.Part{genai.Text(userText)}
+
+	var out types.CheckRUResponse
+	stats, err := e.call(ctx, e.parseModel, system, schema, 1, parts, &out, "check_ru")
+	return out, stats, err
+}

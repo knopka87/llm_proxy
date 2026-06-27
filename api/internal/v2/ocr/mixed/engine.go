@@ -2,6 +2,8 @@
 //   - Detect → Gemini (gemini-2.0-flash-lite: дешевле, быстрее, задача простая)
 //   - Parse  → Gemini (gemini-2.5-flash: лучший OCR рукописи + русский язык)
 //   - Hint, CheckSolution, AnalogueSolution → OpenAI (лучший педагогический текст на русском)
+//   - ParseRU → Gemini (лучший OCR для русского языка)
+//   - HintRU, CheckRU → OpenAI (лучший педагогический текст на русском)
 package mixed
 
 import (
@@ -40,4 +42,16 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 
 func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, *types.LLMStats, error) {
 	return e.openai.AnalogueSolution(ctx, in)
+}
+
+func (e *Engine) ParseRU(ctx context.Context, in types.ParseRURequest) (types.ParseRUResponse, *types.LLMStats, error) {
+	return e.gemini.ParseRU(ctx, in)
+}
+
+func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types.HintRUResponse, *types.LLMStats, error) {
+	return e.openai.HintRU(ctx, in)
+}
+
+func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (types.CheckRUResponse, *types.LLMStats, error) {
+	return e.openai.CheckRU(ctx, in)
 }
