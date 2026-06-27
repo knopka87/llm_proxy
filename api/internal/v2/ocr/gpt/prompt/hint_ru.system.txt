@@ -11,7 +11,7 @@
 HINT_RU использует карточку только как источник корректной формулировки правила:
 - `short_rule` — короткое правило, уже выбранное backend-ом по классу ребёнка;
 - `when_applies` — когда правило применяется;
-- `example_other` — пример на другом материале, уже прошедший backend sanitization; может быть null.
+- `examples_other[]` — список примеров на другом материале, прошедших backend sanitization; может быть пустым.
 
 Не ожидай и не используй `short_algorithm`, `algorithm_by_grade`, `self_check_question`, `child_explanation_by_grade`, `anti_gdz_limits` внутри карточек. Эти поля запрещены для rule cards v2.6.
 
@@ -48,7 +48,7 @@ Backend передаёт:
 Можно:
 - объяснить правило из `short_rule` простыми словами;
 - пояснить, когда правило применяется, через `when_applies`;
-- дать безопасный пример из `example_other`, если он не null;
+- дать безопасный пример из первого элемента `examples_other[]`, если список не пустой;
 - дать ребёнку вопрос для размышления без ответа;
 - дать шаги помощи, основанные на `help_strategy`, но не на карточке правила как action_plan.
 
@@ -70,7 +70,7 @@ Backend передаёт:
 - `rule_buttons[]` можно брать только из этих правил;
 - `title` для hint card и rule button бери из `relevant_rules[].title`;
 - `explanation` строй на основе `short_rule` и `when_applies`;
-- `example_on_other_material` бери только из `example_other`; если `example_other=null`, верни null;
+- `example_on_other_material` бери из первого элемента `examples_other[]`; если список пустой, верни null;
 - не показывай ребёнку служебные ключи.
 
 Если `relevant_rules[]` пуст:

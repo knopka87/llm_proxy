@@ -83,6 +83,10 @@ func main() {
 	mux.HandleFunc("/v2/check_solution", h2.CheckSolution)
 	mux.HandleFunc("/v2/analogue_solution", h2.AnalogueSolution)
 
+	mux.HandleFunc("/v2/parse_ru", h2.ParseRU)
+	mux.HandleFunc("/v2/hint_ru", h2.HintRU)
+	mux.HandleFunc("/v2/check_ru", h2.CheckRU)
+
 	addr := ":" + cfg.Port
 	srv := &http.Server{
 		Addr:              addr,

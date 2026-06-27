@@ -41,6 +41,7 @@ func (h *Handle) Detect(w http.ResponseWriter, r *http.Request) {
 	var out types.DetectResponse
 	var stats *types.LLMStats
 
+	log.Printf("[detect] llm_name=%q", req.LLMName)
 	engine, err := h.engs.GetEngine(req.LLMName)
 	if err != nil {
 		log.Printf("[detect] engine error: %v", err)

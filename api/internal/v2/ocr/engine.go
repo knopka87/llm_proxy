@@ -14,6 +14,9 @@ type Engine interface {
 	Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, *types.LLMStats, error)
 	CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, *types.LLMStats, error)
 	AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, *types.LLMStats, error)
+	ParseRU(ctx context.Context, in types.ParseRURequest) (types.ParseRUResponse, *types.LLMStats, error)
+	HintRU(ctx context.Context, in types.HintRUCompactInput) (types.HintRUResponse, *types.LLMStats, error)
+	CheckRU(ctx context.Context, in types.CheckRUCompactInput) (types.CheckRUResponse, *types.LLMStats, error)
 }
 
 type Engines struct {

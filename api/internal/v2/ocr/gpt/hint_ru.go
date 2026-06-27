@@ -38,7 +38,16 @@ func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types
 	}
 	util.FixJSONSchemaStrict(schema)
 
-	userJSON, _ := json.Marshal(in)
+	userTask, err := util.LoadUserPrompt(HINT_RU, e.Name(), e.Version())
+	if err != nil {
+		userTask = ""
+	}
+
+	userObj := map[string]any{
+		"task":  userTask,
+		"input": in,
+	}
+	userJSON, _ := json.Marshal(userObj)
 
 	body := map[string]any{
 		"model": model,

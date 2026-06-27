@@ -1,0 +1,11 @@
+Верни ТОЛЬКО JSON по check_ru.output.schema.v2_6_4.json.
+
+Ниже — compact input от backend. Проверь ответы ребёнка по русскому языку.
+
+Правила:
+- Не исправляй ответ за ребёнка и не давай готовое решение.
+- check_items[] содержит пары source_item / student_answer — проверяй именно их.
+- Если answer_reliability="none" или check_flow="need_retake" — верни status="cannot_check".
+- Соблюдай лимиты: error_groups <= limits.max_error_groups, rule_buttons <= limits.max_rule_buttons.
+
+COMPACT_INPUT:

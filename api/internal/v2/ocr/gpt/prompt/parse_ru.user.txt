@@ -1,0 +1,11 @@
+Верни ТОЛЬКО JSON по parse_ru.output.schema.v2_6_6.json.
+
+Вход:
+- image: фото одного задания по русскому языку (прикреплено)
+- task_id: идентификатор задания (верни в поле task_id если нужно для трассировки)
+- grade: 1|2|3|4 — класс ребёнка
+- subject_candidate: "ru"
+- locale: "ru-RU"
+
+Разбери задание и верни action_plan со всеми actions[].
+Если изображение нечитаемо или задание не по русскому языку — верни readable=false, recommend_retake=true, actions=[].
