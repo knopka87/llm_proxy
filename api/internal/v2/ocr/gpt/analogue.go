@@ -96,7 +96,7 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 	raw, _ := io.ReadAll(resp.Body)
 	t := time.Since(start).Milliseconds()
 	inTok, outTok := parseUsage(raw)
-	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t}
+	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t, Model: model}
 	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
 	if err != nil || strings.TrimSpace(out) == "" {
 		out = fallbackExtractResponsesText(raw)

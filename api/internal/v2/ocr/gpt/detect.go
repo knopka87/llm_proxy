@@ -121,7 +121,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 
 	// Извлекаем реальные токены из ответа OpenAI
 	inTok, outTok := parseUsage(raw)
-	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t}
+	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t, Model: model}
 
 	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
 	if err != nil || strings.TrimSpace(out) == "" {

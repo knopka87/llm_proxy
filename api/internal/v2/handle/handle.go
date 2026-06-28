@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"llm-proxy/api/internal/v2/ocr"
+	"llm-proxy/api/internal/v2/ocr/types"
 )
 
 const (
@@ -30,6 +31,21 @@ type Handle struct {
 func New(engs *ocr.Engines) *Handle {
 	return &Handle{
 		engs: engs,
+	}
+}
+
+// writeStatsHeaders пишет метрики LLM-вызова в заголовки ответа.
+// X-LLM-Model позволяет child_bot логировать, какая именно модель
+// обработала запрос, и сохранять это в llm_steps_json.
+func writeStatsHeaders(w http.ResponseWriter, stats *types.LLMStats) {
+	if stats == nil {
+		return
+	}
+	w.Header().Set("X-LLM-Input-Tokens", strconv.Itoa(stats.InputTokens))
+	w.Header().Set("X-LLM-Output-Tokens", strconv.Itoa(stats.OutputTokens))
+	w.Header().Set("X-LLM-Latency-Ms", strconv.FormatInt(stats.LatencyMs, 10))
+	if stats.Model != "" {
+		w.Header().Set("X-LLM-Model", stats.Model)
 	}
 }
 

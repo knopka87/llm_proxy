@@ -25,19 +25,10 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 		model = "gpt-5-mini"
 	}
 
-	// Параметры сэмплинга по уровням
-	temp := 1
-
-	// switch in.Level {
-	// case types.HintL3:
-	// 	// model = "gpt-5-mini"
-	// 	temp = 1
-	// case types.HintL2:
-	// 	// остаёмся на gpt-4.1-mini
-	// 	temp = 1
-	// default:
-	// 	// L1: значения по умолчанию заданы выше
-	// }
+	// 0.4: достаточно творческой вариативности для подсказок, но не случайность.
+	// Значение 1 давало нестабильные результаты: повторные запросы одного задания
+	// выдавали принципиально разные подсказки.
+	temp := 0.4
 
 	// Try to load system prompt from /prompt/hint<L1|L2|L3>.txt; fallback to the default text if not found.
 	system, err := util.LoadSystemPrompt(HINT, e.Name(), e.Version())
@@ -88,8 +79,9 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 			},
 		},
 	}
+	// gpt-5 не поддерживает параметр temperature — не передаём его.
 	if strings.Contains(model, "gpt-5") {
-		body["temperature"] = 1
+		delete(body, "temperature")
 	}
 
 	payload, _ := json.Marshal(body)
@@ -111,7 +103,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	raw, _ := io.ReadAll(resp.Body)
 	t := time.Since(start).Milliseconds()
 	inTok, outTok := parseUsage(raw)
-	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t}
+	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t, Model: model}
 	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
 	if err != nil || strings.TrimSpace(out) == "" {
 		out = fallbackExtractResponsesText(raw)

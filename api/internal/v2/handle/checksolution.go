@@ -57,11 +57,7 @@ func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {
 	// 	}
 	// }
 
-	if stats != nil {
-		w.Header().Set("X-LLM-Input-Tokens", strconv.Itoa(stats.InputTokens))
-		w.Header().Set("X-LLM-Output-Tokens", strconv.Itoa(stats.OutputTokens))
-		w.Header().Set("X-LLM-Latency-Ms", strconv.FormatInt(stats.LatencyMs, 10))
-	}
+	writeStatsHeaders(w, stats)
 
 	// Fallback: if normalization failed for any reason, return raw output
 	writeJSON(w, http.StatusOK, out)

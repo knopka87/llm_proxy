@@ -248,9 +248,10 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 
 // chatRequest — тело запроса Chat Completions API (используется OpenRouter и OpenAI).
 type chatRequest struct {
-	Model          string         `json:"model"`
-	Messages       []message      `json:"messages"`
+	Model          string          `json:"model"`
+	Messages       []message       `json:"messages"`
 	ResponseFormat *responseFormat `json:"response_format,omitempty"`
+	Temperature    *float64        `json:"temperature,omitempty"`
 }
 
 type message struct {
@@ -301,6 +302,9 @@ func isGeminiModel(model string) bool {
 	return strings.Contains(m, "gemini") || strings.Contains(m, "google/")
 }
 
+// tempPtr возвращает указатель на float64 — для заполнения Temperature в chatRequest.
+func tempPtr(t float64) *float64 { return &t }
+
 func (e *Engine) call(
 	ctx context.Context,
 	model, op string,
@@ -340,10 +344,21 @@ func (e *Engine) call(
 		}
 	}
 
+	// Температура зависит от шага: низкая для детерминированных операций,
+	// умеренная для творческих (подсказки).
+	var temp *float64
+	switch op {
+	case "check", "check_ru", "parse", "parse_ru", "detect":
+		temp = tempPtr(0.1) // максимальный детерминизм
+	case "hint", "hint_ru":
+		temp = tempPtr(0.4) // вариативность, но без случайности
+	}
+
 	reqBody := chatRequest{
 		Model:          model,
 		Messages:       messages,
 		ResponseFormat: rf,
+		Temperature:    temp,
 	}
 
 	// Для Gemini добавляем явную инструкцию в конец user-сообщения,
@@ -392,6 +407,7 @@ func (e *Engine) call(
 		InputTokens:  cr.Usage.PromptTokens,
 		OutputTokens: cr.Usage.CompletionTokens,
 		LatencyMs:    latencyMs,
+		Model:        model,
 	}
 
 	text := util.StripCodeFences(strings.TrimSpace(cr.Choices[0].Message.Content))

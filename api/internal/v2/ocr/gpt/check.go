@@ -96,9 +96,11 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 			},
 		},
 	}
-	// gpt-5 models don't support temperature parameter
+	// Низкая температура для детерминизма проверки — одинаковый ответ должен
+	// давать одинаковый результат при повторных запросах.
+	// gpt-5 не поддерживает параметр temperature.
 	if !strings.Contains(model, "gpt-5") {
-		body["temperature"] = 0.5
+		body["temperature"] = 0.1
 	}
 
 	payload, _ := json.Marshal(body)
@@ -127,7 +129,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	raw, _ := io.ReadAll(resp.Body)
 	t := time.Since(start).Milliseconds()
 	inTok, outTok := parseUsage(raw)
-	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t}
+	stats := &types.LLMStats{InputTokens: inTok, OutputTokens: outTok, LatencyMs: t, Model: model}
 	log.Printf("[check] OpenAI response body_len=%d", len(raw))
 
 	out, err := util.ExtractResponsesText(bytes.NewReader(raw))
