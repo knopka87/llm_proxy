@@ -1,0 +1,353 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2 (1) (1).txt",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T9 only).",
+        "MAPPING_JSON not provided in chat; template_id/topic follow the established slice convention used in T2–T4 outputs."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T9",
+        "template_id": "T9_pedagogical_template",
+        "title": "Письменное умножение и деление (столбиком)",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "column",
+          "plain_text",
+          "fill_gaps",
+          "inline_examples"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "arithmetic_fluency",
+          "format": "column",
+          "topic": "written_mul_div_column",
+          "constraints": [
+            "multi_step"
+          ],
+          "template_params_defaults": {
+            "ops": [
+              "mul",
+              "div"
+            ],
+            "written_algorithm": true,
+            "range_max": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "arithmetic_fluency",
+            "topic": "written_mul_div_column",
+            "formats_allowed": [
+              "column",
+              "plain_text",
+              "fill_gaps",
+              "inline_examples"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T9_EXPLICIT_COLUMN_MUL_DIV",
+              "must_have": {
+                "text_patterns_any": [
+                  "(умножение|деление|умножь|раздели)(те)? столбиком",
+                  "(умнож|делен).* (столбик|письменно)",
+                  "в столбик.*(умнож|делен|×|:)",
+                  "письменн(ое|ый|ые) (умножение|деление)",
+                  "деление уголком",
+                  "\\d+ [×·\\*] \\d+ .* столбик",
+                  "\\d+ : \\d+ .* столбик"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "таблица умножения",
+                  "по таблице",
+                  "выучи таблицу",
+                  "неизвестное слагаемое",
+                  "неизвестное уменьшаемое",
+                  "неизвестное вычитаемое",
+                  "уравнение",
+                  "чётн",
+                  "нечётн",
+                  "римск",
+                  "арабск",
+                  "периметр",
+                  "площадь",
+                  "диаграмма",
+                  "числовая прямая",
+                  "сложение столбиком",
+                  "вычитание столбиком",
+                  "столбик.*(сложен|вычитан|\\+|−|\\-)",
+                  "(сложи|вычти)(те)? столбиком"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing",
+                  "table"
+                ]
+              },
+              "routing_priority": 95,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений 'умнож/делен' + 'столбик/письменно'; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T9_COLUMN_LAYOUT_WITH_MULDIV_WORDS",
+              "must_have": {
+                "text_patterns_any": [
+                  "умнож",
+                  "делен",
+                  "(умножь|раздели|дели)(те)?",
+                  "\\d+ [×·\\*:] \\d+"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "таблица умножения",
+                  "по таблице",
+                  "выучи таблицу",
+                  "уравнение",
+                  "неизвестное",
+                  "периметр",
+                  "площадь",
+                  "сложение столбиком",
+                  "вычитание столбиком",
+                  "(сложи|вычти)(те)? столбиком"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing",
+                  "table"
+                ]
+              },
+              "routing_priority": 85,
+              "tie_breaker": "(1) совпало visual_kinds_any; (2) 0 нарушений must_not; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T9_FILL_GAPS_STEPS",
+              "must_have": {
+                "text_patterns_any": [
+                  "промежуточн(ый|ые) результат",
+                  "(частное|делитель|делимое|множитель|произведение)"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "таблица умножения",
+                  "по таблице",
+                  "выучи таблицу",
+                  "числовая прямая",
+                  "диаграмма",
+                  "неизвестное слагаемое",
+                  "неизвестное уменьшаемое",
+                  "неизвестное вычитаемое",
+                  "римск"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 70,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений терминов шагов; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T5",
+            "T8",
+            "T6",
+            "T3",
+            "T7"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Для письменных алгоритмов полезна короткая самопроверка и контроль разрядов/остатка (если появился) без раскрытия ответа."
+        },
+        "notes_for_backend": [
+          "Сильные якоря: «умнож/делен» вместе с «столбиком/в столбик/письменно» или визуальная раскладка столбца.",
+          "Если явно «таблица умножения» — это T8.",
+          "Если это сложение/вычитание столбиком — это T5."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T09_A",
+        "kind": "positive",
+        "description": "Умножь столбиком: 234 × 6.",
+        "expected": {
+          "template_id": "T9_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "column",
+          "topic": "written_mul_div_column"
+        },
+        "why": "Явные маркеры «умножь» и «столбиком»."
+      },
+      {
+        "id": "RT_T09_B",
+        "kind": "positive",
+        "description": "Раздели столбиком: 144 : 6.",
+        "expected": {
+          "template_id": "T9_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "column",
+          "topic": "written_mul_div_column"
+        },
+        "why": "Явные маркеры «раздели» и «столбиком»."
+      },
+      {
+        "id": "RT_T09_C",
+        "kind": "near_miss",
+        "description": "Вычисли: 7 × 8. Используй таблицу умножения.",
+        "expected": {
+          "template_id": "T8_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "table_mul_div"
+        },
+        "why": "Тренировка фактов по таблице — это T8, без письменного алгоритма."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T9_pedagogical_template": {
+      "hint_style_profile": "written_mul_div_column",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "tone": "спокойный/пошаговый",
+        "complexity_rules": [
+          "короткие инструкции",
+          "по разрядам",
+          "без лишних переменных",
+          "без воды"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Выполнять письменное умножение и деление столбиком по шагам и проверять результат.",
+        "l1": {
+          "rules": [
+            "Уточни действие: умножение или деление.",
+            "Проверь, что числа записаны правильно столбиком (по разрядам).",
+            "Скажи, с какого шага начать (обычно справа налево при умножении; сверху вниз по шагам при делении)."
+          ],
+          "format": "Проверка записи → Первый шаг",
+          "forbidden": [
+            "давать конечный ответ сразу",
+            "переводить в таблицу умножения вместо столбика, если требуют письменный способ"
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Умножение: умножай по цифрам, записывай промежуточные результаты, затем складывай их по разрядам (если множитель двузначный и больше).",
+            "Деление: дели по шагам — берём часть делимого, подбираем цифру частного, умножаем делитель, вычитаем, сносим следующую цифру.",
+            "Следи за разрядами и аккуратно записывай промежуточные результаты."
+          ],
+          "format": "Алгоритм по шагам → Мини-проверка",
+          "forbidden": [
+            "длинные объяснения вместо пошагового алгоритма",
+            "вводить новые обозначения кроме уже данных"
+          ]
+        },
+        "l3": {
+          "when_allowed": "только если max_hints_default==3",
+          "rules": [
+            "Самопроверка: умножение можно проверить делением; деление — умножением (частное × делитель + остаток = делимое, если остаток есть).",
+            "Проверь, что промежуточные записи стоят в правильных разрядах.",
+            "Оставь ребёнку возможность досчитать самому."
+          ],
+          "format": "Короткая проверка"
+        }
+      },
+      "common_mistakes": [
+        "Сдвигают промежуточные результаты не в тот разряд.",
+        "Теряют нули (особенно при умножении на 10, 100).",
+        "При делении неправильно подбирают цифру частного.",
+        "Пропускают шаг «снести следующую цифру» или вычитают неверно.",
+        "Не делают проверку обратным действием."
+      ],
+      "terminology_rules": [
+        "1–2 класс: говорить простыми словами «умножаем по цифрам», «делим по шагам».",
+        "3–4 класс: можно «частное/делитель/делимое/остаток», но кратко."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

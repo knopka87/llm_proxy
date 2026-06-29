@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"llm-proxy/api/internal/v2/ocr/types"
+	"llm-proxy/api/internal/v2/tmplrouter"
 )
 
 type Engine interface {
@@ -20,10 +21,11 @@ type Engine interface {
 }
 
 type Engines struct {
-	OpenAI     Engine // OpenAI GPT — hint, check, analogue
-	Gemini     Engine // Gemini    — detect, parse
-	Mixed      Engine // detect+parse→Gemini, hint+check→OpenAI
-	OpenRouter Engine // все шаги через OpenRouter; модели из env
+	OpenAI         Engine                // OpenAI GPT — hint, check, analogue
+	Gemini         Engine                // Gemini    — detect, parse
+	Mixed          Engine                // detect+parse→Gemini, hint+check→OpenAI
+	OpenRouter     Engine                // все шаги через OpenRouter; модели из env
+	TemplateRouter *tmplrouter.Router    // педагогические шаблоны T1–T52
 }
 
 // GetEngine возвращает движок по llm_name из запроса:

@@ -1,0 +1,327 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2.updated_after_audit_T1_T5.txt",
+      "generated_at": "2026-01-29T06:45:14Z",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T39 only).",
+        "Основан на описании T39 в педдокументе и routing_keys_table_v1.xlsx; без добавления новых ped-ключей.",
+        "v2: formats_allowed для T39 расширен (drawing/mixed/plain_text), добавлено правило T39_TILED_RECTANGLES для задач про разрезанный прямоугольник и длины сторон квадратов."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T39",
+        "template_id": "T39_pedagogical_template",
+        "title": "Геометрические олимпиады и головоломки",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "drawing",
+          "mixed",
+          "plain_text"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "geometry",
+          "format": "drawing",
+          "topic": "geometry_puzzles",
+          "constraints": [
+            "needs_visual"
+          ],
+          "template_params_defaults": {
+            "ops": [
+              "add",
+              "sub",
+              "mul",
+              "div"
+            ],
+            "geometry_mode": "puzzles",
+            "logic_mode": null,
+            "word_model": null,
+            "change_mode": "none",
+            "compare_mode": "none",
+            "unit_kind": null,
+            "range_max": null,
+            "unknown_component": null,
+            "data_task_mode": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "geometry",
+            "formats_allowed": [
+              "drawing",
+              "mixed",
+              "plain_text"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T39_COUNT_FIGURES",
+              "must_have": {
+                "text_patterns_any": [
+                  "сколько (квадратов|треугольников|прямоугольников|фигур|отрезков|линий)",
+                  "(посчитай|подсчитай)(те)? (квадраты|фигуры|треугольники|прямоугольники)",
+                  "найди(те)? все (квадраты|треугольники|фигуры|прямоугольники)",
+                  "сколько (различных|всего) фигур",
+                  "на рисунке .* (квадрат|треугольник|прямоугольник)"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "периметр",
+                  "площадь"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 79,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие вопроса 'сколько квадратов/фигур/отрезков'; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T39_MATCHSTICK_PUZZLE",
+              "must_have": {
+                "text_patterns_any": [
+                  "(задача|головоломка) со спичками",
+                  "(переложи|убери|переставь|добавь)(те)? (спички|спичку|одну спичку|\\d+ спич)",
+                  "из (спичек|палочек)",
+                  "спички сложены",
+                  "(переложи|убери)(те)? (палочку|одну палочку)"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 78,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие фраз про действия со спичками; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T39_TILED_RECTANGLES",
+              "must_have": {
+                "text_patterns_any": [
+                  "прямоугольник разрезали на",
+                  "разрезали на .* квадрат",
+                  "длин(а|ы) сторон(ы)? .* квадрат",
+                  "покажи.*длин(ы|у) сторон"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "периметр",
+                  "площадь"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 80,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) есть маркеры 'прямоугольник разрезали на ... квадратов' и запрос длины сторон; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T22",
+            "T41"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Для геометрических головоломок полезен третий шаг с проверкой решения и обсуждением, как именно считали фигуры или перекладывали спички."
+        },
+        "notes_for_backend": [
+          "T39: геометрические олимпиады и головоломки (подсчёт фигур, задачи со спичками).",
+          "Основные параметры PARSE: task_type='geometry', ped.constraints=['needs_visual'], template_params.geometry_mode='puzzles', ops=['add','sub','mul','div'] строго по routing_keys_table_v1.xlsx.",
+          "topic='geometry_puzzles' используется как стабильный идентификатор темы.",
+          "Для разведения с T22 важно, что здесь задачe не требуется вычислять периметр/площадь, а основной акцент на подсчёте фигур и манипуляции со спичками."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T39_COUNT_SQUARES",
+        "kind": "positive",
+        "description": "На рисунке несколько квадратов, составленных из маленьких. Посчитай, сколько всего квадратов на рисунке.",
+        "expected": {
+          "template_id": "T39_pedagogical_template",
+          "task_type": "geometry",
+          "format": "drawing"
+        },
+        "why": "Классическая задача на подсчёт фигур на рисунке."
+      },
+      {
+        "id": "RT_T39_MATCHSTICK",
+        "kind": "positive",
+        "description": "Переложи одну спичку, чтобы получить правильное равенство.",
+        "expected": {
+          "template_id": "T39_pedagogical_template",
+          "task_type": "geometry",
+          "format": "drawing"
+        },
+        "why": "Типичная задача со спичками."
+      },
+      {
+        "id": "RT_T39_TRIANGLES",
+        "kind": "positive",
+        "description": "Сколько треугольников на рисунке?",
+        "expected": {
+          "template_id": "T39_pedagogical_template",
+          "task_type": "geometry",
+          "format": "drawing"
+        },
+        "why": "Подсчёт треугольников."
+      },
+      {
+        "id": "RT_T39_REMOVE_MATCH",
+        "kind": "positive",
+        "description": "Из спичек сложен квадрат 2×2. Убери 2 спички, чтобы осталось 2 квадрата.",
+        "expected": {
+          "template_id": "T39_pedagogical_template",
+          "task_type": "geometry",
+          "format": "drawing"
+        },
+        "why": "Задача со спичками на удаление."
+      },
+      {
+        "id": "RT_T39_TILED",
+        "kind": "positive",
+        "description": "Прямоугольник разрезали на 5 квадратов. Найди длины сторон квадратов.",
+        "expected": {
+          "template_id": "T39_pedagogical_template",
+          "task_type": "geometry",
+          "format": "mixed"
+        },
+        "why": "Задача про разрезание прямоугольника на квадраты."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T39_pedagogical_template": {
+      "hint_style_profile": "geometry_puzzles",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 2,
+        "grade_max": 4,
+        "tone": "спокойный/поддерживающий",
+        "complexity_rules": [
+          "По возможности опираться на рисунок: проговаривать, какие фигуры уже посчитаны, а какие ещё нет.",
+          "Показывать, как удобно помечать или группировать фигуры, чтобы не сбиться при подсчёте.",
+          "В задачах со спичками объяснять каждое действие простыми словами, не перегружая формулами."
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Развивать наблюдательность и умение считать фигуры, работать с разрезаниями и задачами со спичками.",
+        "l1": {
+          "rules": [
+            "Вместе с ребёнком внимательно рассмотреть рисунок: определить, какие фигуры нарисованы и как они расположены.",
+            "Показать удобный способ помечать уже посчитанные фигуры (например, точкой или номером).",
+            "Обсудить, какие скрытые фигуры могут образовываться при разрезании или наложении фигур."
+          ],
+          "format": "Понимание рисунка и типов фигур, которые надо считать.",
+          "forbidden": [
+            "сразу называть ответ, не объясняя, как его получили.",
+            "переходить к формальным вычислениям периметра/площади вместо подсчёта фигур."
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Пошагово считать фигуры по выбранному порядку (например, от меньших к большим или по строкам/столбцам).",
+            "Показывать, как не пропустить и не пересчитать одну и ту же фигуру два раза.",
+            "В задачах со спичками объяснять, какую спичку и почему нужно переложить или убрать, чтобы получить нужную фигуру или равенство."
+          ],
+          "format": "Пошаговый разбор подсчёта фигур или решения задачи со спичками.",
+          "forbidden": [
+            "перескакивать через шаги и не показывать промежуточный результат.",
+            "давать слишком сложные конфигурации, если ребёнок ещё не разобрался с базовыми примерами."
+          ]
+        },
+        "l3": {
+          "when_allowed": "если max_hints_default == 3 и ребёнок уже видел пример разбирательства одной головоломки.",
+          "rules": [
+            "Организовать самопроверку: предложить ребёнку ещё раз пройтись по рисунку и пересчитать фигуры по своему плану.",
+            "Попросить ребёнка объяснить, как он убедился, что ни одна фигура не пропущена и не посчитана дважды.",
+            "Дать похожую, но чуть более простую головоломку для самостоятельного подсчёта или перекладывания спичек."
+          ],
+          "format": "Самопроверка и закрепление приёмов работы с геометрическими головоломками.",
+          "forbidden": [
+            "вводить новые, существенно более сложные типы задач на этом этапе.",
+            "оставлять ребёнка без возможности самому проверить правильность ответа по рисунку."
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Считает одну и ту же фигуру несколько раз или пропускает фигуры.",
+        "Сложно увидеть составные фигуры (например, большие квадраты, сложенные из маленьких).",
+        "В задачах со спичками меняет лишние спички, нарушая другие условия задачи.",
+        "Путается в последовательности действий и перестаёт понимать, что уже сделано."
+      ],
+      "terminology_rules": [
+        "Использовать простые названия фигур (квадрат, прямоугольник, треугольник, отрезок).",
+        "Избегать сложной геометрической терминологии, если она не требуется для решения головоломки.",
+        "Подчёркивать, что главное — внимательность и аккуратный подсчёт, а не запоминание формул."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

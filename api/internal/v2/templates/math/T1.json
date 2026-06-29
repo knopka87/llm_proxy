@@ -1,0 +1,436 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt": "prompt_generate_math_templates_T1_T44.final.v2 (1).txt",
+      "note": "Slice: только T1 (не весь реестр T1–T44)."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T1",
+        "template_id": "T1_pedagogical_template",
+        "title": "Нумерация и числовая прямая",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "number_line",
+          "plain_text",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "number_sense",
+          "format": "number_line",
+          "topic": "numeration_number_line",
+          "constraints": [
+            "has_number_line",
+            "needs_visual"
+          ],
+          "template_params_defaults": {
+            "range_max": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "number_sense",
+            "topic": "numeration_number_line",
+            "formats_allowed": [
+              "number_line",
+              "plain_text",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T01_VISUAL_NUMBER_LINE",
+              "must_have": {
+                "text_patterns_any": [
+                  "числов(ая|ой|ом|ого) (прямая|прямой|луч|луче|луча)",
+                  "числовая прямая",
+                  "числовой луч",
+                  "шаг деления",
+                  "цена деления",
+                  "на шкале",
+                  "деления шкалы",
+                  "отметь(те)? (число|точку)",
+                  "между какими числами",
+                  "между числами",
+                  "координат(а|ы) точ(ки|ек)",
+                  "найди число по координат",
+                  "какое число соответствует точке"
+                ],
+                "visual_kinds_any": [
+                  "number_line"
+                ],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "римск",
+                  "термометр",
+                  "диаграмм",
+                  "таблиц",
+                  "закономерн",
+                  "найди правило",
+                  "уравнен",
+                  "неравенств"
+                ],
+                "visual_kinds_any": [
+                  "diagram",
+                  "table"
+                ]
+              },
+              "routing_priority": 90,
+              "tie_breaker": "(1) совпало visual_kinds_any (если задано) > (2) 0 нарушений must_not > (3) больше совпадений сильных якорей > (4) совпало больше template_params_required > (5) выше routing_priority > (6) стабильный порядок по template_code."
+            },
+            {
+              "rule_id": "T01_TEXT_NUMERATION",
+              "must_have": {
+                "text_patterns_any": [
+                  "разрядный состав",
+                  "разрядные слагаемые",
+                  "сумма разрядных слагаемых",
+                  "десятки и единиц",
+                  "десятки и единицы",
+                  "сотни и десятки",
+                  "тысячи и сотни",
+                  "сколько (десятков|единиц|сотен|тысяч)",
+                  "предыдущее число",
+                  "следующее число",
+                  "соседи числа",
+                  "соседние числа",
+                  "назови соседей",
+                  "сч[её]т через \\d+",
+                  "считай через \\d+",
+                  "посчитай через \\d+",
+                  "\\d+ (десятков|единиц|сотен)",
+                  "в числе \\d+ .* (десятков|единиц|сотен)",
+                  "запиши число .* цифрами",
+                  "представь число .* в виде суммы"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "закономерн",
+                  "продолжи ряд",
+                  "продолжи последовательность",
+                  "найди правило",
+                  "по правилу",
+                  "римск",
+                  "остаток",
+                  "в \\d+ раз(а)",
+                  "уравнен"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 70,
+              "tie_breaker": "(1) совпало visual_kinds_any (если задано) > (2) 0 нарушений must_not > (3) больше совпадений сильных якорей > (4) совпало больше template_params_required > (5) выше routing_priority > (6) стабильный порядок по template_code."
+            },
+            {
+              "rule_id": "T01_COMPARE_ORDER",
+              "must_have": {
+                "text_patterns_any": [
+                  "сравни числа",
+                  "сравните числа",
+                  "какое число больше",
+                  "какое число меньше",
+                  "расположи числа",
+                  "расположите числа",
+                  "запиши числа в порядке",
+                  "по возрастанию",
+                  "по убыванию",
+                  "в порядке возрастания",
+                  "в порядке убывания",
+                  "от меньшего к большему",
+                  "от большего к меньшему",
+                  "поставь знак",
+                  "вставь знак"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "закономерн",
+                  "найди правило",
+                  "римск",
+                  "уравнен",
+                  "в \\d+ раз больше",
+                  "в \\d+ раз меньше",
+                  "на сколько больше",
+                  "на сколько меньше"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 65,
+              "tie_breaker": "(1) 0 нарушений must_not > (2) больше совпадений маркеров сравнения/порядка > (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T34",
+            "T2",
+            "T35",
+            "T37"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "В T1 часто нужна самопроверка (шаг делений/разряды/соседи), но без выдачи ответа целиком."
+        },
+        "notes_for_backend": [
+          "PARSE для математики ставит template_id='UNRESOLVED_MATH', поэтому выбор выполняется по routing_rules (task_text_clean/prompt + visual_facts + ped_keys).",
+          "Визуальный подтип: visual_facts.kind='number_line' + якоря про числовую прямую/луч/шаг деления.",
+          "Текстовый подтип: якоря про разрядный состав/десятки-единицы/соседние числа/счёт через шаг; отсекать 'закономерность/найди правило' (T34)."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T01_A",
+        "kind": "positive",
+        "description": "На рисунке есть числовая прямая; нужно определить шаг делений и найти число, отмеченное точкой.",
+        "expected": {
+          "template_id": "T1_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "number_line",
+          "topic": "numeration_number_line"
+        },
+        "why": "Якорь + visual_facts.kind='number_line' отличает от текстовых задач и от T34."
+      },
+      {
+        "id": "RT_T01_B",
+        "kind": "positive",
+        "description": "Назови разрядный состав числа: сколько десятков и единиц (или сотен и десятков) в данном числе; затем назови предыдущее и следующее число.",
+        "expected": {
+          "template_id": "T1_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "plain_text",
+          "topic": "numeration_number_line"
+        },
+        "why": "Сильные текстовые якоря: 'разрядный состав', 'десятки и единицы', 'предыдущее/следующее число'."
+      },
+      {
+        "id": "RT_T01_C",
+        "kind": "near_miss",
+        "description": "Дан ряд чисел; нужно продолжить последовательность и объяснить закономерность (найти правило).",
+        "expected": {
+          "template_id": "MATH_T34_PATTERNS_AND_SEQUENCES",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "patterns_sequences"
+        },
+        "why": "Маркер 'закономерность/найди правило' должен увести в T34; must_not в T1 отсекает такие кейсы."
+      },
+      {
+        "id": "RT_T01_D",
+        "kind": "positive",
+        "description": "Определи цену деления на шкале и найди число, которое соответствует точке А.",
+        "expected": {
+          "template_id": "T1_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "number_line",
+          "topic": "numeration_number_line"
+        },
+        "why": "Фразы 'цена деления' и 'на шкале' — маркеры T01_VISUAL_NUMBER_LINE."
+      },
+      {
+        "id": "RT_T01_E",
+        "kind": "positive",
+        "description": "Представь число 256 в виде суммы разрядных слагаемых.",
+        "expected": {
+          "template_id": "T1_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "plain_text",
+          "topic": "numeration_number_line"
+        },
+        "why": "Фраза 'сумма разрядных слагаемых' — маркер T01_TEXT_NUMERATION."
+      },
+      {
+        "id": "RT_T01_F",
+        "kind": "positive",
+        "description": "Сколько десятков и сколько единиц в числе 47?",
+        "expected": {
+          "template_id": "T1_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "plain_text",
+          "topic": "numeration_number_line"
+        },
+        "why": "Фразы 'сколько десятков', 'сколько единиц' — маркеры T01_TEXT_NUMERATION."
+      },
+      {
+        "id": "RT_T01_G",
+        "kind": "positive",
+        "description": "Сравни числа и поставь знак > или <: 345 и 354.",
+        "expected": {
+          "template_id": "T1_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "plain_text",
+          "topic": "numeration_number_line"
+        },
+        "why": "Фразы 'сравни числа' и 'поставь знак' — маркеры T01_COMPARE_ORDER."
+      },
+      {
+        "id": "RT_T01_H",
+        "kind": "positive",
+        "description": "Расположи числа в порядке возрастания: 28, 15, 32, 9.",
+        "expected": {
+          "template_id": "T1_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "plain_text",
+          "topic": "numeration_number_line"
+        },
+        "why": "Фразы 'расположи числа' и 'в порядке возрастания' — маркеры T01_COMPARE_ORDER."
+      },
+      {
+        "id": "RT_T01_I",
+        "kind": "positive",
+        "description": "Назови соседей числа 100.",
+        "expected": {
+          "template_id": "T1_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "plain_text",
+          "topic": "numeration_number_line"
+        },
+        "why": "Фраза 'соседей числа' — маркер T01_TEXT_NUMERATION."
+      },
+      {
+        "id": "RT_T01_J",
+        "kind": "positive",
+        "description": "Между какими числами на числовом луче находится точка А?",
+        "expected": {
+          "template_id": "T1_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "number_line",
+          "topic": "numeration_number_line"
+        },
+        "why": "Фразы 'между какими числами' и 'числовом луче' — маркеры T01_VISUAL_NUMBER_LINE."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T1_pedagogical_template": {
+      "hint_style_profile": "numeration_number_line",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "tone": "дружелюбный/поддерживающий",
+        "complexity_rules": [
+          "короткие предложения",
+          "термины упрощать в 1–2",
+          "без лишних переменных",
+          "без воды"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Понимать запись числа, его разрядный состав и расположение на числовом луче/прямой.",
+        "l1": {
+          "rules": [
+            "Определи подтип: (а) есть числовая прямая/луч, (б) про разряды (десятки/единицы/сотни/тысячи), (в) про предыдущее/следующее/соседи, (г) счёт через 2/5/10.",
+            "Если есть числовая прямая: найди два подписанных деления рядом — это поможет понять шаг.",
+            "Сформулируй, что нужно ответить: число? шаг? соседи? разрядный состав?"
+          ],
+          "format": "Вопрос → Действие → Мини-проверка",
+          "forbidden": [
+            "сообщать конечный ответ целиком",
+            "придумывать подписи и шаг на числовой прямой без данных из условия/visual_facts",
+            "подменять задание другой темой (например закономерностями)"
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Числовая прямая: (1) определи шаг по двум соседним подписанным делениям, (2) считай деления равными шагами до точки/нужного числа, (3) проверь: каждое деление добавляет/убавляет один и тот же шаг.",
+            "Разрядный состав: прочитай число по разрядам и скажи, сколько десятков и единиц (или сотен/тысяч). Проверь: десятки — это вторая цифра справа, единицы — первая справа.",
+            "Соседи: предыдущее число на 1 меньше, следующее на 1 больше. Проверь: разница с исходным числом равна 1.",
+            "Счёт через 2/5/10: держи постоянный шаг и контролируй себя через 2–3 шага."
+          ],
+          "format": "Шаги → Где смотреть → Мини-проверка",
+          "forbidden": [
+            "использовать общие слова без опоры на якорь из условия",
+            "давать длинные объяснения вместо 2–4 коротких шагов"
+          ]
+        },
+        "l3": {
+          "when_allowed": "только если max_hints_default==3",
+          "rules": [
+            "Сделай короткую самопроверку: шаг делений постоянный? соседи отличаются на 1? разряды названы по местам цифр?",
+            "Укажи на типичные ошибки: перепутал десятки и единицы; начал считать деления, не найдя шаг; поменял шаг при счёте через 2/5/10.",
+            "Дай последний небольшой ориентир, но не называй итог."
+          ],
+          "format": "чуть подробнее, но компактно"
+        }
+      },
+      "common_mistakes": [
+        "Путает десятки и единицы (или сотни и десятки).",
+        "Определяет шаг на числовой прямой на глаз, не по подписанным делениям.",
+        "Считает деления разными шагами.",
+        "Путает предыдущее и следующее число.",
+        "Сбивается при счёте через 2/5/10 и меняет шаг."
+      ],
+      "terminology_rules": [
+        "1–2 класс: «десятки и единицы», «шаг», «деление на прямой».",
+        "3–4 класс: можно «разрядный состав», «числовой луч/прямая», «шаг деления»."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

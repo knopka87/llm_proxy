@@ -1,0 +1,261 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch 2 (T16,T19,T20,T21,T23) built to match existing TemplateRegistry format; tasks are synthetic examples."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T23",
+        "template_id": "T23_pedagogical_template",
+        "title": "Температура и шкала термометра",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "diagram",
+          "drawing",
+          "plain_text",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "measurement_units",
+          "format": "diagram",
+          "topic": "temperature_thermometer",
+          "constraints": [
+            "needs_visual"
+          ],
+          "template_params_defaults": {
+            "allow_negative": true,
+            "unit": "celsius"
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "measurement_units",
+            "topic": "temperature_thermometer",
+            "formats_allowed": [
+              "diagram",
+              "drawing",
+              "plain_text",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T23_THERMOMETER_ANCHORS",
+              "routing_priority": 98,
+              "must_have": {
+                "text_patterns_any": [
+                  "термометр",
+                  "температур",
+                  "градус",
+                  "°\\s*С|°C|°"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "diagram",
+                  "drawing"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "процент|%|дроб|доля",
+                  "перевед(и|ите)|вырази(те)?",
+                  "таблица умножения|столбик|письменно"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T23_TEMPERATURE_CHANGE",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "(повысил(ась|ась)?|понизил(ась|ась)?|стало)\\s+на\\s+\\d+\\s*°",
+                  "(на\\s+сколько)\\s+измени(лась|лось)\\s+температур"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "процент|%"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            }
+          ],
+          "confusables": [
+            "T21",
+            "T19",
+            "T16"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T23_A",
+        "kind": "positive",
+        "description": "По рисунку термометра определи температуру (шкала в градусах).",
+        "expected": {
+          "template_id": "T23_pedagogical_template",
+          "task_type": "measurement_units",
+          "format": "diagram",
+          "topic": "temperature_thermometer"
+        },
+        "why": "Явный термометр/шкала."
+      },
+      {
+        "id": "RT_T23_B",
+        "kind": "positive",
+        "description": "Температура была −3°, а стала +4°. На сколько градусов изменилась температура?",
+        "expected": {
+          "template_id": "T23_pedagogical_template",
+          "task_type": "measurement_units",
+          "format": "plain_text",
+          "topic": "temperature_thermometer"
+        },
+        "why": "Изменение температуры + градусы."
+      },
+      {
+        "id": "RT_T23_C",
+        "kind": "negative",
+        "description": "Переведи 3 м 25 см в сантиметры.",
+        "expected": {
+          "not_template_id": "T23_pedagogical_template"
+        },
+        "why": "Единицы длины — T21."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T23_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Уметь читать температуру по шкале термометра и решать задачи на изменение температуры (в т.ч. с отрицательными значениями).",
+        "l1": {
+          "format": "Как читать шкалу",
+          "rules": [
+            "Сначала найди отметку 0° и посмотри, куда направлены деления: вверх — больше, вниз — меньше.",
+            "Определи цену деления (например, 1° или 2°)."
+          ],
+          "forbidden": [
+            "переписывать условие задачи целиком",
+            "давать конечный ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Как считать изменение",
+          "rules": [
+            "Чтобы прочитать значение: посчитай деления от 0° до уровня столбика.",
+            "Чтобы найти изменение: сравни начальную и конечную температуру и вычисли разницу."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Проверь знак: если температура ниже 0°, записываем минус.",
+            "При повышении температура растёт, при понижении — уменьшается."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путают направление шкалы: думают, что −5° теплее, чем −10° (наоборот!).",
+        "Не понимают, что 0° — это граница между теплом и холодом.",
+        "При вычислении разницы температур забывают учитывать знак минус.",
+        "Читают шкалу неправильно: пропускают деления или считают неверно.",
+        "Путают «похолодало на 5°» (вычитание) и «температура −5°» (значение)."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

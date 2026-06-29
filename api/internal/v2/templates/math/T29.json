@@ -1,0 +1,266 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch 4 (T29–T33) built to match existing TemplateRegistry format; examples are synthetic."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T29",
+        "template_id": "T29_pedagogical_template",
+        "title": "Составление фигур из частей",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "drawing",
+          "grid",
+          "diagram",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "geometry",
+          "format": "drawing",
+          "topic": "compose_shapes_from_parts",
+          "constraints": [
+            "needs_visual",
+            "has_drawing"
+          ],
+          "template_params_defaults": {
+            "geometry_mode": "spatial_composition"
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "geometry",
+            "topic": "compose_shapes_from_parts",
+            "formats_allowed": [
+              "drawing",
+              "grid",
+              "diagram",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T29_COMPOSE_FROM_PARTS_WORDS",
+              "routing_priority": 98,
+              "must_have": {
+                "text_patterns_any": [
+                  "(состав(ь|ьте)|слож(и|ите)|собер(и|ите))\\s+фигур",
+                  "из\\s+част(ей|ей)",
+                  "части\\s+фигур",
+                  "разрезан(а|ы)\\s+на\\s+части"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "drawing",
+                  "grid",
+                  "diagram"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "периметр|площадь|см²|м²",
+                  "таблица|диаграмм|график",
+                  "угол|градус|°",
+                  "координат"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T29_TANGRAM_OR_PUZZLE",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "танграм|пазл",
+                  "(какую\\s+фигуру)\\s+можно\\s+составить",
+                  "сколько\\s+способ(ов|а)\\s+составить"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "drawing",
+                  "grid"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "таблица|диаграмм|график"
+                ],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T40",
+            "T39",
+            "T24",
+            "T26"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T29_A",
+        "kind": "positive",
+        "description": "Составь квадрат из 4 частей (по рисунку).",
+        "expected": {
+          "template_id": "T29_pedagogical_template",
+          "task_type": "geometry",
+          "format": "drawing",
+          "topic": "compose_shapes_from_parts"
+        },
+        "why": "Ключевое «составь… из частей»."
+      },
+      {
+        "id": "RT_T29_B",
+        "kind": "positive",
+        "description": "Фигура разрезана на части. Собери прямоугольник.",
+        "expected": {
+          "template_id": "T29_pedagogical_template",
+          "task_type": "geometry",
+          "format": "diagram",
+          "topic": "compose_shapes_from_parts"
+        },
+        "why": "Разрезана на части + собрать."
+      },
+      {
+        "id": "RT_T29_C",
+        "kind": "negative",
+        "description": "Найди периметр фигуры на рисунке.",
+        "expected": {
+          "not_template_id": "T29_pedagogical_template"
+        },
+        "why": "Периметр — не сборка, это T22/T26."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T29_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Научиться составлять целую фигуру из частей: искать подходящие стороны/углы, пробовать варианты и проверять результат.",
+        "l1": {
+          "format": "С чего начать",
+          "rules": [
+            "Посмотри на части: какие у них стороны и углы? Какие могут «стыковаться» друг с другом.",
+            "Начинай собирать с самой «опорной» детали: большой, с прямым углом или с длинной стороной."
+          ],
+          "forbidden": [
+            "переписывать условие задачи целиком",
+            "давать конечный ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Как подбирать детали",
+          "rules": [
+            "Подбирай пары сторон одинаковой длины или с одинаковым наклоном (на клетках — по количеству клеток).",
+            "Если деталь не встаёт — попробуй повернуть её и поменять местами с другой."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Проверь: не осталось ли дырок и не перекрываются ли детали.",
+            "Сверь силуэт (контур) с тем, что требуется в задании."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Переворачивают или поворачивают части в уме неправильно.",
+        "Используют одну и ту же часть дважды, хотя нельзя.",
+        "Не замечают, что части можно поворачивать.",
+        "Пытаются собрать фигуру, не проверяя, что все части использованы.",
+        "Забывают, что части не должны перекрываться."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "claude",
+      "generated_at": "2026-02-09",
+      "notes": "Шаблоны для 1 класса (T45-T50)"
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T48",
+        "template_id": "T48_pedagogical_template",
+        "title": "Соседи числа и числовой ряд до 20",
+        "grade_min": 1,
+        "grade_max": 1,
+        "formats_allowed": [
+          "plain_text",
+          "fill_gaps",
+          "number_line",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "number_sense",
+          "format": "fill_gaps",
+          "topic": "number_neighbors_sequence",
+          "constraints": [],
+          "template_params_defaults": {
+            "range_max": 20
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "number_sense",
+            "topic": "number_neighbors_sequence",
+            "formats_allowed": [
+              "plain_text",
+              "fill_gaps",
+              "number_line",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T48_NEIGHBORS",
+              "routing_priority": 95,
+              "must_have": {
+                "text_patterns_any": [
+                  "сосед(и|ей|ями)?\\s+числа",
+                  "назови\\s+соседей",
+                  "какое\\s+число\\s+(перед|после|между)",
+                  "(предыдущее|следующее)\\s+число",
+                  "стоит\\s+(перед|после|между)",
+                  "\\d+,\\s*(__GAP__|\\?|_),\\s*\\d+",
+                  "(__GAP__|\\?|_),\\s*\\d+,\\s*(__GAP__|\\?|_)"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "сложи|вычти|прибавь",
+                  "\\+|−|-",
+                  "больше.*на|меньше.*на",
+                  "римск|[IVXLCDM]"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            },
+            {
+              "rule_id": "T48_SEQUENCE_FILL",
+              "routing_priority": 85,
+              "must_have": {
+                "text_patterns_any": [
+                  "продолжи\\s+(ряд|счёт|последовательность)",
+                  "заполни\\s+пропуски.*ряд",
+                  "вставь\\s+пропущенн",
+                  "1,\\s*2,\\s*3.*(__GAP__|\\?|_)",
+                  "счёт\\s+(от|до)\\s+\\d+"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "number_line"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "закономерност|правило",
+                  "чётн|нечётн"
+                ],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T1",
+            "T34"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": [
+          "Ключевые якоря: «соседи числа», «перед/после/между», «продолжи ряд».",
+          "Отличие от T1: здесь простой числовой ряд без визуальной числовой прямой.",
+          "Отличие от T34: нет сложных закономерностей, только +1/-1."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T48_A",
+        "kind": "positive",
+        "description": "Назови соседей числа 7.",
+        "expected": {
+          "template_id": "T48_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "plain_text",
+          "topic": "number_neighbors_sequence"
+        },
+        "why": "Явный маркер «соседи числа»."
+      },
+      {
+        "id": "RT_T48_B",
+        "kind": "positive",
+        "description": "Какое число стоит между 8 и 10?",
+        "expected": {
+          "template_id": "T48_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "plain_text",
+          "topic": "number_neighbors_sequence"
+        },
+        "why": "Вопрос про число между двумя другими."
+      },
+      {
+        "id": "RT_T48_C",
+        "kind": "positive",
+        "description": "Заполни пропуски: 5, __, 7, __, 9.",
+        "expected": {
+          "template_id": "T48_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "fill_gaps",
+          "topic": "number_neighbors_sequence"
+        },
+        "why": "Числовой ряд с пропусками."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T48_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 1,
+        "register": "kid_friendly_ru",
+        "complexity_rules": [
+          "простые слова",
+          "короткие фразы"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Научить находить соседей числа и понимать порядок чисел в ряду.",
+        "l1": {
+          "format": "Что такое соседи",
+          "rules": [
+            "Соседи числа — это числа, которые стоят рядом с ним.",
+            "Сосед слева — на 1 меньше (предыдущее число).",
+            "Сосед справа — на 1 больше (следующее число)."
+          ],
+          "forbidden": [
+            "давать ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Как найти",
+          "rules": [
+            "Вспомни счёт: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10...",
+            "Найди своё число и посмотри, что стоит до и после него.",
+            "Например, для 7: ...6, 7, 8... — соседи 6 и 8."
+          ],
+          "forbidden": [
+            "давать ответ без объяснения"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Проверь: сосед слева + 1 = твоё число.",
+            "Проверь: твоё число + 1 = сосед справа."
+          ],
+          "forbidden": [
+            "решать за ребёнка"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путают «перед» и «после» (предыдущее и следующее).",
+        "Называют число через одно (вместо 6 и 8 для 7 говорят 5 и 9).",
+        "Сбиваются при переходе через десяток (9, 10, 11).",
+        "Путают соседей с составом числа.",
+        "Забывают, что сосед слева меньше, а справа — больше."
+      ],
+      "terminology_rules": {
+        "use_terms": [
+          "сосед",
+          "перед",
+          "после",
+          "между",
+          "следующее",
+          "предыдущее"
+        ],
+        "avoid_terms": [
+          "предшествующее",
+          "последующее"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

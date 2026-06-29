@@ -1,0 +1,483 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2.updated_after_audit_T1_T5.txt",
+      "generated_at": "2025-12-13T09:50:03Z",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T44 only).",
+        "Основан на описании T44 в педдокументе и routing_keys_table_v1.xlsx; без добавления новых ключей, с расширением enums.constraints_enum значением 'check_required'."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question",
+        "check_required"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T44",
+        "template_id": "T44_pedagogical_template",
+        "title": "Вычислительная культура, проверка и алгоритмы",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "calc_culture_algorithms",
+          "constraints": [
+            "check_required",
+            "multi_step"
+          ],
+          "template_params_defaults": {
+            "ops": [
+              "add",
+              "sub",
+              "mul",
+              "div"
+            ],
+            "logic_mode": "algorithms",
+            "word_model": "none",
+            "change_mode": "none",
+            "compare_mode": "none",
+            "geometry_mode": null,
+            "unit_kind": null,
+            "range_max": null,
+            "unknown_component": null,
+            "data_task_mode": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "arithmetic_fluency",
+            "topic": "calc_culture_algorithms",
+            "formats_allowed": [
+              "plain_text",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T44_CHECK_BY_INVERSE",
+              "must_have": {
+                "text_patterns_any": [
+                  "проверь",
+                  "проверьте",
+                  "проверь вычисления",
+                  "проверь пример",
+                  "проверь результат",
+                  "проверь решение",
+                  "проверь ответ",
+                  "обратным действием",
+                  "обратным действием проверь",
+                  "сделай проверку",
+                  "выполни проверку",
+                  "проверка вычислений",
+                  "проверочное действие"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "задача",
+                  "скорость",
+                  "расстояние",
+                  "км/ч",
+                  "периметр",
+                  "площадь"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 74,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие маркеров проверки и обратного действия; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T44_ESTIMATE_RESULT",
+              "must_have": {
+                "text_patterns_any": [
+                  "прикинь результат",
+                  "прикинь",
+                  "прикинь ответ",
+                  "прикидка",
+                  "оценить результат",
+                  "оценить ответ",
+                  "оцени результат",
+                  "оцени ответ",
+                  "оценка результата",
+                  "примерно",
+                  "примерный ответ",
+                  "приблизительно",
+                  "приблизительный ответ",
+                  "округли и вычисли",
+                  "округли и посчитай",
+                  "примерно равно",
+                  "приблизительное значение"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "найди точное значение",
+                  "точный ответ",
+                  "точное значение"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 73,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие маркеров прикидки/оценки; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T44_FIND_ERROR",
+              "must_have": {
+                "text_patterns_any": [
+                  "найди ошибку",
+                  "найдите ошибку",
+                  "где ошибка",
+                  "исправь ошибку",
+                  "исправьте ошибку",
+                  "в каком примере",
+                  "в каких примерах",
+                  "ошибк",
+                  "есть ли ошибка",
+                  "допущена ошибка",
+                  "ошибочный ответ",
+                  "неправильно вычислено",
+                  "неверно решено",
+                  "правильно ли решено",
+                  "правильно ли вычислено"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "сюжетная задача",
+                  "текстовая задача"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 72,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие маркеров поиска ошибки; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T44_TRUE_FALSE_CHECK",
+              "must_have": {
+                "text_patterns_any": [
+                  "верно ли",
+                  "верно или неверно",
+                  "правда ли",
+                  "истинно ли",
+                  "согласен ли",
+                  "может ли быть",
+                  "правильно ли",
+                  "верное равенство",
+                  "неверное равенство"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "задача",
+                  "скорость",
+                  "расстояние"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 70,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие маркеров верно/неверно; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T44_DESCRIBE_ALGORITHM",
+              "must_have": {
+                "text_patterns_any": [
+                  "составь план решения",
+                  "составь алгоритм",
+                  "опиши алгоритм",
+                  "опиши порядок действий",
+                  "порядок действий",
+                  "последовательность действий",
+                  "запиши по шагам",
+                  "план вычислений",
+                  "как вычислить",
+                  "расставь порядок действий",
+                  "какое действие первое",
+                  "какое действие выполнить сначала",
+                  "что выполнить сначала",
+                  "в каком порядке вычислять"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "задача на движение",
+                  "скорость",
+                  "расстояние",
+                  "вычисли выражение",
+                  "найди значение"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 71,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие формулировок про алгоритм/порядок действий; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T6",
+            "T16",
+            "T17",
+            "T18"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Для задач на вычислительную культуру и проверку полезен третий шаг с обсуждением, как проверить себя и какие шаги алгоритма важны."
+        },
+        "notes_for_backend": [
+          "T44: задания на вычислительную культуру, проверку и алгоритмы (по педдокументу).",
+          "Типичные подтипы: проверка обратным действием, прикидка результата, поиск ошибок, составление алгоритма.",
+          "task_type='arithmetic_fluency', constraints включают 'check_required' и 'multi_step', logic_mode='algorithms' строго по routing_keys_table_v1.xlsx."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T44_CHECK_BY_INVERSE",
+        "kind": "positive",
+        "description": "Реши пример и проверь его обратным действием: 47 + 28.",
+        "expected": {
+          "template_id": "T44_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "calc_culture_algorithms"
+        },
+        "why": "Задание явно просит выполнить проверку обратным действием."
+      },
+      {
+        "id": "RT_T44_DO_CHECK",
+        "kind": "positive",
+        "description": "Вычисли и сделай проверку: 156 - 89.",
+        "expected": {
+          "template_id": "T44_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "calc_culture_algorithms"
+        },
+        "why": "Фраза 'сделай проверку' — типичный маркер T44."
+      },
+      {
+        "id": "RT_T44_FIND_ERROR",
+        "kind": "positive",
+        "description": "В каких примерах допущена ошибка? 36 + 29 = 55; 48 - 19 = 39; 7 · 8 = 56.",
+        "expected": {
+          "template_id": "T44_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "calc_culture_algorithms"
+        },
+        "why": "Задача на поиск ошибок в вычислениях, типичный случай для T44."
+      },
+      {
+        "id": "RT_T44_FIX_ERROR",
+        "kind": "positive",
+        "description": "Найди и исправь ошибку: 72 : 8 = 8.",
+        "expected": {
+          "template_id": "T44_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "calc_culture_algorithms"
+        },
+        "why": "Фраза 'исправь ошибку' — маркер T44_FIND_ERROR."
+      },
+      {
+        "id": "RT_T44_ESTIMATE",
+        "kind": "positive",
+        "description": "Прикинь результат, не вычисляя точно: 49 × 21.",
+        "expected": {
+          "template_id": "T44_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "calc_culture_algorithms"
+        },
+        "why": "Слово 'прикинь' — ключевой маркер T44_ESTIMATE_RESULT."
+      },
+      {
+        "id": "RT_T44_ROUND_ESTIMATE",
+        "kind": "positive",
+        "description": "Округли числа и вычисли примерный ответ: 398 + 512.",
+        "expected": {
+          "template_id": "T44_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "calc_culture_algorithms"
+        },
+        "why": "Фразы 'округли' и 'примерный ответ' указывают на прикидку."
+      },
+      {
+        "id": "RT_T44_TRUE_FALSE",
+        "kind": "positive",
+        "description": "Верно ли равенство: 15 × 4 = 60?",
+        "expected": {
+          "template_id": "T44_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "calc_culture_algorithms"
+        },
+        "why": "Фраза 'верно ли' — маркер T44_TRUE_FALSE_CHECK."
+      },
+      {
+        "id": "RT_T44_ORDER_OF_OPERATIONS",
+        "kind": "positive",
+        "description": "В каком порядке вычислять выражение 24 + 6 × 3?",
+        "expected": {
+          "template_id": "T44_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "calc_culture_algorithms"
+        },
+        "why": "Вопрос про порядок вычислений — маркер T44_DESCRIBE_ALGORITHM."
+      },
+      {
+        "id": "RT_T44_ALGORITHM_PLAN",
+        "kind": "positive",
+        "description": "Составь план решения и вычисли: (45 + 15) : 3 × 2.",
+        "expected": {
+          "template_id": "T44_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "calc_culture_algorithms"
+        },
+        "why": "Фраза 'составь план решения' — явный маркер T44_DESCRIBE_ALGORITHM."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T44_pedagogical_template": {
+      "hint_style_profile": "calc_culture_algorithms",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 2,
+        "grade_max": 4,
+        "tone": "спокойный/поддерживающий",
+        "complexity_rules": [
+          "объяснять прикидку результата на простых примерах (округление, оценка порядка величины).",
+          "показывать проверку обратным действием без тяжёлых формулировок.",
+          "подчёркивать, что алгоритм — это понятный план действий, а не сложная формула."
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Формировать привычку проверять свои вычисления, прикидывать результат и продумывать план действий.",
+        "l1": {
+          "rules": [
+            "Обсудить с ребёнком, зачем нужна проверка: чтобы поймать ошибки в вычислениях.",
+            "Показать один-два примера, где прикидка результата помогает понять, реалистичен ли ответ.",
+            "Разобрать, какие шаги входят в простой алгоритм решения примера или небольшой задачи."
+          ],
+          "format": "Понимание необходимости проверки и прикидки, выделение шагов алгоритма.",
+          "forbidden": [
+            "делать длинные теоретические определения.",
+            "игнорировать связь между проверкой и исходным примером/задачей."
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Пошагово показать проверку обратным действием на одном-двух примерах (сложение/вычитание, умножение/деление).",
+            "Показать прикидку результата: заменить числа близкими и прикинуть, каким должен быть ответ примерно.",
+            "Предложить ребёнку записать алгоритм решения в виде списка шагов и выполнить их."
+          ],
+          "format": "Практика проверки обратным действием, прикидки результата и записи алгоритма.",
+          "forbidden": [
+            "давать только готовые ответы без промежуточных шагов.",
+            "перегружать ребёнка большим количеством разных приёмов за один раз."
+          ]
+        },
+        "l3": {
+          "when_allowed": "если max_hints_default == 3 и ребёнок уже попробовал самостоятельно проверять и прикидывать результат.",
+          "rules": [
+            "Организовать самопроверку: спросить, как можно проверить полученный ответ другим способом.",
+            "Попросить ребёнка объяснить своими словами, какой алгоритм он использовал и что ему помогло не ошибиться.",
+            "Дать короткий похожий пример, где ребёнок самостоятельно применит прикидку и проверку."
+          ],
+          "format": "Самопроверка и закрепление привычки проверять и планировать действия.",
+          "forbidden": [
+            "вводить новые темы (например, сложные алгебраические преобразования).",
+            "менять исходный тип задач (оставаться в рамках вычислительной культуры)."
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Не выполняет проверку, даже если она явно требуется в условии.",
+        "Проверяет тем же действием, которым решал пример, и не замечает ошибок.",
+        "Не прикидывает результат и принимает нереалистичные ответы (слишком большие или слишком маленькие).",
+        "Путается в шагах алгоритма и выполняет действия в случайном порядке."
+      ],
+      "terminology_rules": [
+        "Слово 'алгоритм' объяснять как 'план действий', 'шаг за шагом'.",
+        "Фразу 'проверить обратным действием' сопровождать конкретными примерами.",
+        "Не перегружать ребёнка терминами 'оценка', 'приближение'; достаточно говорить 'прикинуть примерно'."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

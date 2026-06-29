@@ -1,0 +1,330 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2 (1) (1).txt",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T8 only).",
+        "MAPPING_JSON not provided in chat; template_id/topic follow the established slice convention used in T2–T4 outputs."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T8",
+        "template_id": "T8_pedagogical_template",
+        "title": "Таблица умножения и деления (тренировка фактов)",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "inline_examples",
+          "plain_text",
+          "table",
+          "fill_gaps"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "table_mul_div",
+          "constraints": [],
+          "template_params_defaults": {
+            "ops": [
+              "mul",
+              "div"
+            ],
+            "range_max": null,
+            "written_algorithm": false
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "arithmetic_fluency",
+            "topic": "table_mul_div",
+            "formats_allowed": [
+              "inline_examples",
+              "plain_text",
+              "table",
+              "fill_gaps"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T8_TABLE_KEYWORDS",
+              "must_have": {
+                "text_patterns_any": [
+                  "таблица умножения",
+                  "по таблице (умножения|деления)",
+                  "(знаешь|выучи|используй)(те)? таблицу",
+                  "таблицу умножения на \\d+",
+                  "умножение на [2-9]",
+                  "заполни(те)? таблицу умножения",
+                  "примеры на (умножение|деление)",
+                  "табличн(ое|ый|ые) (умножение|деление)",
+                  "\\d+ [×·\\*] \\d+",
+                  "\\d+ : \\d+.*таблиц"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "поровну",
+                  "в каждой",
+                  "в каждом",
+                  "групп",
+                  "коробк",
+                  "пакет",
+                  "ящик",
+                  "купил",
+                  "продал",
+                  "было",
+                  "стало",
+                  "осталось",
+                  "в столбик",
+                  "столбиком",
+                  "письменно",
+                  "деление с остатком",
+                  "остаток",
+                  "римск",
+                  "арабск",
+                  "периметр",
+                  "площадь",
+                  "диаграмма"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 95,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений явных маркеров таблицы; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T8_MUL_DIV_EXPRESSION_ANCHOR",
+              "must_have": {
+                "text_patterns_any": [
+                  "умножь(те)?",
+                  "раздели(те)?",
+                  "выполни(те)? (умножение|деление)",
+                  "найди(те)? значение выражения",
+                  "вычисли(те)?",
+                  "\\d+ [×·\\*] \\d+ =",
+                  "\\d+ : \\d+ ="
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "поровну",
+                  "в каждой",
+                  "в каждом",
+                  "групп",
+                  "равные группы",
+                  "многократное сложение",
+                  "задача",
+                  "купил",
+                  "было",
+                  "стало",
+                  "осталось",
+                  "в столбик",
+                  "столбиком",
+                  "письменно",
+                  "деление с остатком",
+                  "остаток",
+                  "уравнение",
+                  "неизвестное",
+                  "\\d+\\s*[+−-]\\s*\\d+",
+                  "сложи|вычти|прибавь|отними"
+                ],
+                "visual_kinds_any": [
+                  "diagram",
+                  "drawing",
+                  "number_line"
+                ]
+              },
+              "routing_priority": 70,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений маркеров «вычисли/умножь/раздели»; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T7",
+            "T9",
+            "T10",
+            "T14",
+            "T6"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Иногда полезен третий шаг с быстрой самопроверкой (деление как обратное умножению) без раскрытия ответа."
+        },
+        "notes_for_backend": [
+          "T8 — это тренировка фактов по таблице (быстрые вычисления), не смысл равных групп.",
+          "Если в тексте есть «поровну/в каждой/группы» — это скорее T7 (смысл) или сюжетная задача (T14).",
+          "Если это письменные вычисления «в столбик» — это T9, а не T8."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T08_A",
+        "kind": "positive",
+        "description": "Вычисли: 7 × 8. Используй таблицу умножения.",
+        "expected": {
+          "template_id": "T8_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "table_mul_div"
+        },
+        "why": "Явный маркер «таблица умножения» и пример на умножение."
+      },
+      {
+        "id": "RT_T08_B",
+        "kind": "positive",
+        "description": "Найди значение выражения: 56 : 7.",
+        "expected": {
+          "template_id": "T8_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "table_mul_div"
+        },
+        "why": "Короткое деление на факт таблицы (проверка через умножение)."
+      },
+      {
+        "id": "RT_T08_C",
+        "kind": "near_miss",
+        "description": "В каждой коробке по 4 яблока. Коробок 3. Сколько яблок всего?",
+        "expected": {
+          "template_id": "T7_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "equal_groups_mul_div_meaning"
+        },
+        "why": "Это смысл равных групп (T7), а не тренировка таблицы."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T8_pedagogical_template": {
+      "hint_style_profile": "table_mul_div_practice",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "tone": "быстрый/поддерживающий",
+        "complexity_rules": [
+          "очень коротко",
+          "без лишних объяснений",
+          "подсказка как вспомнить факт",
+          "без воды"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Уверенно вспоминать факты умножения и деления (2–9) и проверять деление через умножение.",
+        "l1": {
+          "rules": [
+            "Определи действие: умножение или деление.",
+            "Вспомни «семейку фактов»: a × b = c, b × a = c, c : a = b, c : b = a.",
+            "Если не вспоминается — найди ближайший знакомый факт и дойди до нужного."
+          ],
+          "format": "Что за действие → Как вспомнить",
+          "forbidden": [
+            "давать финальный ответ сразу",
+            "переводить задачу в сюжетные объяснения"
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Для умножения: используй известные ряды (например по 2, по 5, по 10) и прибавляй/убавляй один шаг.",
+            "Для деления: подумай, какое число надо умножить на делитель, чтобы получить делимое.",
+            "Мини‑проверка: результат деления должен умножением возвращать исходное число."
+          ],
+          "format": "Приём → Проверка",
+          "forbidden": [
+            "письменное решение столбиком без запроса",
+            "вводить переменные"
+          ]
+        },
+        "l3": {
+          "when_allowed": "только если max_hints_default==3",
+          "rules": [
+            "Дай короткий способ самопроверки: умножь результат на делитель (или проверь деление обратным умножением).",
+            "Если это пропуски в таблице — напомни, что строки/столбцы — это один и тот же ряд умножения.",
+            "Оставь ребёнку место для вычисления."
+          ],
+          "format": "очень кратко"
+        }
+      },
+      "common_mistakes": [
+        "Путают умножение и деление.",
+        "Думают, что при делении надо делить делитель (ошибка роли чисел).",
+        "Не делают проверку обратным действием.",
+        "Путают порядок множителей, думая, что меняется результат."
+      ],
+      "terminology_rules": [
+        "1–2 класс: «умножить — это по столько раз», «деление — наоборот».",
+        "3–4 класс: «обратные действия», «семейка фактов»."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

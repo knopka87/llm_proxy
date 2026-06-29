@@ -1,0 +1,309 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2.updated_after_audit_T1_T5.txt",
+      "generated_at": "2026-01-29T06:45:14Z",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T38 only).",
+        "Основан на описании T38 в педдокументе и routing_keys_table_v1.xlsx; без добавления новых ped-ключей.",
+        "v2: расширены text_patterns_any для T38_DIGIT_REBUS и T38_MAGIC_SQUARE, чтобы покрывать ребусы без слова 'ребус' и разные записи магического квадрата."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T38",
+        "template_id": "T38_pedagogical_template",
+        "title": "Арифметические головоломки и ребусы",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "arith_puzzles_rebuses",
+          "constraints": [],
+          "template_params_defaults": {
+            "ops": [
+              "add",
+              "sub",
+              "mul",
+              "div"
+            ],
+            "logic_mode": "puzzles_digits",
+            "word_model": "none",
+            "change_mode": "none",
+            "compare_mode": "none",
+            "geometry_mode": null,
+            "unit_kind": null,
+            "range_max": null,
+            "unknown_component": null,
+            "data_task_mode": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "patterns_logic",
+            "formats_allowed": [
+              "plain_text",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T38_DIGIT_REBUS",
+              "must_have": {
+                "text_patterns_any": [
+                  "(математический|числовой|арифметический)? ?ребус",
+                  "криптарифм",
+                  "цифры заменили (буквами|одинаковыми буквами)",
+                  "(одинаковые|разные) буквы обозначают (одинаковые|разные) цифры",
+                  "каждая буква обозначает цифру",
+                  "какие цифры .* вместо (букв|зв[её]здочек)",
+                  "зв[её]здочк(а|и) обознача(ет|ют) цифр",
+                  "вместо зв[её]здочек",
+                  "какое число зашифровано",
+                  "расшифруй запись",
+                  "[А-ЯA-Z] [+−\\-] [А-ЯA-Z] ="
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 78,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие маркеров ребуса с буквами и цифрами; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T38_MAGIC_SQUARE",
+              "must_have": {
+                "text_patterns_any": [
+                  "магический квадрат",
+                  "волшебный квадрат",
+                  "латинский квадрат",
+                  "(числовая|арифметическая) головоломка",
+                  "заполни(те)? квадрат",
+                  "сумма в каждой (строке|столбце)",
+                  "сумма по (строке|столбцу)",
+                  "судоку",
+                  "какенуро",
+                  "числовой кроссворд"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 77,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие маркеров 'магический квадрат'; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T35",
+            "T41"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Для арифметических головоломок и ребусов полезен третий шаг с проверкой решения и обсуждением, какие варианты были возможны."
+        },
+        "notes_for_backend": [
+          "T38: арифметические головоломки и ребусы (по педдокументу: математические ребусы, магические квадраты).",
+          "Основные параметры PARSE: task_type='patterns_logic', template_params.logic_mode='puzzles_digits', ops=['add','sub','mul','div'] строго по routing_keys_table_v1.xlsx.",
+          "topic='arith_puzzles_rebuses' используется как стабильный идентификатор темы в логах и при аналитике.",
+          "Для разведения с T41 важно, что здесь акцент на цифрах и разрядах внутри арифметических конструкций (суммы, квадраты), а не на распределении объектов и логических ограничениях."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T38_REBUS",
+        "kind": "positive",
+        "description": "Реши математический ребус: С + О = СТ, где одинаковые буквы обозначают одинаковые цифры.",
+        "expected": {
+          "template_id": "T38_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text"
+        },
+        "why": "Типичный математический ребус с буквами вместо цифр."
+      },
+      {
+        "id": "RT_T38_MAGIC_SQUARE",
+        "kind": "positive",
+        "description": "Заполни магический квадрат числами от 1 до 9 так, чтобы сумма в каждой строке, каждом столбце и по диагонали была одинаковой.",
+        "expected": {
+          "template_id": "T38_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text"
+        },
+        "why": "Классическая задача на магический квадрат."
+      },
+      {
+        "id": "RT_T38_STARS",
+        "kind": "positive",
+        "description": "Какие цифры стоят вместо звёздочек: 3* + *5 = 72?",
+        "expected": {
+          "template_id": "T38_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text"
+        },
+        "why": "Ребус со звёздочками вместо цифр."
+      },
+      {
+        "id": "RT_T38_CRYPTARITHM",
+        "kind": "positive",
+        "description": "Криптарифм: АВ + ВА = СВС. Найди цифры А, В и С.",
+        "expected": {
+          "template_id": "T38_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text"
+        },
+        "why": "Криптарифм — форма числового ребуса."
+      },
+      {
+        "id": "RT_T38_SUM_ROWS",
+        "kind": "positive",
+        "description": "Расставь числа 1, 2, 3, 4 в квадрате 2×2 так, чтобы сумма в каждой строке была одинаковой.",
+        "expected": {
+          "template_id": "T38_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text"
+        },
+        "why": "Числовая головоломка типа магического квадрата."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T38_pedagogical_template": {
+      "hint_style_profile": "arith_puzzles_rebuses",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 2,
+        "grade_max": 4,
+        "tone": "спокойный/поддерживающий",
+        "complexity_rules": [
+          "Объяснять ход рассуждений пошагово: что известно про цифры или суммы в головоломке.",
+          "Использовать простые примеры, чтобы показать, как цифры в записи числа связаны с разрядами и суммой.",
+          "Не перегружать ребёнка терминологией, опираясь на наглядные записи и небольшие таблицы."
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Развивать умение рассуждать о цифрах и разрядах в нестандартных задачах (ребусы, магические квадраты).",
+        "l1": {
+          "rules": [
+            "Внимательно прочитать условие головоломки и выяснить, какие числа или цифры уже известны.",
+            "Обсудить, как устроены записи чисел: какие цифры стоят в разрядах единиц, десятков и сотен.",
+            "Показать, какие ограничения задаёт головоломка (например, сумма в каждой строке и столбце магического квадрата или условие сложения в ребусе)."
+          ],
+          "format": "Понимание условий и ограничений головоломки.",
+          "forbidden": [
+            "сразу подставлять случайные цифры, не анализируя ограничения.",
+            "перепрыгивать к готовому решению без пояснений."
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Пошагово применить ограничения задачи: последовательно подбирать возможные цифры или суммы, отбрасывая невозможные варианты.",
+            "Показывать промежуточные проверки (например, сумма по строке магического квадрата или правильность столбика сложения в ребусе).",
+            "Подчёркивать связь между разрядами: как перенос десятков влияет на соседние клетки или столбцы."
+          ],
+          "format": "Пошаговое решение типичной арифметической головоломки.",
+          "forbidden": [
+            "оставлять ребёнка с большим количеством неподтверждённых вариантов.",
+            "использовать слишком большие числа или сложные конструкции."
+          ]
+        },
+        "l3": {
+          "when_allowed": "если max_hints_default == 3 и ребёнок уже увидел пример разбора одной головоломки.",
+          "rules": [
+            "Организовать самопроверку: предложить ребёнку проверить, что все условия головоломки выполнены (суммы, равенства).",
+            "Попросить ребёнка объяснить, почему другое распределение цифр не подойдёт.",
+            "Дать короткий похожий пример (упрощённый ребус или уменьшенный магический квадрат), чтобы ребёнок попробовал рассуждать сам."
+          ],
+          "format": "Самопроверка и закрепление приёмов рассуждения в арифметических головоломках.",
+          "forbidden": [
+            "вводить новые, более сложные типы головоломок на этом этапе.",
+            "полностью раскрывать ответ, не давая ребёнку попробовать проверить решение."
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Игнорирует одно или несколько ограничений головоломки (например, учитывает только строки, но не столбцы магического квадрата).",
+        "Подставляет цифры наугад, не проверяя каждое предположение.",
+        "Забывает про перенос разрядов в столбиках сложения/вычитания в ребусах.",
+        "Считает, что найденное первое подходящее распределение цифр обязательно единственное, и не проверяет остальные условия."
+      ],
+      "terminology_rules": [
+        "Слова 'ребус', 'магический квадрат' пояснять через короткие примеры.",
+        "Говорить про 'цифры' и 'разряды числа' простым языком, без лишних терминов.",
+        "Подчёркивать, что важно не угадывать ответ, а проверять каждое предположение по условиям задачи."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

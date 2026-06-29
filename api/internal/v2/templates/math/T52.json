@@ -1,0 +1,373 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "claude",
+      "generated_at": "2026-02-16",
+      "notes": "Template for creative/composition tasks: compose expressions, create problems, explain reasoning."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic",
+        "sets_logic",
+        "creative_composition"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode",
+        "set_operation",
+        "composition_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T52",
+        "template_id": "T52_pedagogical_template",
+        "title": "Творческие задачи: составь, придумай, объясни",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "creative_composition",
+          "format": "plain_text",
+          "topic": "creative_composition",
+          "constraints": [],
+          "template_params_defaults": {
+            "composition_mode": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "creative_composition",
+            "topic": "creative_composition",
+            "formats_allowed": [
+              "plain_text",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T52_COMPOSE_EXPRESSION",
+              "routing_priority": 85,
+              "must_have": {
+                "text_patterns_any": [
+                  "составь\\s+выражени",
+                  "составь.*выражени",
+                  "запиши\\s+выражени",
+                  "запиши.*в\\s+виде\\s+выражени",
+                  "придумай.*выражени"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "найди\\s+значени",
+                  "вычисли"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T52_COMPOSE_PROBLEM",
+              "routing_priority": 84,
+              "must_have": {
+                "text_patterns_any": [
+                  "составь\\s+задач",
+                  "составь.*задач",
+                  "придумай\\s+задач",
+                  "придумай.*задач",
+                  "сочини\\s+задач"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "реши\\s+задач"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T52_EXPLAIN_MEANING",
+              "routing_priority": 82,
+              "must_have": {
+                "text_patterns_any": [
+                  "что\\s+означа",
+                  "что\\s+обозначает",
+                  "объясни.*означа",
+                  "объясни.*смысл",
+                  "как\\s+понимаешь",
+                  "что\\s+показыва"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T52_EXPLAIN_JUSTIFY",
+              "routing_priority": 80,
+              "must_have": {
+                "text_patterns_any": [
+                  "объясни",
+                  "обоснуй",
+                  "докажи",
+                  "почему\\s+так",
+                  "как\\s+это\\s+может\\s+быть"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "вычисли",
+                  "найди\\s+значени",
+                  "реши\\s+уравнени",
+                  "посчитай",
+                  "сосчитай",
+                  "реши",
+                  "найди",
+                  "определи",
+                  "периметр",
+                  "площадь",
+                  "объем",
+                  "объём",
+                  "в\\s*столбик",
+                  "столбиком"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T52_VERIFY_TRUE",
+              "routing_priority": 78,
+              "must_have": {
+                "text_patterns_any": [
+                  "верн.*ли",
+                  "верно\\s+ли",
+                  "правильно\\s+ли",
+                  "справедлив.*ли"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T52_COMMON_DIFFERENT",
+              "routing_priority": 76,
+              "must_have": {
+                "text_patterns_any": [
+                  "что\\s+общего",
+                  "чем\\s+похож",
+                  "чем\\s+различа",
+                  "чем\\s+отлича",
+                  "в\\s+чём\\s+сходств",
+                  "в\\s+чём\\s+различи"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T1",
+            "T3",
+            "T33"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": [
+          "Шаблон для творческих и объяснительных задач в начальной школе"
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T52_A",
+        "kind": "positive",
+        "description": "Составь выражение по задаче и найди его значение.",
+        "expected": {
+          "template_id": "T52_pedagogical_template",
+          "task_type": "creative_composition"
+        },
+        "why": "Маркер «составь выражение»."
+      },
+      {
+        "id": "RT_T52_B",
+        "kind": "positive",
+        "description": "Придумай задачу по схеме и реши её.",
+        "expected": {
+          "template_id": "T52_pedagogical_template",
+          "task_type": "creative_composition"
+        },
+        "why": "Маркер «придумай задачу»."
+      },
+      {
+        "id": "RT_T52_C",
+        "kind": "positive",
+        "description": "Объясни, почему это равенство верно.",
+        "expected": {
+          "template_id": "T52_pedagogical_template",
+          "task_type": "creative_composition"
+        },
+        "why": "Маркер «объясни»."
+      },
+      {
+        "id": "RT_T52_D",
+        "kind": "positive",
+        "description": "Что означают выражения a + b и a - b?",
+        "expected": {
+          "template_id": "T52_pedagogical_template",
+          "task_type": "creative_composition"
+        },
+        "why": "Маркер «что означают»."
+      },
+      {
+        "id": "RT_T52_E",
+        "kind": "positive",
+        "description": "Верно ли, что сумма двух чётных чисел всегда чётная?",
+        "expected": {
+          "template_id": "T52_pedagogical_template",
+          "task_type": "creative_composition"
+        },
+        "why": "Маркер «верно ли»."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T52_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Развить творческое мышление, умение составлять выражения и задачи, объяснять и обосновывать свои рассуждения.",
+        "l1": {
+          "format": "Направление",
+          "rules": [
+            "Помоги понять, что именно нужно составить или объяснить.",
+            "Дай пример похожей задачи или выражения.",
+            "Напомни структуру выражения или задачи."
+          ],
+          "forbidden": [
+            "давать готовый ответ",
+            "составлять за ребёнка"
+          ]
+        },
+        "l2": {
+          "format": "Подсказка",
+          "rules": [
+            "Предложи начало выражения или задачи.",
+            "Покажи, какие числа или действия можно использовать.",
+            "Помоги сформулировать объяснение по шагам."
+          ],
+          "forbidden": [
+            "полностью решать за ребёнка"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Помоги проверить, соответствует ли составленное условию задачи.",
+            "Проверь логику объяснения."
+          ],
+          "forbidden": [
+            "давать окончательный ответ без участия ребёнка"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Составляют выражение, не соответствующее условию.",
+        "Путают порядок действий при составлении выражения.",
+        "Дают неполное объяснение без обоснования.",
+        "Забывают проверить составленную задачу на корректность."
+      ],
+      "terminology_rules": {
+        "use_terms": [
+          "выражение",
+          "задача",
+          "условие",
+          "объяснение",
+          "обоснование"
+        ],
+        "avoid_terms": [
+          "тривиально",
+          "очевидно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

@@ -1,0 +1,375 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2.updated_after_audit_T1_T5.txt",
+      "generated_at": "2026-01-29T06:45:14Z",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T41 only).",
+        "Основан на описании T41 в педдокументе и routing_keys_table_v1.xlsx; без добавления новых ключей, но с расширением enums.constraints_enum значением 'use_each_once'.",
+        "v3: добавлено правило T41_TRANSFORM_CHAINS для задач на цепочки превращений (зелье и т.п.)."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question",
+        "use_each_once"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T41",
+        "template_id": "T41_pedagogical_template",
+        "title": "Логические задачи и комбинаторика",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "combinatorics",
+          "constraints": [
+            "use_each_once"
+          ],
+          "template_params_defaults": {
+            "ops": [
+              "add",
+              "sub",
+              "mul",
+              "div"
+            ],
+            "logic_mode": "combinatorics",
+            "word_model": "logic_distribution",
+            "change_mode": "none",
+            "compare_mode": "none",
+            "geometry_mode": null,
+            "unit_kind": null,
+            "range_max": null,
+            "unknown_component": null,
+            "data_task_mode": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "patterns_logic",
+            "topic": "combinatorics",
+            "formats_allowed": [
+              "plain_text",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T41_WHO_WHERE_SEATING",
+              "must_have": {
+                "text_patterns_any": [
+                  "кто где (жив[её]т|сидит)",
+                  "(посади|рассад|пересад)",
+                  "поменять местами",
+                  "сколько (разных|различных) способов",
+                  "сколькими способами",
+                  "(расположи|расставь)(те)? в ряд",
+                  "в каком порядке",
+                  "перестановки",
+                  "порядок расположения",
+                  "кто (слева|справа|между)"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "скорость",
+                  "расстояние",
+                  "км/ч",
+                  "температура",
+                  "процент",
+                  "процента",
+                  "процентов"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 78,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений фраз про рассадку и варианты; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T41_POURING_AND_WEIGHING",
+              "must_have": {
+                "text_patterns_any": [
+                  "перели(в|ть|вая|ван)",
+                  "(взвеш|взвес)",
+                  "(на|чашечных) весах",
+                  "фальшив(ая|ую) монет",
+                  "найди(те)? фальшивую",
+                  "за сколько взвешиваний",
+                  "одна монета (легче|тяжелее)",
+                  "(отмерить|отмерь|отмерьте) воду",
+                  "сосуд(ы)? .* литр"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "просто реши пример",
+                  "таблица умножения"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 77,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие маркеров 'перелив'/'взвешив'; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T41_COUNT_VARIANTS",
+              "must_have": {
+                "text_patterns_any": [
+                  "сколько (разных|различных|всего) вариантов",
+                  "сколько (комбинаций|наборов|пар)",
+                  "сколько способов (выбрать|составить)",
+                  "(перебери|все возможные) варианты",
+                  "выбрать из"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "произведение",
+                  "периметр",
+                  "площадь"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 76,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие маркеров 'сколько вариантов/способов'; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T41_TRANSFORM_CHAINS",
+              "must_have": {
+                "text_patterns_any": [
+                  "превраща(ется|ются) в",
+                  "(можно ли|сколько капель) .* зель(ем|я)",
+                  "(после каждой|каждая) капл(и|я) (зелья)?"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "скорость",
+                  "расстояние",
+                  "км/ч",
+                  "периметр",
+                  "площадь"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 79,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие маркеров задач на цепочки превращений и использование зелья; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T37",
+            "T38",
+            "T43"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Для логических задач и комбинаторики полезен третий шаг с проверкой всех вариантов и обсуждением, почему других нет."
+        },
+        "notes_for_backend": [
+          "T41: логические задачи и комбинаторика (по педдокументу).",
+          "Основные виды задач: 'кто где живёт/сидит', задачи на переливания и взвешивания, подсчёт числа вариантов.",
+          "task_type='patterns_logic', constraints включают 'use_each_once', logic_mode='combinatorics', word_model='logic_distribution' строго по routing_keys_table_v1.xlsx."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T41_SEATING",
+        "kind": "positive",
+        "description": "Трое друзей — Аня, Боря и Вика — сидят на трёх стульях в ряд. Сколькими способами они могут рассесться?",
+        "expected": {
+          "template_id": "T41_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "combinatorics"
+        },
+        "why": "Задача на количество вариантов рассадки, ключевые маркеры 'сколькими способами' и рассадка."
+      },
+      {
+        "id": "RT_T41_POURING",
+        "kind": "positive",
+        "description": "Есть два сосуда: 5 л и 3 л. Как с помощью переливаний отмерить 4 л воды?",
+        "expected": {
+          "template_id": "T41_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "combinatorics"
+        },
+        "why": "Классическая задача на переливания с пошаговыми действиями и логическими ограничениями."
+      },
+      {
+        "id": "RT_T41_WHO_WHERE",
+        "kind": "positive",
+        "description": "Три брата — Иван, Сергей и Павел — живут в разных городах. Иван живёт не в Москве. Кто где живёт?",
+        "expected": {
+          "template_id": "T41_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "combinatorics"
+        },
+        "why": "Логическая задача 'кто где живёт'."
+      },
+      {
+        "id": "RT_T41_FAKE_COIN",
+        "kind": "positive",
+        "description": "Есть 9 монет, одна из них фальшивая и легче остальных. За сколько взвешиваний можно найти фальшивую монету?",
+        "expected": {
+          "template_id": "T41_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "combinatorics"
+        },
+        "why": "Задача на взвешивания с фальшивой монетой."
+      },
+      {
+        "id": "RT_T41_COUNT_PAIRS",
+        "kind": "positive",
+        "description": "Сколько разных пар можно составить из 4 человек?",
+        "expected": {
+          "template_id": "T41_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "combinatorics"
+        },
+        "why": "Комбинаторная задача на подсчёт пар."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T41_pedagogical_template": {
+      "hint_style_profile": "logic_combinatorics",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 2,
+        "grade_max": 4,
+        "tone": "спокойный/поддерживающий",
+        "complexity_rules": [
+          "объяснять рассуждения пошагово: какие варианты возможны и почему.",
+          "использовать простые таблицы, схемы или списки для систематизации вариантов.",
+          "не перегружать ребёнка формальной терминологией комбинаторики; опираться на сюжеты (кто где сидит, как переливать и т.п.)."
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Учиться рассуждать по условиям, систематизировать варианты и отбрасывать невозможные в логических задачах и задачах на комбинаторику.",
+        "l1": {
+          "rules": [
+            "Внимательно прочитать условие и выписать всех участников/объекты задачи (людей, сосуды, предметы).",
+            "Отметить ключевые ограничения: кто не может сидеть/жить где-то, сколько налито, какие взвешивания разрешены.",
+            "Сделать простую схему или таблицу, чтобы наглядно увидеть возможные варианты."
+          ],
+          "format": "Понимание условия и фиксация ограничений.",
+          "forbidden": [
+            "сразу подбирать вариант наугад без анализа ограничений.",
+            "игнорировать явно указанные в задаче запреты и условия."
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Пошагово перебирать варианты, исключая невозможные по условиям задачи.",
+            "Для задач на переливания или взвешивания описывать каждый шаг (что куда перелили, какое взвешивание сделали).",
+            "Отмечать варианты, которые подходят всем условиям, и объяснять словами, почему они подходят."
+          ],
+          "format": "Систематизация вариантов и поиск решения с опорой на ограничения.",
+          "forbidden": [
+            "перескакивать к ответу без объяснения, почему отпали другие варианты.",
+            "давать слишком много вариантов сразу, не поясняя их проверку."
+          ]
+        },
+        "l3": {
+          "when_allowed": "если max_hints_default == 3 и ребёнок уже увидел, как находятся подходящие варианты.",
+          "rules": [
+            "Организовать самопроверку: пройтись по условиям задачи и проверить, что найденное решение их не нарушает.",
+            "Предложить ребёнку сформулировать своими словами, почему других подходящих вариантов нет или сколько их всего.",
+            "Привести очень короткий похожий пример, где ребёнок попробует сам систематизировать варианты."
+          ],
+          "format": "Самопроверка и закрепление навыка систематизации вариантов.",
+          "forbidden": [
+            "вводить новые, более сложные типы логических задач на этом уровне.",
+            "менять исходный сюжет задачи."
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Не учитывает все условия задачи (игнорирует один или несколько запретов).",
+        "Перебирает варианты хаотично, из‑за чего пропускает или повторяет варианты.",
+        "Считает только один найденный вариант, хотя по условию нужно найти все возможные.",
+        "Делает неверные выводы при переливаниях или взвешиваниях (например, не сохраняет общий объём или массу)."
+      ],
+      "terminology_rules": [
+        "Слова 'вариант', 'ограничение', 'подходит/не подходит' вводить через конкретные примеры задач.",
+        "Не перегружать терминами 'комбинаторика', 'перестановки'; достаточно говорить про 'разные способы'.",
+        "Подчёркивать важность систематического перебора, а не угадывания."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

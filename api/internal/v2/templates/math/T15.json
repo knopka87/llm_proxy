@@ -1,0 +1,282 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2.updated_after_audit_T1_T5.txt",
+      "generated_at": "2026-01-29T06:45:14Z",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T15 only).",
+        "Основан на описании T15 в педдокументе и routing_keys_table_v1.xlsx; без добавления новых ped-ключей.",
+        "v2: routing_patterns for T15_RATIO_COMPARISON made more устойчивыми (общий стем 'во сколько раз')."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T15",
+        "template_id": "T15_pedagogical_template",
+        "title": "Задачи на кратное сравнение",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "constraints": [],
+          "template_params_defaults": {
+            "ops": [
+              "mul",
+              "div"
+            ],
+            "word_model": "compare_ratio",
+            "change_mode": "none",
+            "compare_mode": "ratio",
+            "geometry_mode": null,
+            "logic_mode": null,
+            "unit_kind": null,
+            "range_max": null,
+            "unknown_component": null,
+            "data_task_mode": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "word_problems",
+            "formats_allowed": [
+              "plain_text",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T15_RATIO_COMPARISON",
+              "must_have": {
+                "text_patterns_any": [
+                  "во сколько раз",
+                  "(во сколько|сколько) раз (больше|меньше)",
+                  "в несколько раз (больше|меньше)",
+                  "кратное сравнение",
+                  "сколько раз (помещается|вмещается|укладывается)",
+                  "в \\d+ раза? (больше|меньше)"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "увеличил[аио]?",
+                  "уменьшил[аио]?",
+                  "стал[аио]? (больше|меньше)",
+                  "вырос(ла|ло)?",
+                  "убав",
+                  "прибав"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 66,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) есть фразы 'во сколько раз/сколько раз/в несколько раз'; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T16"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Для кратного сравнения полезен третий шаг с проговариванием разницы между 'во сколько раз' и 'на сколько' и самопроверкой."
+        },
+        "notes_for_backend": [
+          "T15: задачи на кратное сравнение (по педдокументу).",
+          "Цель — отделить 'во сколько раз больше/меньше' от 'на сколько больше/меньше'.",
+          "Основные параметры PARSE: task_type='word_problems', template_params.word_model='compare_ratio', compare_mode='ratio', ops=['mul','div'] строго по routing_keys_table_v1.xlsx.",
+          "Для разведения с T16 важно, чтобы PARSE корректно различал формулировки на изменение величины (увеличили/уменьшили) и чистое сравнение 'во сколько раз'."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T15_RATIO_BIGGER",
+        "kind": "positive",
+        "description": "В саду растёт 3 яблони, а груш — в 3 раза больше. Сколько груш растёт в саду?",
+        "expected": {
+          "template_id": "T15_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text"
+        },
+        "why": "Классическая задача на кратное сравнение 'в 3 раза больше'."
+      },
+      {
+        "id": "RT_T15_RATIO_SMALLER",
+        "kind": "positive",
+        "description": "У Пети 24 карандаша, а у Вовы карандашей в 3 раза меньше. Сколько карандашей у Вовы?",
+        "expected": {
+          "template_id": "T15_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text"
+        },
+        "why": "Задача на нахождение числа, которое в несколько раз меньше."
+      },
+      {
+        "id": "RT_T15_HOW_MANY_TIMES",
+        "kind": "positive",
+        "description": "Во сколько раз 36 больше 6?",
+        "expected": {
+          "template_id": "T15_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text"
+        },
+        "why": "Прямой вопрос 'во сколько раз' — кратное сравнение."
+      },
+      {
+        "id": "RT_T15_TIMES_SMALLER_Q",
+        "kind": "positive",
+        "description": "Во сколько раз 5 меньше 40?",
+        "expected": {
+          "template_id": "T15_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text"
+        },
+        "why": "Вопрос 'во сколько раз меньше'."
+      },
+      {
+        "id": "RT_T15_COMPARE_CONTEXT",
+        "kind": "positive",
+        "description": "Длина коридора 8 м, а комнаты — 2 м. Во сколько раз коридор длиннее комнаты?",
+        "expected": {
+          "template_id": "T15_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text"
+        },
+        "why": "Сюжетная задача с вопросом 'во сколько раз'."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T15_pedagogical_template": {
+      "hint_style_profile": "ratio_comparison",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 2,
+        "grade_max": 4,
+        "tone": "спокойный/поддерживающий",
+        "complexity_rules": [
+          "Всегда проговаривать разницу между 'во сколько раз' и 'на сколько'.",
+          "Использовать простые числовые примеры (например, 2 и 6) для иллюстрации кратного сравнения.",
+          "Избегать длинных теоретических объяснений, опираясь на конкретные ситуации из задач."
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Научиться понимать и решать задачи на кратное сравнение: 'во сколько раз больше/меньше', находить число в несколько раз большего/меньшего.",
+        "l1": {
+          "rules": [
+            "Обсудить с ребёнком примеры 'на сколько больше' и 'во сколько раз больше' на простых числах (например, 2 и 6).",
+            "Показать, что 'во сколько раз больше' связано с умножением или делением, а не с обычной разностью.",
+            "Разобрать формулировку конкретной задачи, подчеркнув слова 'во сколько раз' или 'в несколько раз'."
+          ],
+          "format": "Понимание формулировки и отличий между 'во сколько раз' и 'на сколько'.",
+          "forbidden": [
+            "сразу подставлять формулу без объяснения смысла 'во сколько раз'.",
+            "подменять кратное сравнение обычным вычитанием."
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Показать, как из условия задачи составить кратное сравнение (какое число во сколько раз больше/меньше другого).",
+            "Пошагово решить одну-две задачи: либо умножением (если ищем число, которое во столько-то раз больше), либо делением (если знаем большее число и во сколько раз оно больше).",
+            "Обратить внимание на единицы измерения (чего именно во столько-то раз больше: предметов, денег, длины и т.п.)."
+          ],
+          "format": "Пошаговое решение типичных задач на кратное сравнение.",
+          "forbidden": [
+            "перескакивать к ответу без проговаривания шага умножения/деления.",
+            "игнорировать, какое число больше, а какое меньше по условию задачи."
+          ]
+        },
+        "l3": {
+          "when_allowed": "если max_hints_default == 3 и ребёнок уже увидел пример разбора задачи на кратное сравнение.",
+          "rules": [
+            "Организовать самопроверку: предложить ребёнку объяснить своими словами, во сколько раз одно число больше или меньше другого.",
+            "Попросить ребёнка придумать свой пример кратного сравнения на тех же числах.",
+            "Дать короткий похожий пример, чтобы ребёнок попробовал решить задачу на кратное сравнение самостоятельно."
+          ],
+          "format": "Самопроверка и закрепление понимания кратного сравнения.",
+          "forbidden": [
+            "углубляться в сложные пропорции или проценты на этом уровне.",
+            "смешивать в одной подсказке сразу несколько новых типов задач."
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путает 'во сколько раз' и 'на сколько': вместо кратного сравнения считает разность чисел.",
+        "Неверно определяет, какое число больше, а какое меньше, и получает дробный или бессмысленный результат.",
+        "Ошибается в выборе действия: делит вместо умножения или наоборот.",
+        "Не связывает условие задачи с тем, какое именно число нужно найти (большее или меньшее)."
+      ],
+      "terminology_rules": [
+        "Формулировку 'во сколько раз больше/меньше' объяснять через конкретные примеры.",
+        "Не вводить лишнюю терминологию (пропорции, отношения), а говорить простым языком.",
+        "Подчёркивать, что при кратном сравнении мы смотрим, 'сколько раз' помещается одно число в другом."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

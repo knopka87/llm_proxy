@@ -1,0 +1,269 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch 5 (T34,T36,T40,T42,T43) built to match existing TemplateRegistry format; examples are synthetic."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T34",
+        "template_id": "T34_pedagogical_template",
+        "title": "Логические задачи и закономерности (ряды, лишнее, правило)",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "table",
+          "mixed",
+          "fill_gaps"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "logic",
+          "format": "plain_text",
+          "topic": "patterns_and_logic",
+          "constraints": [
+            "multi_step"
+          ],
+          "template_params_defaults": {
+            "logic_modes": [
+              "sequence",
+              "odd_one_out",
+              "rule"
+            ]
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "logic",
+            "topic": "patterns_and_logic",
+            "formats_allowed": [
+              "plain_text",
+              "table",
+              "mixed",
+              "fill_gaps"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T34_PATTERN_WORDS",
+              "routing_priority": 98,
+              "must_have": {
+                "text_patterns_any": [
+                  "закономерност",
+                  "продолж(и|ите)\\s+ряд",
+                  "найди\\s+следующ(ее|ий)",
+                  "какое\\s+число\\s+лишнее",
+                  "лишн(ее|ий)",
+                  "по\\s+какому\\s+правил"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "периметр|площадь|угол|координат|симметри",
+                  "процент|%|дроб|доля",
+                  "столбик|письменно|в столбик",
+                  "умнож|делен\\s+столбик"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            },
+            {
+              "rule_id": "T34_NUMBER_SEQUENCE",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "\\b\\d+\\s*,\\s*\\d+\\s*,\\s*\\d+",
+                  "__GAP__",
+                  "ряд\\s+чисел"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "таблица умножения|по таблице",
+                  "уравнен|=|x|икс"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            }
+          ],
+          "confusables": [
+            "T37",
+            "T30",
+            "T33",
+            "T35"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T34_A",
+        "kind": "positive",
+        "description": "Продолжи ряд: 2, 4, 6, 8, __.",
+        "expected": {
+          "template_id": "T34_pedagogical_template",
+          "task_type": "logic",
+          "format": "plain_text",
+          "topic": "patterns_and_logic"
+        },
+        "why": "Продолжи ряд."
+      },
+      {
+        "id": "RT_T34_B",
+        "kind": "positive",
+        "description": "Найди лишнее число: 3, 5, 7, 8, 9.",
+        "expected": {
+          "template_id": "T34_pedagogical_template",
+          "task_type": "logic",
+          "format": "plain_text",
+          "topic": "patterns_and_logic"
+        },
+        "why": "Лишнее."
+      },
+      {
+        "id": "RT_T34_C",
+        "kind": "negative",
+        "description": "Вычисли: (12−7)×3.",
+        "expected": {
+          "not_template_id": "T34_pedagogical_template"
+        },
+        "why": "Порядок действий — T35."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T34_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Находить правило в ряду/наборе и продолжать последовательность или выбирать «лишнее», объясняя почему.",
+        "l1": {
+          "format": "Найди идею",
+          "rules": [
+            "Посмотри, как меняются числа/предметы: прибавляют одно и то же, чередуются, растут в 2 раза и т.п.",
+            "Проверь 2–3 шага подряд: правило должно работать везде, а не только один раз."
+          ],
+          "forbidden": [
+            "переписывать условие задачи целиком",
+            "давать конечный ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Проверь правило",
+          "rules": [
+            "Составь гипотезу правила и проверь её на каждом переходе (например, +3, затем −1 и т.д.).",
+            "Для «лишнего»: найди общий признак у большинства и проверь, кто не подходит."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Контроль",
+          "rules": [
+            "Проверь ответ подстановкой: следующий элемент должен продолжать правило.",
+            "Если нашёл несколько правил — выбери самое простое и устойчивое."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Находят правило, которое работает для первых членов, но не для всех.",
+        "Путают «лишний» элемент по разным признакам (форма, цвет, размер).",
+        "В числовом ряду находят простую закономерность, пропуская сложную.",
+        "При поиске закономерности не проверяют правило на всех элементах.",
+        "Не видят закономерность, если она основана на двух признаках одновременно."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

@@ -1,0 +1,260 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch 4 (T29–T33) built to match existing TemplateRegistry format; examples are synthetic."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T31",
+        "template_id": "T31_pedagogical_template",
+        "title": "Чтение диаграмм и графиков",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "diagram",
+          "mixed",
+          "plain_text"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "data_representation",
+          "format": "diagram",
+          "topic": "read_diagrams_and_graphs",
+          "constraints": [
+            "needs_visual",
+            "has_diagram"
+          ],
+          "template_params_defaults": {
+            "data_task_mode": "read_diagram"
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "data_representation",
+            "topic": "read_diagrams_and_graphs",
+            "formats_allowed": [
+              "diagram",
+              "mixed",
+              "plain_text"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T31_DIAGRAM_WORDS",
+              "routing_priority": 98,
+              "must_have": {
+                "text_patterns_any": [
+                  "диаграмм",
+                  "график",
+                  "столбчат",
+                  "кругов(ая|ой)\\s+диаграмм",
+                  "по\\s+диаграмм(е|е)"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "diagram"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "построй\\s+диаграмм",
+                  "составь\\s+диаграмм",
+                  "таблиц",
+                  "средн(ее|яя)\\s+значен"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T31_COMPARE_ON_DIAGRAM",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "(чего\\s+больше|чего\\s+меньше|на\\s+сколько\\s+больше|на\\s+сколько\\s+меньше)",
+                  "(самый|самая)\\s+(высок|больш)"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "diagram"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "построй\\s+диаграмм"
+                ],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T30",
+            "T32",
+            "T33"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T31_A",
+        "kind": "positive",
+        "description": "По диаграмме определи, сколько книг прочитали в среду.",
+        "expected": {
+          "template_id": "T31_pedagogical_template",
+          "task_type": "data_representation",
+          "format": "diagram",
+          "topic": "read_diagrams_and_graphs"
+        },
+        "why": "Чтение значения по диаграмме."
+      },
+      {
+        "id": "RT_T31_B",
+        "kind": "positive",
+        "description": "По графику температуры найди самый тёплый день.",
+        "expected": {
+          "template_id": "T31_pedagogical_template",
+          "task_type": "data_representation",
+          "format": "diagram",
+          "topic": "read_diagrams_and_graphs"
+        },
+        "why": "График/диаграмма — чтение."
+      },
+      {
+        "id": "RT_T31_C",
+        "kind": "negative",
+        "description": "Построй столбчатую диаграмму по таблице.",
+        "expected": {
+          "not_template_id": "T31_pedagogical_template"
+        },
+        "why": "Построение — T32."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T31_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Читать столбчатые/круговые диаграммы и простые графики: понимать подписи, шкалу и отвечать на вопросы сравнения и суммирования.",
+        "l1": {
+          "format": "Подписи и шкала",
+          "rules": [
+            "Посмотри на подписи: что обозначает каждый столбик/сектор.",
+            "Найди шкалу (если есть): цена деления показывает, сколько «стоит» один шаг."
+          ],
+          "forbidden": [
+            "переписывать условие задачи целиком",
+            "давать конечный ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Как читать значение",
+          "rules": [
+            "Чтобы узнать значение: найди столбик/точку и прочитай по шкале.",
+            "Чтобы сравнить: сравни высоты столбиков/размеры секторов и посчитай разницу."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Проверь: значение не выходит за шкалу и соответствует вопросу.",
+            "Если надо «всего» — сложи значения нужных столбиков/секторов."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Неправильно читают шкалу: не замечают, что одно деление = 2 или 5 единиц.",
+        "Путают высоту столбца с его шириной на столбчатой диаграмме.",
+        "На круговой диаграмме не понимают, что целое — это 100% или полный круг.",
+        "Сравнивают секторы «на глаз» неточно, не обращая внимания на подписи.",
+        "Путают линейный график и столбчатую диаграмму по способу чтения."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

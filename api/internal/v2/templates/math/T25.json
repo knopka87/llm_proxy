@@ -1,0 +1,262 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch 3 (T24–T28) built to match existing TemplateRegistry format; examples are synthetic."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T25",
+        "template_id": "T25_pedagogical_template",
+        "title": "Углы и их виды",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "diagram",
+          "drawing",
+          "mixed",
+          "plain_text"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "geometry",
+          "format": "diagram",
+          "topic": "angles_types_measure",
+          "constraints": [
+            "needs_visual",
+            "has_diagram"
+          ],
+          "template_params_defaults": {
+            "geometry_mode": "angles"
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "geometry",
+            "topic": "angles_types_measure",
+            "formats_allowed": [
+              "diagram",
+              "drawing",
+              "mixed",
+              "plain_text"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T25_ANGLE_WORDS",
+              "routing_priority": 98,
+              "must_have": {
+                "text_patterns_any": [
+                  "угол",
+                  "(острый|тупой|прямой)\\s+угол",
+                  "(измерь|измерьте)\\s+угол",
+                  "градус",
+                  "°"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "diagram",
+                  "drawing"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "термометр|температур",
+                  "перевед(и|ите)|вырази(те)?",
+                  "периметр|площадь"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T25_ANGLE_CLASSIFY",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "(какой\\s+это\\s+угол|определи\\s+вид\\s+угла|назови\\s+угол)",
+                  "(острый|тупой|прямой)"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "diagram",
+                  "drawing"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "термометр|температур"
+                ],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T23",
+            "T24"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T25_A",
+        "kind": "positive",
+        "description": "Определи вид угла на рисунке (острый/прямой/тупой).",
+        "expected": {
+          "template_id": "T25_pedagogical_template",
+          "task_type": "geometry",
+          "format": "diagram",
+          "topic": "angles_types_measure"
+        },
+        "why": "Ключевое слово «угол» + классификация."
+      },
+      {
+        "id": "RT_T25_B",
+        "kind": "positive",
+        "description": "Измерь угол AOB на рисунке (в градусах).",
+        "expected": {
+          "template_id": "T25_pedagogical_template",
+          "task_type": "geometry",
+          "format": "diagram",
+          "topic": "angles_types_measure"
+        },
+        "why": "Измерение угла + градусы."
+      },
+      {
+        "id": "RT_T25_C",
+        "kind": "negative",
+        "description": "Температура была −3°, стала +4°. На сколько изменилась?",
+        "expected": {
+          "not_template_id": "T25_pedagogical_template"
+        },
+        "why": "Градусы, но это температура — T23."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T25_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Различать острый, прямой и тупой углы и уметь измерять угол в градусах по рисунку (в начальной школе — на уровне распознавания/простого измерения).",
+        "l1": {
+          "format": "Как определить вид",
+          "rules": [
+            "Сначала найди вершину угла (точка, где сходятся стороны).",
+            "Сравни с прямым углом: меньше — острый, ровно — прямой, больше — тупой."
+          ],
+          "forbidden": [
+            "переписывать условие задачи целиком",
+            "давать конечный ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Как измерять",
+          "rules": [
+            "Если нужно измерить: совмести ноль транспортира с одной стороной, а центр — с вершиной.",
+            "Считай по шкале там, куда «смотрит» вторая сторона угла."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Проверь: острый < 90°, прямой = 90°, тупой > 90° и < 180°.",
+            "Если сомневаешься — сравни углы на рисунке с квадратным углом (угол тетрадного листа)."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путают острый и тупой угол: острый меньше 90°, тупой больше 90°.",
+        "Не узнают прямой угол без угольника — не видят его «на глаз».",
+        "Измеряют угол неправильно: не совмещают вершину угла с центром транспортира.",
+        "Читают транспортир по неверной шкале (внутренней вместо внешней или наоборот).",
+        "Путают развёрнутый угол (180°) и полный угол (360°)."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

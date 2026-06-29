@@ -1,0 +1,315 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "claude",
+      "generated_at": "2026-02-16",
+      "notes": "Template for set theory tasks: elements, subsets, union, intersection, Venn diagrams."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic",
+        "sets_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode",
+        "set_operation"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T51",
+        "template_id": "T51_pedagogical_template",
+        "title": "Множества: элементы, подмножества, операции",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "diagram",
+          "drawing",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "sets_logic",
+          "format": "plain_text",
+          "topic": "sets_elements_operations",
+          "constraints": [],
+          "template_params_defaults": {
+            "set_operation": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "sets_logic",
+            "topic": "sets_elements_operations",
+            "formats_allowed": [
+              "plain_text",
+              "diagram",
+              "drawing",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T51_SETS_MAIN",
+              "routing_priority": 95,
+              "must_have": {
+                "text_patterns_any": [
+                  "множеств",
+                  "элемент.*множеств",
+                  "множеств.*элемент",
+                  "принадлежит\\s+множеству",
+                  "подмножеств",
+                  "пересечени",
+                  "объединени",
+                  "\\{[^}]+\\}",
+                  "пустое множество",
+                  "пустого множества"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "периметр|площадь",
+                  "уравнен",
+                  "процент|%",
+                  "столбик|письменно"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T51_SETS_DESCRIBE",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "опиши множеств",
+                  "назови.*элемент",
+                  "перечисли.*множеств",
+                  "запиши множеств",
+                  "задай множеств",
+                  "обозначь множеств",
+                  "сколько элементов",
+                  "принадлежишь.*множеств",
+                  "является элементом"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T51_VENN_DIAGRAMS",
+              "routing_priority": 92,
+              "must_have": {
+                "text_patterns_any": [
+                  "диаграмм.*эйлера",
+                  "эйлера.*венна",
+                  "венна",
+                  "диаграмм.*множеств",
+                  "нарисуй.*диаграмм",
+                  "изобрази.*множеств",
+                  "отметь.*на.*диаграмм",
+                  "по диаграмме"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "столбчат",
+                  "круговая диаграмма"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T51_SET_OPERATIONS",
+              "routing_priority": 88,
+              "must_have": {
+                "text_patterns_any": [
+                  "найди.*пересечение",
+                  "найди.*объединение",
+                  "общ.*элемент",
+                  "входит.*в.*оба",
+                  "принадлежит.*обоим"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T44",
+            "T33"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": [
+          "Шаблон для задач на теорию множеств в начальной школе"
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T51_A",
+        "kind": "positive",
+        "description": "Опиши множества, которые можно назвать: хор, оркестр, бригада.",
+        "expected": {
+          "template_id": "T51_pedagogical_template",
+          "task_type": "sets_logic"
+        },
+        "why": "Явный маркер «множества»."
+      },
+      {
+        "id": "RT_T51_B",
+        "kind": "positive",
+        "description": "Назови 5 элементов множества ягод.",
+        "expected": {
+          "template_id": "T51_pedagogical_template",
+          "task_type": "sets_logic"
+        },
+        "why": "Маркеры «элементов» и «множества»."
+      },
+      {
+        "id": "RT_T51_C",
+        "kind": "positive",
+        "description": "Нарисуй диаграмму Эйлера-Венна множеств М и К.",
+        "expected": {
+          "template_id": "T51_pedagogical_template",
+          "task_type": "sets_logic"
+        },
+        "why": "Диаграмма Эйлера-Венна."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T51_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Научить понимать понятие множества, определять элементы, подмножества и выполнять простые операции над множествами.",
+        "l1": {
+          "format": "Понятие",
+          "rules": [
+            "Множество — это набор объектов, объединённых по какому-то признаку.",
+            "Элементы множества — это те предметы или объекты, которые в него входят.",
+            "Используй фигурные скобки {} для записи множеств."
+          ],
+          "forbidden": [
+            "давать готовый ответ сразу",
+            "использовать сложную терминологию"
+          ]
+        },
+        "l2": {
+          "format": "Примеры",
+          "rules": [
+            "Приведи простой пример похожего множества.",
+            "Покажи, как определить, входит ли элемент в множество.",
+            "Объясни разницу между множеством и его подмножеством."
+          ],
+          "forbidden": [
+            "перечислять все возможные элементы"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Помоги проверить, все ли элементы подходят под определение множества.",
+            "Если есть диаграмма — объясни, что показывает каждая область."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путают множество и его элемент.",
+        "Забывают, что элемент не повторяется в множестве.",
+        "Путают пересечение и объединение множеств.",
+        "Не понимают, что пустое множество — тоже множество.",
+        "Неправильно размещают элементы на диаграмме Венна."
+      ],
+      "terminology_rules": {
+        "use_terms": [
+          "множество",
+          "элемент",
+          "принадлежит",
+          "подмножество"
+        ],
+        "avoid_terms": [
+          "тривиально",
+          "очевидно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

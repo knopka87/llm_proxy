@@ -1,0 +1,291 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "claude",
+      "generated_at": "2026-02-09",
+      "notes": "Шаблоны для 1 класса (T45-T50)"
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T49",
+        "template_id": "T49_pedagogical_template",
+        "title": "Сложение и вычитание в пределах 10",
+        "grade_min": 1,
+        "grade_max": 1,
+        "formats_allowed": [
+          "plain_text",
+          "inline_examples",
+          "fill_gaps",
+          "drawing",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "add_sub_within_10",
+          "constraints": [],
+          "template_params_defaults": {
+            "ops": [
+              "add",
+              "sub"
+            ],
+            "range_max": 10,
+            "written_algorithm": false
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "arithmetic_fluency",
+            "topic": "add_sub_within_10",
+            "formats_allowed": [
+              "plain_text",
+              "inline_examples",
+              "fill_gaps",
+              "drawing",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T49_SIMPLE_ADD_SUB_10",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "(вычисли|реши|найди).*[0-9]\\s*[+−-]\\s*[0-9]",
+                  "[0-9]\\s*\\+\\s*[0-9]\\s*=",
+                  "[0-9]\\s*−\\s*[0-9]\\s*=",
+                  "[0-9]\\s*-\\s*[0-9]\\s*=",
+                  "прибавь\\s+[0-9]",
+                  "отними\\s+[0-9]",
+                  "сложи\\s+[0-9]\\s+и\\s+[0-9]"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "столбик|в столбик|столбиком|письменно",
+                  "двузначн|трёхзначн",
+                  "(1[1-9]|[2-9][0-9]|[1-9][0-9]{2,})",
+                  "умнож|делен|×|÷",
+                  "\\d+\\s*[×÷:]\\s*\\d+",
+                  "уравнен|неизвестн|x|икс",
+                  "состав числа|домик"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            },
+            {
+              "rule_id": "T49_VISUAL_ADD_SUB",
+              "routing_priority": 85,
+              "must_have": {
+                "text_patterns_any": [
+                  "сколько.*если.*прибав",
+                  "сколько.*если.*убр",
+                  "было.*прилетел|было.*улетел",
+                  "нарисуй.*сколько.*станет"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "drawing",
+                  "diagram"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "(1[1-9]|[2-9][0-9]|[1-9][0-9]{2,})"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            }
+          ],
+          "confusables": [
+            "T4",
+            "T45",
+            "T6"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": [
+          "Ключевое отличие от T4: здесь только числа до 10, без перехода через десяток.",
+          "Ключевое отличие от T45: здесь вычисление, а не разложение числа на части.",
+          "Формат: простые примеры типа 3+4, 7-2, 5+5."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T49_A",
+        "kind": "positive",
+        "description": "Вычисли: 3 + 4 = __",
+        "expected": {
+          "template_id": "T49_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "add_sub_within_10"
+        },
+        "why": "Простое сложение в пределах 10."
+      },
+      {
+        "id": "RT_T49_B",
+        "kind": "positive",
+        "description": "Реши примеры: 8 - 3, 5 + 2, 9 - 4.",
+        "expected": {
+          "template_id": "T49_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "add_sub_within_10"
+        },
+        "why": "Серия простых примеров в пределах 10."
+      },
+      {
+        "id": "RT_T49_C",
+        "kind": "negative",
+        "description": "Вычисли: 47 + 28.",
+        "expected": {
+          "not_template_id": "T49_pedagogical_template"
+        },
+        "why": "Двузначные числа — это T4, не T49."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T49_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 1,
+        "register": "kid_friendly_ru",
+        "complexity_rules": [
+          "самые простые слова",
+          "очень короткие фразы"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Научить быстро и уверенно складывать и вычитать числа в пределах 10.",
+        "l1": {
+          "format": "Понимание действия",
+          "rules": [
+            "Сложение (+) — это когда мы соединяем, добавляем. Станет больше.",
+            "Вычитание (−) — это когда убираем, отнимаем. Станет меньше.",
+            "Посмотри на знак: + или −?"
+          ],
+          "forbidden": [
+            "давать ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Способы счёта",
+          "rules": [
+            "Можно посчитать на пальцах: покажи первое число, добавь/убери второе.",
+            "Можно представить предметы: 3 яблока + 4 яблока = ?",
+            "Можно вспомнить состав числа: 3 + 4 — это 7 (запомни!)."
+          ],
+          "forbidden": [
+            "давать ответ без попытки ребёнка"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Сложение проверяй вычитанием: 3 + 4 = 7, значит 7 - 4 = 3.",
+            "При вычитании ответ должен быть меньше первого числа."
+          ],
+          "forbidden": [
+            "решать за ребёнка"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путают сложение и вычитание (не смотрят на знак).",
+        "При вычитании отнимают от меньшего числа (3 - 5 вместо 5 - 3).",
+        "Сбиваются при счёте на пальцах.",
+        "Называют следующее число вместо суммы (3 + 4 = 5 вместо 7).",
+        "При вычитании получают отрицательное число (не понимают, что нельзя)."
+      ],
+      "terminology_rules": {
+        "use_terms": [
+          "прибавь",
+          "отними",
+          "сложи",
+          "вычти",
+          "получится"
+        ],
+        "avoid_terms": [
+          "сумма",
+          "разность",
+          "слагаемое"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

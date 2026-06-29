@@ -1,0 +1,465 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_at": "2025-11-30",
+      "generated_by": "chatgpt",
+      "prompt_file": "prompt_generate_math_templates_T1_T44.final.v2 (1).txt",
+      "notes": [
+        "SINGLE_TEMPLATE_SLICE: contains only T2 + 3 routing tests (A/B/C)."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_schema": {
+        "ops": [
+          "add",
+          "sub",
+          "mul",
+          "div"
+        ],
+        "range_max": "number|null",
+        "written_algorithm": "boolean|null",
+        "unknown_component": [
+          "addend",
+          "minuend",
+          "subtrahend",
+          "factor",
+          "dividend",
+          "divisor",
+          "null"
+        ],
+        "compare_mode": [
+          "difference",
+          "times",
+          "null"
+        ],
+        "change_mode": [
+          "plus",
+          "minus",
+          "times",
+          "divide",
+          "null"
+        ],
+        "word_model": [
+          "short_record",
+          "table",
+          "diagram",
+          "equation",
+          "none",
+          "null"
+        ],
+        "unit_kind": [
+          "length",
+          "mass",
+          "time",
+          "money",
+          "temperature",
+          "area",
+          "volume",
+          "mixed",
+          "null"
+        ],
+        "data_task_mode": [
+          "read",
+          "fill",
+          "build",
+          "null"
+        ],
+        "geometry_mode": [
+          "perimeter",
+          "area",
+          "angles",
+          "symmetry",
+          "coordinates",
+          "compose",
+          "spatial",
+          "other",
+          "null"
+        ],
+        "logic_mode": [
+          "sequence",
+          "rebuses",
+          "combinatorics",
+          "statements",
+          "trick",
+          "other",
+          "null"
+        ]
+      }
+    },
+    "templates": [
+      {
+        "template_code": "T2",
+        "template_id": "T2_pedagogical_template",
+        "title": "Римские и арабские числа",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "inline_examples",
+          "fill_gaps",
+          "table"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "numeral_systems",
+          "format": "plain_text",
+          "topic": "roman_arabic_numerals",
+          "constraints": [
+            "roman_numerals"
+          ],
+          "template_params_defaults": {}
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "numeral_systems",
+            "topic": "roman_arabic_numerals",
+            "formats_allowed": [
+              "plain_text",
+              "inline_examples",
+              "fill_gaps",
+              "table"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T2_rule_plain_or_inline_anchor",
+              "must_have": {
+                "text_patterns_any": [
+                  "римск",
+                  "(запиши|запишите|переведи|переведите) .* римск",
+                  "в римской записи",
+                  "из (римских|арабских) в (арабские|римские)",
+                  "(сложение|вычитание) римских"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "числовая прямая",
+                  "числовой луч",
+                  "по числовому лучу",
+                  "таблица умножения",
+                  "деление с остатком",
+                  "закономерн",
+                  "уравнен",
+                  "неизвестн",
+                  "найди\\s+[xх]",
+                  "[xх]\\s*[+=]",
+                  "[+=]\\s*[xх]"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 85,
+              "tie_breaker": "(1) visual_kinds_any совпадение сильнее текста; (2) 0 нарушений must_not; (3) больше совпадений сильных якорей; (4) больше совпадений template_params_required; (5) выше routing_priority; (6) стабильный порядок по template_code."
+            },
+            {
+              "rule_id": "T2_rule_roman_numerals_regex",
+              "must_have": {
+                "text_patterns_any": [
+                  "[IVXLCDM]{2,}",
+                  "число [IVXLCDM]{1,}",
+                  "римск"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "числовая прямая",
+                  "числовой луч",
+                  "диаграмм",
+                  "таблица умножения",
+                  "периметр",
+                  "площадь",
+                  "^[IVX]\\.",
+                  "\\b[IVX]\\.\\s",
+                  "пункт [IVX]",
+                  "раздел [IVX]",
+                  "уравнен",
+                  "неизвестн",
+                  "найди\\s+[xх]",
+                  "[xх]\\s*[+=]",
+                  "[+=]\\s*[xх]",
+                  "реши\\s+уравнение"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 68,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) наличие римских цифр в тексте; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T2_rule_table",
+              "must_have": {
+                "text_patterns_any": [
+                  "римск"
+                ],
+                "visual_kinds_any": [
+                  "table"
+                ],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "диаграмм",
+                  "термометр",
+                  "периметр",
+                  "площадь"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 95,
+              "tie_breaker": "(1) visual_kinds_any совпадение сильнее текста; (2) 0 нарушений must_not; (3) больше совпадений сильных якорей; (4) больше совпадений template_params_required; (5) выше routing_priority; (6) стабильный порядок по template_code."
+            },
+            {
+              "rule_id": "T2_rule_fill_gaps",
+              "must_have": {
+                "text_patterns_any": [
+                  "__GAP__",
+                  "римск"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "прочитай диаграмму",
+                  "по числовой прямой",
+                  "периметр",
+                  "площадь"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 90,
+              "tie_breaker": "(1) visual_kinds_any совпадение сильнее текста; (2) 0 нарушений must_not; (3) больше совпадений сильных якорей; (4) больше совпадений template_params_required; (5) выше routing_priority; (6) стабильный порядок по template_code."
+            }
+          ],
+          "confusables": [
+            "T1",
+            "T3",
+            "T35",
+            "T44"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2,
+          "h3_reason": ""
+        },
+        "notes_for_backend": [
+          "Primary key (when available): ped_keys.template_id == 'T2_pedagogical_template'.",
+          "Fallback: task_type='numeral_systems' + topic='roman_arabic_numerals' + format in formats_allowed; then apply routing_rules OR-logic.",
+          "Near-miss protection: do not match if отсутствуют 'римск' или римская запись [IVXLCDM]{2,}."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T2_A",
+        "kind": "positive",
+        "description": "Переведи римское число XIV в арабскую запись.",
+        "expected": {
+          "template_id": "T2_pedagogical_template",
+          "task_type": "numeral_systems",
+          "format": "plain_text",
+          "topic": "roman_arabic_numerals"
+        },
+        "why": "Сильный якорь: 'римское' + запись XIV."
+      },
+      {
+        "id": "RT_T2_B",
+        "kind": "positive",
+        "description": "Заполни таблицу: Римские — __GAP__, Арабские — 9; Римские — IV, Арабские — __GAP__.",
+        "expected": {
+          "template_id": "T2_pedagogical_template",
+          "task_type": "numeral_systems",
+          "format": "table",
+          "topic": "roman_arabic_numerals"
+        },
+        "why": "Формат table + сильный якорь 'римские'/'IV' + '__GAP__'."
+      },
+      {
+        "id": "RT_T2_C",
+        "kind": "near_miss",
+        "description": "Запиши арабскими цифрами число: пятьдесят два.",
+        "expected": {
+          "template_id": "T1_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "plain_text",
+          "topic": "numeration_number_line"
+        },
+        "why": "Нет якоря 'римск' и нет римской записи [IVXLCDM]{2,}; фраза 'арабскими цифрами' сама по себе недостаточна для T2."
+      },
+      {
+        "id": "RT_T2_D",
+        "kind": "positive",
+        "description": "Запиши римскими цифрами число 24.",
+        "expected": {
+          "template_id": "T2_pedagogical_template",
+          "task_type": "numeral_systems",
+          "format": "plain_text",
+          "topic": "roman_arabic_numerals"
+        },
+        "why": "Фраза 'запиши римскими цифрами' — маркер T2."
+      },
+      {
+        "id": "RT_T2_E",
+        "kind": "positive",
+        "description": "Какое римское число больше: XXI или XIX?",
+        "expected": {
+          "template_id": "T2_pedagogical_template",
+          "task_type": "numeral_systems",
+          "format": "plain_text",
+          "topic": "roman_arabic_numerals"
+        },
+        "why": "Фраза 'римское число' + наличие римских цифр XXI, XIX."
+      },
+      {
+        "id": "RT_T2_F",
+        "kind": "positive",
+        "description": "Выполни сложение римских чисел: XII + VIII.",
+        "expected": {
+          "template_id": "T2_pedagogical_template",
+          "task_type": "numeral_systems",
+          "format": "plain_text",
+          "topic": "roman_arabic_numerals"
+        },
+        "why": "Фраза 'сложение римских чисел' + римские цифры XII, VIII."
+      },
+      {
+        "id": "RT_T2_G",
+        "kind": "positive",
+        "description": "Переведи из римских в арабские: XLII.",
+        "expected": {
+          "template_id": "T2_pedagogical_template",
+          "task_type": "numeral_systems",
+          "format": "plain_text",
+          "topic": "roman_arabic_numerals"
+        },
+        "why": "Фраза 'из римских в арабские' — маркер T2."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T2_pedagogical_template": {
+      "hint_style_profile": "roman_arabic_numerals",
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "tone": "дружелюбный/поддерживающий",
+        "complexity_rules": [
+          "короткие предложения",
+          "термины упрощать в 1–2",
+          "без лишних переменных",
+          "без воды"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Научить переводить римские ↔ арабские записи и сравнивать такие числа.",
+        "l1": {
+          "rules": [
+            "Спроси: какие знаки видишь (I, V, X, L, C, D, M) и сколько их.",
+            "Напомни значения только тех знаков, которые есть в задании.",
+            "Подведи к действию: перевести в арабские числа и только потом сравнить/записать."
+          ],
+          "format": "Вопрос → Действие → Мини-проверка",
+          "forbidden": [
+            "давать готовый ответ одной строкой без шагов",
+            "перечислять весь справочник значений, если в задании нужны 1–2 знака"
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Дай алгоритм: читаем слева направо; если знак меньше следующего — вычитаем, иначе прибавляем.",
+            "Покажи на одном мини-примере из условия (не на новом сложном).",
+            "Если нужно сравнить: переведи обе записи в арабские числа и сравни обычными знаками."
+          ],
+          "format": "Шаги → Где смотреть → Мини-проверка",
+          "forbidden": [
+            "вводить сложную терминологию (например 'субтрактивная нотация')",
+            "длинные объяснения на полстраницы"
+          ]
+        },
+        "l3": {
+          "when_allowed": "только если max_hints_default==3",
+          "rules": [],
+          "format": "чуть подробнее, но компактно"
+        }
+      },
+      "common_mistakes": [
+        "Всегда складывают знаки и забывают про вычитание (IX считают как 11).",
+        "Путают 4 и 9 (пишут IIII вместо IV, VIIII вместо IX).",
+        "Меняют порядок знаков (VX вместо XV).",
+        "Сравнивают по виду записи, не переводя в арабские числа."
+      ],
+      "terminology_rules": [
+        "В 1–2 подсказках говори: 'римские числа/цифры' и 'обычные (арабские) цифры'.",
+        "Используй слова 'прибавь/вычти' вместо сложных терминов."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

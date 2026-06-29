@@ -1,0 +1,247 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch 2 (T16,T19,T20,T21,T23) built to match existing TemplateRegistry format; tasks are synthetic examples."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T21",
+        "template_id": "T21_pedagogical_template",
+        "title": "Перевод и сравнение единиц измерения",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "table",
+          "mixed",
+          "fill_gaps"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "measurement_units",
+          "format": "plain_text",
+          "topic": "unit_conversion_and_compare",
+          "constraints": [
+            "uses_units"
+          ],
+          "template_params_defaults": {
+            "supported": [
+              "length",
+              "mass",
+              "time",
+              "volume",
+              "money"
+            ]
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "measurement_units",
+            "topic": "unit_conversion_and_compare",
+            "formats_allowed": [
+              "plain_text",
+              "table",
+              "mixed",
+              "fill_gaps"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T21_CONVERT_EXPLICIT",
+              "routing_priority": 98,
+              "must_have": {
+                "text_patterns_any": [
+                  "перевед(и|ите)",
+                  "вырази(те)?",
+                  "сколько\\s+(сантиметр|миллиметр|метр|километр|грамм|килограмм|минут|час|рубл|копеек)",
+                  "в\\s+каких\\s+единицах",
+                  "сравни(те)?\\s+\\d+\\s*(см|мм|м\\b|км|г\\b|кг|л\\b|мл|мин|ч\\b|руб|коп)"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "термометр|температур|°",
+                  "процент|%|дроб|доля",
+                  "скорост|км/ч|м/с"
+                ],
+                "visual_kinds_any": [
+                  "column",
+                  "number_line"
+                ]
+              }
+            }
+          ],
+          "confusables": [
+            "T19",
+            "T20",
+            "T23"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T21_A",
+        "kind": "positive",
+        "description": "Переведи 3 м 25 см в сантиметры.",
+        "expected": {
+          "template_id": "T21_pedagogical_template",
+          "task_type": "measurement_units",
+          "format": "plain_text",
+          "topic": "unit_conversion_and_compare"
+        },
+        "why": "Явный глагол «переведи» + единицы."
+      },
+      {
+        "id": "RT_T21_B",
+        "kind": "positive",
+        "description": "Сравни: 2 кг и 1800 г.",
+        "expected": {
+          "template_id": "T21_pedagogical_template",
+          "task_type": "measurement_units",
+          "format": "plain_text",
+          "topic": "unit_conversion_and_compare"
+        },
+        "why": "Сравнение величин в разных единицах."
+      },
+      {
+        "id": "RT_T21_C",
+        "kind": "negative",
+        "description": "Машина ехала со скоростью 60 км/ч 2 часа. Найди расстояние.",
+        "expected": {
+          "not_template_id": "T21_pedagogical_template"
+        },
+        "why": "Это движение — T20."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T21_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Научиться переводить и сравнивать единицы длины, массы, времени, объёма и денег.",
+        "l1": {
+          "format": "Что переводим",
+          "rules": [
+            "Определи, из каких единиц переводим и в какие (например: м и см).",
+            "Вспомни опорные равенства: 1 м = 100 см; 1 км = 1000 м; 1 кг = 1000 г; 1 ч = 60 мин; 1 руб = 100 коп."
+          ],
+          "forbidden": [
+            "переписывать условие задачи целиком",
+            "давать конечный ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Как считать",
+          "rules": [
+            "Если переводим в меньшие единицы — умножаем (м → см).",
+            "Если в большие — делим (см → м)."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Проверь: после перевода число должно стать больше при переходе к меньшим единицам, и меньше — к большим.",
+            "Если сравниваешь — приведи оба числа к одним единицам и сравни."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путают направление перевода: при переводе в меньшие единицы нужно умножать, в большие — делить.",
+        "Не помнят соотношения: 1 км = 1000 м, 1 м = 100 см, 1 кг = 1000 г.",
+        "При сравнении не приводят к одним единицам: сравнивают 2 км и 1500 м без перевода.",
+        "Путают 1 ц = 100 кг и 1 т = 1000 кг.",
+        "При работе со временем: 1 ч 20 мин ≠ 1,20 ч (правильно: 1 ч 20 мин = 80 мин)."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

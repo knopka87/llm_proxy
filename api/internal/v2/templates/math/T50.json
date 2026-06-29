@@ -1,0 +1,312 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "claude",
+      "generated_at": "2026-02-09",
+      "notes": "Шаблоны для 1 класса (T45-T50)"
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T50",
+        "template_id": "T50_pedagogical_template",
+        "title": "Простые задачи для 1 класса (было-стало, больше-меньше на)",
+        "grade_min": 1,
+        "grade_max": 1,
+        "formats_allowed": [
+          "plain_text",
+          "drawing",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "simple_word_problems_grade1",
+          "constraints": [],
+          "template_params_defaults": {
+            "ops": [
+              "add",
+              "sub"
+            ],
+            "range_max": 10,
+            "word_model": "was_became"
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "word_problems",
+            "topic": "simple_word_problems_grade1",
+            "formats_allowed": [
+              "plain_text",
+              "drawing",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T50_WAS_BECAME",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "было.*прилетел.*сколько",
+                  "было.*улетел.*сколько",
+                  "было.*пришл.*сколько",
+                  "было.*ушл.*сколько",
+                  "было.*дали.*сколько",
+                  "было.*взяли.*сколько",
+                  "было.*съел.*сколько осталось",
+                  "было.*конфет.*сколько осталось",
+                  "сидел.*улетел.*сколько",
+                  "стоял.*ушл.*сколько",
+                  "лежал.*взял.*сколько",
+                  "(птиц|птичек).*улетел.*сколько",
+                  "(собак|кошек|зверей).*убежал.*сколько",
+                  "дали.*сколько стало",
+                  "ей дали.*сколько",
+                  "ему дали.*сколько",
+                  "на\\s+\\d+\\s+(больше|меньше).*сколько",
+                  "стало.*на\\s+\\d+\\s+(больше|меньше)"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "во сколько раз",
+                  "скорост|время|расстояни",
+                  "цена|стоимость|рубл",
+                  "периметр|площадь",
+                  "\\b[1-9][0-9]{2,}\\b"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            },
+            {
+              "rule_id": "T50_SIMPLE_STORY",
+              "routing_priority": 85,
+              "must_have": {
+                "text_patterns_any": [
+                  "у (Маши|Пети|мамы|папы).*сколько",
+                  "(мальчик|девочка).*сколько.*всего",
+                  "в корзин.*сколько",
+                  "на тарелк.*сколько",
+                  "в коробк.*сколько"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "drawing"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "\\b[1-9][0-9]{2,}\\b",
+                  "умнож|делен|раздел",
+                  "во сколько раз"
+                ],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T14",
+            "T16",
+            "T49"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": [
+          "Ключевое отличие от T14: здесь только 1 класс, числа до 10-20, простейшие сюжеты.",
+          "Ключевое отличие от T49: здесь текстовая задача, а не голый пример.",
+          "Типичные сюжеты: было-стало, прилетели-улетели, дали-взяли."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T50_A",
+        "kind": "positive",
+        "description": "На ветке сидели 5 птиц. 2 улетели. Сколько осталось?",
+        "expected": {
+          "template_id": "T50_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "simple_word_problems_grade1"
+        },
+        "why": "Классическая задача «было-улетели-осталось» для 1 класса."
+      },
+      {
+        "id": "RT_T50_B",
+        "kind": "positive",
+        "description": "У Маши 3 яблока. Ей дали ещё 4. Сколько стало?",
+        "expected": {
+          "template_id": "T50_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "simple_word_problems_grade1"
+        },
+        "why": "Задача «было-дали-стало»."
+      },
+      {
+        "id": "RT_T50_C",
+        "kind": "positive",
+        "description": "У Пети 7 конфет, а у Васи на 2 больше. Сколько у Васи?",
+        "expected": {
+          "template_id": "T50_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "simple_word_problems_grade1"
+        },
+        "why": "Задача «на N больше»."
+      },
+      {
+        "id": "RT_T50_D",
+        "kind": "negative",
+        "description": "Поезд ехал 3 часа со скоростью 60 км/ч. Какое расстояние он проехал?",
+        "expected": {
+          "not_template_id": "T50_pedagogical_template"
+        },
+        "why": "Это задача на движение (T20), не для 1 класса."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T50_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 1,
+        "register": "kid_friendly_ru",
+        "complexity_rules": [
+          "простейшие слова",
+          "очень короткие фразы",
+          "понятные примеры"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Научить понимать простые текстовые задачи и выбирать правильное действие.",
+        "l1": {
+          "format": "Понимание задачи",
+          "rules": [
+            "Прочитай задачу. О чём она? (о птицах, яблоках, конфетах...)",
+            "Что было сначала? Что случилось потом?",
+            "Что нужно найти: сколько стало или сколько осталось?"
+          ],
+          "forbidden": [
+            "давать ответ сразу",
+            "называть действие без понимания"
+          ]
+        },
+        "l2": {
+          "format": "Выбор действия",
+          "rules": [
+            "Если ДОБАВИЛИ (дали, прилетели, пришли) — это СЛОЖЕНИЕ (+).",
+            "Если УБРАЛИ (взяли, улетели, ушли, съели) — это ВЫЧИТАНИЕ (−).",
+            "«На 2 больше» — прибавляем 2. «На 2 меньше» — отнимаем 2."
+          ],
+          "forbidden": [
+            "давать формулу без объяснения смысла"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Проверь смысл ответа: если улетели — осталось МЕНЬШЕ, чем было.",
+            "Перечитай вопрос: ты ответил именно на него?"
+          ],
+          "forbidden": [
+            "решать за ребёнка"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Не понимают, какое действие выбрать: сложение или вычитание.",
+        "Путают «стало» и «осталось» — разные вопросы!",
+        "При «на 2 больше» прибавляют 2 к неправильному числу.",
+        "Не читают вопрос до конца и отвечают не на то.",
+        "Забывают написать наименование (яблок, птиц, конфет)."
+      ],
+      "terminology_rules": {
+        "use_terms": [
+          "было",
+          "стало",
+          "осталось",
+          "всего",
+          "прибавить",
+          "отнять"
+        ],
+        "avoid_terms": [
+          "сумма",
+          "разность",
+          "слагаемое",
+          "уменьшаемое"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

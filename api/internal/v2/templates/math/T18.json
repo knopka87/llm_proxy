@@ -1,0 +1,320 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2.updated_after_audit_T1_T5.txt",
+      "generated_at": "2025-12-13T09:38:55Z",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T18 only).",
+        "Основан на описании T18 в педдокументе и routing_keys_table_v1.xlsx без добавления новых ключей."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T18",
+        "template_id": "T18_pedagogical_template",
+        "title": "Задачи на норму и количество",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "rate_word_problems",
+          "constraints": [],
+          "template_params_defaults": {
+            "ops": [
+              "mul",
+              "div"
+            ],
+            "word_model": "rate",
+            "change_mode": "none",
+            "compare_mode": "none",
+            "geometry_mode": null,
+            "logic_mode": null,
+            "unit_kind": null,
+            "range_max": null,
+            "unknown_component": null,
+            "data_task_mode": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "word_problems",
+            "topic": "rate_word_problems",
+            "formats_allowed": [
+              "plain_text",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T18_RATE_PRICE_QUANTITY",
+              "must_have": {
+                "text_patterns_any": [
+                  "за (штуку|1 кг|килограмм|литр|метр|единицу|1 штуку)",
+                  "стои(т|мость)",
+                  "цена",
+                  "сколько (заплатили|стоит|стоят|денег)",
+                  "по \\d+ (рублей|руб|копеек|коп)",
+                  "(рублей|руб\\.) за",
+                  "за (один|одну|одно|каждый|каждую)",
+                  "\\d+ (рублей|руб) за \\d+",
+                  "куп(ил|или|ить) .* \\d+ (штук|кг|литр)"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "скорость",
+                  "расстояние",
+                  "движени"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 70,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше ценовых маркеров 'цена/стоимость'; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T18_RATE_WORK_OUTPUT",
+              "must_have": {
+                "text_patterns_any": [
+                  "(вырабатывает|изготавливает|производит|выпускает|делает)",
+                  "работая",
+                  "(за|в) (час|день|минуту|неделю|месяц)",
+                  "(деталей|страниц|штук|изделий|деталь) в (час|день|минуту)",
+                  "\\d+ (деталей|штук|изделий) (за|в) \\d+ (час|минут|дней)",
+                  "норма выработки",
+                  "производительность"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "скорость",
+                  "км/ч",
+                  "расстояние"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 69,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше маркеров выработки 'вырабатывает/изготавливает'; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T7",
+            "T10",
+            "T19",
+            "T21"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Для задач на норму и количество полезен третий шаг с проверкой связи результат = норма × количество."
+        },
+        "notes_for_backend": [
+          "T18: словесные задачи на постоянную норму и количество, где модель result = rate × quantity (по описанию педшаблона).",
+          "Типичные сюжеты: цена–количество–стоимость, скорость работы/выработка.",
+          "task_type='word_problems', word_model='rate', ops=['mul','div'] строго по routing_keys_table_v1.xlsx."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T18_PRICE_QUANTITY",
+        "kind": "positive",
+        "description": "По 5 рублей за тетрадь купили 8 тетрадей. Сколько заплатили?",
+        "expected": {
+          "template_id": "T18_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "rate_word_problems"
+        },
+        "why": "Классическая задача на цену, количество и стоимость с постоянной нормой."
+      },
+      {
+        "id": "RT_T18_WORK_RATE",
+        "kind": "positive",
+        "description": "Мастер за 1 час изготавливает 6 деталей. Сколько деталей он изготовит за 5 часов?",
+        "expected": {
+          "template_id": "T18_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "rate_word_problems"
+        },
+        "why": "Задача на норму выработки (деталей в час) и количество часов."
+      },
+      {
+        "id": "RT_T18_FIND_PRICE",
+        "kind": "positive",
+        "description": "За 6 карандашей заплатили 42 рубля. Сколько стоит один карандаш?",
+        "expected": {
+          "template_id": "T18_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "rate_word_problems"
+        },
+        "why": "Нахождение цены за единицу (нормы) по известной стоимости и количеству."
+      },
+      {
+        "id": "RT_T18_FIND_QUANTITY",
+        "kind": "positive",
+        "description": "Ручка стоит 12 рублей. Сколько ручек можно купить на 60 рублей?",
+        "expected": {
+          "template_id": "T18_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "rate_word_problems"
+        },
+        "why": "Нахождение количества по известной цене и общей стоимости."
+      },
+      {
+        "id": "RT_T18_PRODUCTION_RATE",
+        "kind": "positive",
+        "description": "Станок выпускает 15 деталей в минуту. Сколько деталей выпустит станок за 8 минут?",
+        "expected": {
+          "template_id": "T18_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "rate_word_problems"
+        },
+        "why": "Задача на производительность — норма выработки в минуту."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T18_pedagogical_template": {
+      "hint_style_profile": "rate_word_problems",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 2,
+        "grade_max": 4,
+        "tone": "спокойный/поддерживающий",
+        "complexity_rules": [
+          "объяснять норму простыми словами: сколько приходится на одну единицу (1 кг, 1 штуку, 1 час и т.д.).",
+          "показывать связь: чтобы найти результат, умножаем норму на количество; чтобы найти норму или количество, используем деление.",
+          "не перегружать ребёнка формальными терминами, делать опору на сюжет задачи."
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Понимать зависимость результат = норма × количество и применять её в текстовых задачах.",
+        "l1": {
+          "rules": [
+            "Разобрать условие и выделить три ключевых величины: норму (за 1 единицу), количество и результат.",
+            "Показать на одном-двух примерах, где в тексте спрятана норма (за 1 штуку, за 1 кг, за 1 час).",
+            "Обсудить, какая величина в задаче неизвестна: норма, количество или результат."
+          ],
+          "format": "Разбор условия и выделение тройки 'норма–количество–результат'.",
+          "forbidden": [
+            "сразу записывать формулу без пояснения смысла норм и количества.",
+            "подставлять числа в формулу, не проверив, что это именно норма и количество.",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Показать, как составить краткую запись (табличку или схему) с тремя величинами.",
+            "По шагам объяснить, когда надо умножать, а когда делить: результат = норма × количество; норма = результат : количество; количество = результат : норма.",
+            "Пройти решение по шагам, связывая каждое действие с сюжетом, но последний расчёт (сколько предмет(ы) на общее число из условия руб.) пусть выполнит ученик сам.",
+            "Краткая запись/таблица: «предмет(ы) — количество — стоимость»; сначала найди стоимость 1 предмет(ы), затем раздели общее число из условия на эту стоимость."
+          ],
+          "format": "Пошаговое решение задачи с опорой на модель result = rate × quantity.",
+          "forbidden": [
+            "превращать объяснение в чистую алгебру без опоры на текст.",
+            "перескакивать к ответу без промежуточной связи с сюжетом.",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        },
+        "l3": {
+          "when_allowed": "если max_hints_default == 3 и ребёнок уже увидел схему решения.",
+          "rules": [
+            "Организовать самопроверку: спросить, как можно проверить ответ (например, умножив норму на количество).",
+            "Попросить ребёнка объяснить своими словами, что означают числа в ответе (что именно столько стоит, делают, получают).",
+            "Привести короткий дополнительный пример с такой же моделью, чтобы закрепить идею нормы.",
+            "Самопроверка: умножь «цена одной предмет(ы) × найденное количество» и проверь, что получилось общее число из условия; если не совпало — пересчитай деление."
+          ],
+          "format": "Самопроверка и перенос модели на похожий пример.",
+          "forbidden": [
+            "вводить новые типы задач (например, сложные комбинированные проценты).",
+            "менять исходный сюжет текущей задачи.",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путает норму и результат (принимает общую сумму за норму за единицу).",
+        "Складывает или вычитает вместо умножения/деления, хотя текст описывает постоянную норму.",
+        "Неверно определяет, какая величина неизвестна (ищет количество, когда надо найти норму, и наоборот)."
+      ],
+      "terminology_rules": [
+        "Вводить слово 'норма' через жизненные примеры: цена за 1 штуку, выработка за 1 час и т.п.",
+        "Не перегружать терминологией; достаточно объяснять связь между 'за одну единицу' и 'за несколько единиц'.",
+        "Подчёркивать, что одинаковая норма означает использование умножения или деления, а не сложения каждый раз с нуля."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

@@ -1,0 +1,294 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2.updated_after_audit_T1_T5.txt",
+      "generated_at": "2025-12-13T09:33:04Z",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T37 only).",
+        "Основан на описании T37 в педдокументе и routing_keys_table_v1.xlsx без добавления новых ключей."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T37",
+        "template_id": "T37_pedagogical_template",
+        "title": "Уравнения и неравенства",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "equations",
+          "constraints": [],
+          "template_params_defaults": {
+            "ops": [
+              "add",
+              "sub",
+              "mul",
+              "div"
+            ],
+            "logic_mode": "equations",
+            "change_mode": "none",
+            "compare_mode": "none",
+            "geometry_mode": null,
+            "word_model": "none",
+            "unknown_component": null,
+            "range_max": null,
+            "unit_kind": null,
+            "data_task_mode": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "patterns_logic",
+            "topic": "equations",
+            "formats_allowed": [
+              "plain_text"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T37_EQUATIONS_AND_INEQUALITIES",
+              "must_have": {
+                "text_patterns_any": [
+                  "уравнен",
+                  "реши(те)? уравнение",
+                  "неравенств",
+                  "(на )?числов(ом|ой) луч",
+                  "(найди|чему равн[оа]) (x|икс)",
+                  "(корень|решение) уравнения",
+                  "(больше|меньше) или равно",
+                  "x [+−\\-×·\\*:]",
+                  "[+−\\-] ?x ?=",
+                  "(подставь|проверь) (x|корень)",
+                  "\\d+ [+−\\-×·\\*:] x [=<>]",
+                  "x [+−\\-×·\\*:] \\d+ [=<>]"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 75,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений маркеров 'уравнен/неравенств'; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T35",
+            "T41"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Для уравнений и неравенств полезен третий шаг с самопроверкой и объяснением, почему решение верно."
+        },
+        "notes_for_backend": [
+          "Шаблон T37 покрывает решение уравнений в одно действие и простых неравенств на числовом луче (по педдокументу).",
+          "Основные текстовые якоря: 'уравнен', 'уравнение', 'неравенств', 'на числовом луче'.",
+          "task_type='patterns_logic', logic_mode='equations', ops=['add','sub','mul','div'] — строго по routing_keys_table_v1.xlsx."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T37_EQ_SIMPLE",
+        "kind": "positive",
+        "description": "Реши уравнение: x + 7 = 15.",
+        "expected": {
+          "template_id": "T37_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "equations"
+        },
+        "why": "Есть явное слово 'уравнение' и запись с неизвестным числом."
+      },
+      {
+        "id": "RT_T37_INEQ_NUMBER_LINE",
+        "kind": "positive",
+        "description": "Отметь на числовом луче все числа, которые больше 5, но меньше 9.",
+        "expected": {
+          "template_id": "T37_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "equations"
+        },
+        "why": "Условие описывает простое неравенство на числовом луче (по педдокументу T37)."
+      },
+      {
+        "id": "RT_T37_EQ_MUL",
+        "kind": "positive",
+        "description": "Реши уравнение: x · 4 = 28.",
+        "expected": {
+          "template_id": "T37_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "equations"
+        },
+        "why": "Уравнение с умножением."
+      },
+      {
+        "id": "RT_T37_EQ_SUB",
+        "kind": "positive",
+        "description": "Найди x: 25 - x = 18.",
+        "expected": {
+          "template_id": "T37_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "equations"
+        },
+        "why": "Уравнение с вычитанием, просят 'найди x'."
+      },
+      {
+        "id": "RT_T37_EQ_CHECK",
+        "kind": "positive",
+        "description": "Реши уравнение и сделай проверку: x + 12 = 30.",
+        "expected": {
+          "template_id": "T37_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "equations"
+        },
+        "why": "Уравнение с требованием проверки."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T37_pedagogical_template": {
+      "hint_style_profile": "equations_simple",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 2,
+        "grade_max": 4,
+        "tone": "спокойный/поддерживающий",
+        "complexity_rules": [
+          "объяснять уравнение как задачу 'найти неизвестное число'",
+          "использовать простые примеры без громоздких обозначений",
+          "для неравенств на луче явно проговаривать, какие точки закрашены, а какие нет"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Понимать уравнение как равенство с неизвестным и решать простейшие уравнения и неравенства.",
+        "l1": {
+          "rules": [
+            "Пояснить, что уравнение — это равенство, где одно число неизвестно.",
+            "Показать, из каких частей состоит простое уравнение (левая и правая части, знак равенства).",
+            "Для неравенств на числовом луче обсудить, какие точки подходят решению, а какие нет."
+          ],
+          "format": "Понимание смысла уравнения/неравенства и структуры записи.",
+          "forbidden": [
+            "сразу подставлять число без объяснения, что делаем",
+            "использовать сложные алгебраические термины, вроде 'преобразование выражения'",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Разобрать несколько уравнений в одно действие: найти неизвестное число с опорой на обратное действие.",
+            "Пошагово решить простое неравенство на числовом луче, показать, где отмечается решение.",
+            "Подчеркнуть связь между операцией и обратной операцией (сложение/вычитание, умножение/деление).",
+            "Если в задании есть подпункты (а, б, в...) — объясни один общий алгоритм и как применять его к каждому подпункту; подсказки должны относиться ко всему заданию целиком.",
+            "Для каждого уравнения проговори «какое действие мешает x» и какое обратное действие его отменяет; не вычисляй x до конца, если это уже будет готовым ответом — оставь вычисление ученику."
+          ],
+          "format": "Пошаговое решение уравнений и неравенств с пояснениями.",
+          "forbidden": [
+            "давать готовый ответ без промежуточных шагов",
+            "перепрыгивать через шаг самопроверки",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        },
+        "l3": {
+          "when_allowed": "если max_hints_default == 3 и ребёнок уже получил схему решения",
+          "rules": [
+            "Организовать самопроверку: подставить найденное число в уравнение и проверить равенство.",
+            "Обсудить, есть ли у данного уравнения/неравенства несколько решений или одно.",
+            "Попросить ребёнка сформулировать своими словами, как он понял, что решение верное.",
+            "В L3 дай полный разбор хода решения по всему заданию, но оставь ученику выполнить финальный расчёт/записать итог самостоятельно; добавь самопроверку обратным действием.",
+            "Обязательно требуй подстановку найденного x обратно в уравнение как проверку; попроси ученика убедиться, что обе части равны."
+          ],
+          "format": "Самопроверка и закрепление понимания.",
+          "forbidden": [
+            "добавлять новые типы уравнений на этом уровне",
+            "менять исходное условие задачи",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Считает, что уравнение — это просто пример, и не обращает внимания на знак равенства.",
+        "Подставляет числа наугад, не пользуясь обратным действием.",
+        "Путает направление знаков неравенства (> и <).",
+        "Неправильно отмечает решение на числовом луче (не там ставит точку или штриховку)."
+      ],
+      "terminology_rules": [
+        "Вводить слово 'уравнение' через простые примеры: 'выражение слева = выражение справа'.",
+        "Не перегружать обозначениями x, y; достаточно говорить 'неизвестное число'.",
+        "Для неравенств использовать формулировки 'подходит/не подходит', 'больше/меньше', с опорой на числовой луч."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

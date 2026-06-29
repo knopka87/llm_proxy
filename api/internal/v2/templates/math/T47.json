@@ -1,0 +1,283 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "claude",
+      "generated_at": "2026-02-09",
+      "notes": "Шаблоны для 1 класса (T45-T50)"
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T47",
+        "template_id": "T47_pedagogical_template",
+        "title": "Сравнение чисел (больше, меньше, равно)",
+        "grade_min": 1,
+        "grade_max": 1,
+        "formats_allowed": [
+          "plain_text",
+          "fill_gaps",
+          "drawing",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "number_sense",
+          "format": "fill_gaps",
+          "topic": "compare_numbers_signs",
+          "constraints": [],
+          "template_params_defaults": {
+            "range_max": 20,
+            "compare_mode": "greater_less_equal"
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "number_sense",
+            "topic": "compare_numbers_signs",
+            "formats_allowed": [
+              "plain_text",
+              "fill_gaps",
+              "drawing",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T47_COMPARE_SIGNS",
+              "routing_priority": 95,
+              "must_have": {
+                "text_patterns_any": [
+                  "сравни(те)?\\s+числа",
+                  "сравни(те)?.*\\d+.*и.*\\d+",
+                  "поставь(те)?\\s+(знак|<|>|=)",
+                  "вставь(те)?\\s+(знак|<|>|=)",
+                  "какое\\s+число\\s+(больше|меньше)",
+                  "что\\s+(больше|меньше)",
+                  "\\d+\\s*(__GAP__|\\?|_)\\s*\\d+",
+                  "(>|<|=)\\s+или\\s+(>|<|=)",
+                  "больше.*или.*меньше"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "на сколько (больше|меньше)",
+                  "во сколько раз",
+                  "\\d+\\s*[+−-]\\s*\\d+",
+                  "\\d+\\s*[×÷:]\\s*\\d+",
+                  "вычисли|реши|сложи|вычти",
+                  "уравнен"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            },
+            {
+              "rule_id": "T47_COMPARE_VISUAL",
+              "routing_priority": 85,
+              "must_have": {
+                "text_patterns_any": [
+                  "где больше",
+                  "где меньше",
+                  "в какой группе больше",
+                  "одинаково или нет"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "drawing",
+                  "diagram"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "сколько всего",
+                  "сложи|прибавь"
+                ],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T14",
+            "T15",
+            "T1"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": [
+          "Ключевые якоря: «сравни числа», «поставь знак», «больше или меньше».",
+          "Формат: обычно N __ M, где нужно вставить <, > или =.",
+          "Отличие от T15: здесь нет вопроса «на сколько больше/меньше»."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T47_A",
+        "kind": "positive",
+        "description": "Сравни числа. Поставь знак: 7 __ 5.",
+        "expected": {
+          "template_id": "T47_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "fill_gaps",
+          "topic": "compare_numbers_signs"
+        },
+        "why": "Явное сравнение с постановкой знака."
+      },
+      {
+        "id": "RT_T47_B",
+        "kind": "positive",
+        "description": "Какое число больше: 12 или 9?",
+        "expected": {
+          "template_id": "T47_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "plain_text",
+          "topic": "compare_numbers_signs"
+        },
+        "why": "Вопрос о сравнении двух чисел."
+      },
+      {
+        "id": "RT_T47_C",
+        "kind": "negative",
+        "description": "На сколько 7 больше 5?",
+        "expected": {
+          "not_template_id": "T47_pedagogical_template"
+        },
+        "why": "Это задача на разность (T14/T15), не чистое сравнение."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T47_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 1,
+        "register": "kid_friendly_ru",
+        "complexity_rules": [
+          "простые слова",
+          "короткие фразы"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Научить сравнивать числа и правильно ставить знаки «больше», «меньше», «равно».",
+        "l1": {
+          "format": "Понимание знаков",
+          "rules": [
+            "Знак < похож на клювик, который смотрит на меньшее число.",
+            "Знак > — клювик смотрит на большее число (открыт к большему).",
+            "Знак = ставим, когда числа одинаковые."
+          ],
+          "forbidden": [
+            "давать ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Как сравнить",
+          "rules": [
+            "Представь числа на линейке: какое правее — то больше.",
+            "Или вспомни счёт: 1, 2, 3... — чем дальше, тем больше.",
+            "Можно представить предметы: 7 яблок больше, чем 5."
+          ],
+          "forbidden": [
+            "давать ответ без объяснения"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Прочитай вслух: «7 больше 5» — звучит правильно?",
+            "Клювик (острый конец) всегда смотрит на меньшее число."
+          ],
+          "forbidden": [
+            "решать за ребёнка"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путают направление знаков < и > (не помнят, куда «смотрит клювик»).",
+        "Думают, что число с бо́льшим количеством цифр всегда больше (9 vs 12).",
+        "Ставят = когда числа близкие, но не равные.",
+        "Путают «больше» и «меньше» в устной речи.",
+        "Сравнивают только первые цифры (15 vs 9 — смотрят на 1 и 9)."
+      ],
+      "terminology_rules": {
+        "use_terms": [
+          "больше",
+          "меньше",
+          "равно",
+          "одинаково"
+        ],
+        "avoid_terms": [
+          "неравенство",
+          "отношение"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

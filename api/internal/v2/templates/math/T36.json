@@ -1,0 +1,266 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch 5 (T34,T36,T40,T42,T43) built to match existing TemplateRegistry format; examples are synthetic."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T36",
+        "template_id": "T36_pedagogical_template",
+        "title": "Задачи по рисунку (сравнение и счёт объектов)",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "drawing",
+          "diagram",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "word_problems",
+          "format": "drawing",
+          "topic": "picture_count_compare",
+          "constraints": [
+            "needs_visual",
+            "has_drawing"
+          ],
+          "template_params_defaults": {
+            "picture_modes": [
+              "count_total",
+              "compare_more_less",
+              "find_difference"
+            ]
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "word_problems",
+            "topic": "picture_count_compare",
+            "formats_allowed": [
+              "drawing",
+              "diagram",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T36_BY_PICTURE_WORDS",
+              "routing_priority": 98,
+              "must_have": {
+                "text_patterns_any": [
+                  "по\\s+рисунк(у|е)",
+                  "на\\s+рисунк(е|у)",
+                  "сколько\\s+предмет",
+                  "сосчитай(те)?",
+                  "на\\s+сколько\\s+больше|на\\s+сколько\\s+меньше"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "drawing",
+                  "diagram"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "периметр|площадь|угол|координат|симметри",
+                  "диаграмм|график",
+                  "таблиц",
+                  "процент|%|дроб|доля"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T36_COUNT_PICTURES",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "сколько\\s+(яблок|шариков|карандаш|звёздоч|кружков|квадратов|треугольников)",
+                  "сосчитай"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "drawing"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "периметр|площадь"
+                ],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T14",
+            "T31",
+            "T24",
+            "T39"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T36_A",
+        "kind": "positive",
+        "description": "По рисунку сосчитай, сколько кружков изображено.",
+        "expected": {
+          "template_id": "T36_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "drawing",
+          "topic": "picture_count_compare"
+        },
+        "why": "По рисунку + сосчитай."
+      },
+      {
+        "id": "RT_T36_B",
+        "kind": "positive",
+        "description": "На рисунке 6 красных и 4 синих шарика. Сколько шариков всего?",
+        "expected": {
+          "template_id": "T36_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "mixed",
+          "topic": "picture_count_compare"
+        },
+        "why": "Задание по рисунку + сумма/сравнение."
+      },
+      {
+        "id": "RT_T36_C",
+        "kind": "negative",
+        "description": "По диаграмме найди, чего больше.",
+        "expected": {
+          "not_template_id": "T36_pedagogical_template"
+        },
+        "why": "Диаграмма — T31."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T36_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Уметь решать задания «по рисунку»: аккуратно считать объекты, сравнивать группы и находить разницу/сумму.",
+        "l1": {
+          "format": "Как считать",
+          "rules": [
+            "Сначала реши, что считать: все предметы или только одного вида.",
+            "Считай системно: по рядам/слева направо, отмечая уже посчитанные (мысленно)."
+          ],
+          "forbidden": [
+            "переписывать условие задачи целиком",
+            "давать конечный ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Как выбрать действие",
+          "rules": [
+            "Если «сколько всего» — сложи количества в группах.",
+            "Если «на сколько больше/меньше» — вычти меньшее из большего."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Проверь: ты не посчитал один предмет дважды и не пропустил.",
+            "Сверь вопрос: «всего» ≠ «на сколько»."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Считают объекты на рисунке невнимательно — пропускают или считают дважды.",
+        "Не понимают вопрос: «сколько всего» vs «на сколько больше».",
+        "Путают группы объектов при сравнении (считают не ту группу).",
+        "Не замечают скрытые или частично видимые объекты на рисунке.",
+        "При сравнении двух групп вычитают в неправильном порядке."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

@@ -1,0 +1,265 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch 5 (T34,T36,T40,T42,T43) built to match existing TemplateRegistry format; examples are synthetic."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T40",
+        "template_id": "T40_pedagogical_template",
+        "title": "Простая комбинаторика (сколько способов)",
+        "grade_min": 3,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "table",
+          "drawing",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "logic",
+          "format": "plain_text",
+          "topic": "simple_combinatorics",
+          "constraints": [
+            "multi_step"
+          ],
+          "template_params_defaults": {
+            "methods": [
+              "table",
+              "tree",
+              "systematic_listing"
+            ]
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "logic",
+            "topic": "simple_combinatorics",
+            "formats_allowed": [
+              "plain_text",
+              "table",
+              "drawing",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T40_HOW_MANY_WAYS",
+              "routing_priority": 98,
+              "must_have": {
+                "text_patterns_any": [
+                  "сколько\\s+способ(ов|а)",
+                  "сколькими\\s+способ(ами|ами)",
+                  "сколько\\s+вариант(ов|а)",
+                  "можно\\s+составить\\s+.*\\s+из"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "периметр|площадь|угол|координат|симметри",
+                  "процент|%|дроб|доля",
+                  "столбик|письменно",
+                  "таблица\\s+умножения"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            },
+            {
+              "rule_id": "T40_COMBINE_ITEMS",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "(выбери|сочетани|комбинац)",
+                  "(рубашк|брюк|юбк|шапк|цвет)\\w*",
+                  "(меню|блюд|напитк)\\w*"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "уравнен|=|x|икс"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            }
+          ],
+          "confusables": [
+            "T34",
+            "T30",
+            "T33"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T40_A",
+        "kind": "positive",
+        "description": "У Маши 3 футболки и 2 юбки. Сколькими способами она может выбрать комплект?",
+        "expected": {
+          "template_id": "T40_pedagogical_template",
+          "task_type": "logic",
+          "format": "plain_text",
+          "topic": "simple_combinatorics"
+        },
+        "why": "Сколько способов + выборы."
+      },
+      {
+        "id": "RT_T40_B",
+        "kind": "positive",
+        "description": "Сколько разных двузначных чисел можно составить из цифр 1 и 2?",
+        "expected": {
+          "template_id": "T40_pedagogical_template",
+          "task_type": "logic",
+          "format": "plain_text",
+          "topic": "simple_combinatorics"
+        },
+        "why": "Сколько вариантов составить."
+      },
+      {
+        "id": "RT_T40_C",
+        "kind": "negative",
+        "description": "Продолжи ряд: 2, 4, 6, 8, __.",
+        "expected": {
+          "not_template_id": "T40_pedagogical_template"
+        },
+        "why": "Это последовательность — T34."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T40_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Считать число вариантов (способов) системно: с таблицей, деревом вариантов или аккуратным списком без повторов.",
+        "l1": {
+          "format": "Что выбираем",
+          "rules": [
+            "Определи, что выбираем и из чего (например: 3 рубашки и 2 пары брюк).",
+            "Выбери способ: таблица или дерево вариантов — чтобы ничего не пропустить."
+          ],
+          "forbidden": [
+            "переписывать условие задачи целиком",
+            "давать конечный ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Как перебрать",
+          "rules": [
+            "Таблица: фиксируй один выбор, перебирай все варианты второго, затем переходи к следующему первому выбору.",
+            "Дерево: от каждого выбора рисуй ветки возможных продолжений."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Проверь: нет повторов и нет пропусков. Можно посчитать по формуле: если выборы независимы — перемножь количества.",
+            "Сверь, что учитывал ограничения (если были: «без повторов», «не больше двух»)."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путают перестановки и сочетания: порядок важен или нет?",
+        "Пропускают варианты при переборе — не систематический подход.",
+        "Считают один и тот же вариант дважды (например, AB и BA как разные, когда порядок не важен).",
+        "Не понимают правило умножения: если 3 способа и 4 способа, то всего 3×4.",
+        "При дереве вариантов забывают ветки или рисуют лишние."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

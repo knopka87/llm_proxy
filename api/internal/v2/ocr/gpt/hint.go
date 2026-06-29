@@ -42,6 +42,19 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	}
 	util.FixJSONSchemaStrict(schema)
 
+	// Select pedagogical template from the router.
+	if e.tmplRouter != nil && in.Task.TaskTextClean != "" {
+		visualKinds := make([]string, 0, len(in.Task.VisualFacts))
+		for _, vf := range in.Task.VisualFacts {
+			if vf.Kind != "" {
+				visualKinds = append(visualKinds, vf.Kind)
+			}
+		}
+		if profile := e.tmplRouter.RouteProfile(in.Task.TaskTextClean, visualKinds); profile != "" {
+			in.Template = profile
+		}
+	}
+
 	userTask, err := util.LoadUserPrompt(HINT, e.Name(), e.Version())
 	if err != nil {
 		return types.HintResponse{}, nil, err

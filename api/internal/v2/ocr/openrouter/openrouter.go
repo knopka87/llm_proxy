@@ -26,6 +26,7 @@ import (
 
 	"llm-proxy/api/internal/util"
 	"llm-proxy/api/internal/v2/ocr/types"
+	"llm-proxy/api/internal/v2/tmplrouter"
 )
 
 const (
@@ -48,6 +49,13 @@ type Engine struct {
 	apiKey string
 	models StepModels
 	httpc  *http.Client
+	tmplRouter *tmplrouter.Router
+}
+
+// SetTemplateRouter injects the pedagogical template router.
+// Call after New() before serving requests.
+func (e *Engine) SetTemplateRouter(r *tmplrouter.Router) {
+	e.tmplRouter = r
 }
 
 func New(apiKey string, models StepModels) *Engine {
@@ -148,6 +156,21 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	system, schemaJSON, err := loadSystemWithSchema("hint")
 	if err != nil {
 		return types.HintResponse{}, nil, fmt.Errorf("openrouter hint: %w", err)
+	}
+
+	// Select pedagogical template from the router (replaces child_bot routing).
+	// Template field is deprecated: we ignore any value coming from child_bot and
+	// always resolve the template here from task_text_clean + visual_kinds.
+	if e.tmplRouter != nil && in.Task.TaskTextClean != "" {
+		visualKinds := make([]string, 0, len(in.Task.VisualFacts))
+		for _, vf := range in.Task.VisualFacts {
+			if vf.Kind != "" {
+				visualKinds = append(visualKinds, vf.Kind)
+			}
+		}
+		if profile := e.tmplRouter.RouteProfile(in.Task.TaskTextClean, visualKinds); profile != "" {
+			in.Template = profile
+		}
 	}
 
 	inJSON, _ := json.Marshal(in)

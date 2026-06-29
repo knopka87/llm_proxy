@@ -1,0 +1,267 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch 3 (T24–T28) built to match existing TemplateRegistry format; examples are synthetic."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T26",
+        "template_id": "T26_pedagogical_template",
+        "title": "Периметр и площадь фигур на чертеже",
+        "grade_min": 3,
+        "grade_max": 4,
+        "formats_allowed": [
+          "grid",
+          "drawing",
+          "diagram",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "geometry",
+          "format": "grid",
+          "topic": "perimeter_area_on_drawing",
+          "constraints": [
+            "needs_visual",
+            "has_grid"
+          ],
+          "template_params_defaults": {
+            "geometry_mode": "perimeter_area_composite"
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "geometry",
+            "topic": "perimeter_area_on_drawing",
+            "formats_allowed": [
+              "grid",
+              "drawing",
+              "diagram",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T26_PERIMETER_AREA_ON_GRID",
+              "routing_priority": 95,
+              "must_have": {
+                "text_patterns_any": [
+                  "периметр|площадь",
+                  "по\\s+клетк(ам|е)",
+                  "клетчат"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "grid"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "прямоугольник|квадрат",
+                  "формул(а|ы)\\s+S=|P=",
+                  "угол|симметри|координат",
+                  "сколько\\s+(квадратов|треугольников)\\s+на\\s+рисунк"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T26_COMPLEX_FIGURE_PERIMETER",
+              "routing_priority": 85,
+              "must_have": {
+                "text_patterns_any": [
+                  "периметр|площадь",
+                  "(составн(ая|ую)|сложн(ая|ую))\\s+фигур",
+                  "чертеж|рисунк"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "drawing",
+                  "diagram",
+                  "grid"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "прямоугольник|квадрат",
+                  "координат",
+                  "симметри",
+                  "угол"
+                ],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T22",
+            "T39",
+            "T24",
+            "T28"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T26_A",
+        "kind": "positive",
+        "description": "На клетчатой бумаге нарисована фигура. Найди её площадь по клеткам.",
+        "expected": {
+          "template_id": "T26_pedagogical_template",
+          "task_type": "geometry",
+          "format": "grid",
+          "topic": "perimeter_area_on_drawing"
+        },
+        "why": "Площадь + клетчатая сетка."
+      },
+      {
+        "id": "RT_T26_B",
+        "kind": "positive",
+        "description": "Найди периметр составной фигуры на рисунке.",
+        "expected": {
+          "template_id": "T26_pedagogical_template",
+          "task_type": "geometry",
+          "format": "drawing",
+          "topic": "perimeter_area_on_drawing"
+        },
+        "why": "Периметр + составная фигура."
+      },
+      {
+        "id": "RT_T26_C",
+        "kind": "negative",
+        "description": "Найди периметр прямоугольника со сторонами 6 см и 4 см.",
+        "expected": {
+          "not_template_id": "T26_pedagogical_template"
+        },
+        "why": "Прямоугольник по сторонам — T22."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T26_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Находить периметр и/или площадь фигур, заданных чертежом или на клетчатой сетке (в т.ч. составных фигур).",
+        "l1": {
+          "format": "Что ищем",
+          "rules": [
+            "Реши, что ищешь: периметр — это «длина границы», площадь — это «сколько клеток внутри».",
+            "Если фигура на клетках — удобно считать по клеткам и разбивать на простые части."
+          ],
+          "forbidden": [
+            "переписывать условие задачи целиком",
+            "давать конечный ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Как считать",
+          "rules": [
+            "Периметр: сложи длины всех сторон по контуру (не забудь все внешние стороны).",
+            "Площадь на клетках: посчитай целые клетки внутри, половинки можно складывать в целые."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Контроль",
+          "rules": [
+            "Проверь: периметр измеряется в см/м, площадь — в см²/м² (или в клетках²).",
+            "Если разбивал на части — сложи площади частей и проверь, что ничего не посчитано дважды."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "При сложной фигуре забывают разбить её на простые части.",
+        "Считают внутренние границы при вычислении периметра составной фигуры.",
+        "Путают периметр и площадь: периметр — сумма сторон, площадь — произведение.",
+        "Неправильно определяют длины сторон по клеткам (считают клетки вместо сторон клеток).",
+        "При вычитании площадей забывают, какую часть нужно вычесть."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

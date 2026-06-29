@@ -1,0 +1,261 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch 4 (T29–T33) built to match existing TemplateRegistry format; examples are synthetic."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T33",
+        "template_id": "T33_pedagogical_template",
+        "title": "Простая статистика (среднее, максимум/минимум, частота)",
+        "grade_min": 3,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "table",
+          "diagram",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "data_representation",
+          "format": "plain_text",
+          "topic": "simple_statistics",
+          "constraints": [
+            "multi_step"
+          ],
+          "template_params_defaults": {
+            "data_task_mode": "basic_statistics"
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "data_representation",
+            "topic": "simple_statistics",
+            "formats_allowed": [
+              "plain_text",
+              "table",
+              "diagram",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T33_AVERAGE_FREQUENCY_WORDS",
+              "routing_priority": 98,
+              "must_have": {
+                "text_patterns_any": [
+                  "средн(ее|яя)\\s+значен",
+                  "средн(ее|яя)\\s+арифметическ",
+                  "частот",
+                  "сколько\\s+раз",
+                  "мода\\s+данных"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "построй\\s+диаграмм",
+                  "угол|периметр|площадь",
+                  "процент|%"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            },
+            {
+              "rule_id": "T33_MAX_MIN_RANGE",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "максимальн|минимальн",
+                  "сам(ое|ый)\\s+(больш|мал)",
+                  "размах"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "построй\\s+диаграмм"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            }
+          ],
+          "confusables": [
+            "T30",
+            "T31",
+            "T32"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T33_A",
+        "kind": "positive",
+        "description": "Найди среднее арифметическое чисел: 4, 6, 10.",
+        "expected": {
+          "template_id": "T33_pedagogical_template",
+          "task_type": "data_representation",
+          "format": "plain_text",
+          "topic": "simple_statistics"
+        },
+        "why": "Якорь «среднее арифметическое»."
+      },
+      {
+        "id": "RT_T33_B",
+        "kind": "positive",
+        "description": "В списке 2, 3, 2, 5, 2. Сколько раз встречается число 2?",
+        "expected": {
+          "template_id": "T33_pedagogical_template",
+          "task_type": "data_representation",
+          "format": "plain_text",
+          "topic": "simple_statistics"
+        },
+        "why": "Частота «сколько раз»."
+      },
+      {
+        "id": "RT_T33_C",
+        "kind": "negative",
+        "description": "По таблице найди, сколько яблок продали во вторник.",
+        "expected": {
+          "not_template_id": "T33_pedagogical_template"
+        },
+        "why": "Это просто чтение таблицы — T30."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T33_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Решать простые статистические задачи: находить максимум/минимум, считать, сколько раз встречается значение, и находить среднее арифметическое (в простых наборах).",
+        "l1": {
+          "format": "Что нужно найти",
+          "rules": [
+            "Сначала выпиши данные аккуратно (списком) или используй таблицу/диаграмму.",
+            "Определи, что нужно: максимум/минимум, сколько раз встречается, или среднее."
+          ],
+          "forbidden": [
+            "переписывать условие задачи целиком",
+            "давать конечный ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Как считать",
+          "rules": [
+            "Максимум/минимум: сравни все числа и выбери самое большое/малое.",
+            "Среднее: сложи все значения и раздели на их количество."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Проверь: среднее должно быть между минимумом и максимумом.",
+            "Если считал частоту — перепроверь подсчёт (можно отметить галочками каждое значение)."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "При нахождении среднего забывают разделить сумму на количество чисел.",
+        "Путают среднее арифметическое с медианой или модой.",
+        "Для нахождения максимума/минимума не проверяют все числа.",
+        "При подсчёте частоты считают одно значение несколько раз или пропускают.",
+        "Не понимают, что среднее может быть дробным числом."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

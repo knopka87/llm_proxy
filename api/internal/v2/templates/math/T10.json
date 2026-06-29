@@ -1,0 +1,357 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2 (1) (1).txt",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T10 only).",
+        "MAPPING_JSON not provided in chat; template_id/topic follow the established slice convention used in T2–T4 outputs."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T10",
+        "template_id": "T10_pedagogical_template",
+        "title": "Увеличение/уменьшение в несколько раз (\"в ... раз\")",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "drawing",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "multiplicative_comparison_times",
+          "constraints": [],
+          "template_params_defaults": {
+            "ops": [
+              "mul",
+              "div"
+            ],
+            "compare_mode": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "word_problems",
+            "topic": "multiplicative_comparison_times",
+            "formats_allowed": [
+              "plain_text",
+              "drawing",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T10_TIMES_MORE_LESS_ANCHORS",
+              "must_have": {
+                "text_patterns_any": [
+                  "в \\d+ раза? (больше|меньше|дороже|дешевле|старше|младше|тяжелее|легче|выше|ниже|длиннее|короче)",
+                  "в \\d+ раза?[^а-яА-Яa-zA-Z0-9]",
+                  "в несколько раз",
+                  "(больше|меньше) в \\d+ раз",
+                  "(увеличь|уменьши|увеличить|уменьшить).* в \\d+ раз",
+                  "(вдвое|втрое|вчетверо|впятеро)( (больше|меньше|дороже|дешевле))?",
+                  "\\d+ .* в \\d+ раза? (больше|меньше)"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "поровну",
+                  "раздели поровну",
+                  "в каждой",
+                  "в каждом",
+                  "равные группы",
+                  "таблица умножения",
+                  "по таблице",
+                  "вычисли",
+                  "найди значение выражения",
+                  "пример",
+                  "в столбик",
+                  "столбиком",
+                  "письменно",
+                  "деление с остатком",
+                  "остаток",
+                  "уравнение",
+                  "неизвестное слагаемое",
+                  "периметр",
+                  "площадь",
+                  "диаграмма",
+                  "числовая прямая"
+                ],
+                "visual_kinds_any": [
+                  "table",
+                  "diagram",
+                  "number_line",
+                  "grid"
+                ]
+              },
+              "routing_priority": 90,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений якорей «в ... раз»; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T10_MULTIPLICATIVE_COMPARE_WORDS",
+              "must_have": {
+                "text_patterns_any": [
+                  "в несколько раз (больше|меньше)",
+                  "сколько .* в \\d+ раза? (больше|меньше)",
+                  "(найди|найдите|вычисли) .* в \\d+ раз"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "поровну",
+                  "в каждой",
+                  "в каждом",
+                  "таблица умножения",
+                  "в столбик",
+                  "столбиком",
+                  "письменно"
+                ],
+                "visual_kinds_any": [
+                  "table",
+                  "diagram",
+                  "number_line",
+                  "grid"
+                ]
+              },
+              "routing_priority": 75,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений «во сколько раз»; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T7",
+            "T8",
+            "T9",
+            "T14",
+            "T6"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Дети часто путают «в ... раз» и «на ... больше/меньше». Иногда нужен третий короткий шаг, чтобы выбрать правильное действие."
+        },
+        "notes_for_backend": [
+          "Сильный якорь: формулировки «в ... раз», «во сколько раз», «в несколько раз больше/меньше».",
+          "Если в задаче «поровну/в каждой» — это чаще T7 (равные группы), а не сравнение «в ... раз».",
+          "Если это просто пример на умножение/деление без текста — это T8 (таблица), не T10."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T10_A",
+        "kind": "positive",
+        "description": "У Вани 6 конфет, а у Пети в 3 раза больше. Сколько конфет у Пети?",
+        "expected": {
+          "template_id": "T10_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "multiplicative_comparison_times"
+        },
+        "why": "Якорь «в 3 раза больше» → найти большее умножением."
+      },
+      {
+        "id": "RT_T10_B",
+        "kind": "positive",
+        "description": "У Маши 24 наклейки, а у Оли в 4 раза меньше. Сколько наклеек у Оли?",
+        "expected": {
+          "template_id": "T10_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "multiplicative_comparison_times"
+        },
+        "why": "Якорь «в 4 раза меньше» → найти меньшее делением."
+      },
+      {
+        "id": "RT_T10_C",
+        "kind": "near_miss",
+        "description": "Разложи 12 карандашей поровну по 3 коробкам. Сколько карандашей в каждой коробке?",
+        "expected": {
+          "template_id": "T7_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "equal_groups_mul_div_meaning"
+        },
+        "why": "Это деление на равные части (поровну) — смысл равных групп (T7), а не сравнение «в ... раз»."
+      },
+      {
+        "id": "RT_T10_D",
+        "kind": "positive",
+        "description": "Во сколько раз 36 больше 4?",
+        "expected": {
+          "template_id": "T10_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "multiplicative_comparison_times"
+        },
+        "why": "Вопрос «во сколько раз» — кратное сравнение."
+      },
+      {
+        "id": "RT_T10_E",
+        "kind": "positive",
+        "description": "Увеличь число 7 в 5 раз.",
+        "expected": {
+          "template_id": "T10_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "multiplicative_comparison_times"
+        },
+        "why": "Маркер «увеличь в ... раз» — умножение."
+      },
+      {
+        "id": "RT_T10_F",
+        "kind": "positive",
+        "description": "Уменьши 48 в 6 раз.",
+        "expected": {
+          "template_id": "T10_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "multiplicative_comparison_times"
+        },
+        "why": "Маркер «уменьши в ... раз» — деление."
+      },
+      {
+        "id": "RT_T10_G",
+        "kind": "positive",
+        "description": "Книга стоит 50 рублей, а тетрадь вдвое дешевле. Сколько стоит тетрадь?",
+        "expected": {
+          "template_id": "T10_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "multiplicative_comparison_times"
+        },
+        "why": "Маркер «вдвое дешевле» = в 2 раза меньше."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T10_pedagogical_template": {
+      "hint_style_profile": "multiplicative_comparison_times",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "tone": "дружелюбный/ясный",
+        "complexity_rules": [
+          "короткие предложения",
+          "обязательно различать «в ... раз» и «на ...»",
+          "без лишних переменных",
+          "без воды"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Решать задачи на сравнение «в несколько раз больше/меньше» и вопросы «во сколько раз».",
+        "l1": {
+          "rules": [
+            "Найди в тексте слова «в ... раз» или «во сколько раз».",
+            "Определи, что ищем: (а) сколько стало, или (б) во сколько раз сравниваем.",
+            "Скажи словами: «одного в несколько раз больше/меньше другого»."
+          ],
+          "format": "Найди ключевые слова → Что ищем → Модель",
+          "forbidden": [
+            "давать готовый ответ сразу",
+            "смешивать с «на сколько больше/меньше»"
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Если «в несколько раз больше» и надо найти большее: умножь меньшее на число раз.",
+            "Если «в несколько раз меньше» и надо найти меньшее: раздели большее на число раз.",
+            "Если вопрос «во сколько раз больше/меньше»: раздели большее на меньшее.",
+            "Мини‑проверка: при «в несколько раз больше» ответ должен быть больше исходного; при «в несколько раз меньше» — меньше."
+          ],
+          "format": "Выбор действия → Почему → Мини-проверка",
+          "forbidden": [
+            "использовать «столбик» без запроса",
+            "переводить в «поровну/в каждой» модель"
+          ]
+        },
+        "l3": {
+          "when_allowed": "только если max_hints_default==3",
+          "rules": [
+            "Короткое напоминание: «в ... раз» — это умножить/разделить, а «на ...» — это прибавить/вычесть.",
+            "Покажи проверку обратным действием одной строкой (умножение↔деление).",
+            "Оставь ребёнку возможность посчитать самому."
+          ],
+          "format": "очень кратко"
+        }
+      },
+      "common_mistakes": [
+        "Путают «в ... раз» и «на ...».",
+        "Делают не то действие: умножают вместо деления или наоборот.",
+        "Не понимают вопрос «во сколько раз» и ищут разницу, а не отношение.",
+        "Не проверяют, что ответ по смыслу больше/меньше."
+      ],
+      "terminology_rules": [
+        "1–2 класс: говорить «в 2 раза — значит вдвое», «во сколько раз — это сравнить делением».",
+        "3–4 класс: можно «отношение», но коротко."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

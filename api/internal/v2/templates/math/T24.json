@@ -1,0 +1,268 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch 3 (T24–T28) built to match existing TemplateRegistry format; examples are synthetic."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T24",
+        "template_id": "T24_pedagogical_template",
+        "title": "Базовые геометрические фигуры и линии",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "drawing",
+          "diagram",
+          "mixed",
+          "plain_text"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "geometry",
+          "format": "drawing",
+          "topic": "basic_shapes_and_lines",
+          "constraints": [
+            "needs_visual",
+            "has_drawing"
+          ],
+          "template_params_defaults": {
+            "geometry_mode": "shapes_lines"
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "geometry",
+            "topic": "basic_shapes_and_lines",
+            "formats_allowed": [
+              "drawing",
+              "diagram",
+              "mixed",
+              "plain_text"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T24_SHAPES_LINES_ANCHOR",
+              "routing_priority": 95,
+              "must_have": {
+                "text_patterns_any": [
+                  "(отрезок|луч|прямая|ломан(ая|ую)|кривая|точка)",
+                  "(вершин|сторон)",
+                  "(назов(и|ите)|определи(те)?)\\s+фигур"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "drawing",
+                  "diagram"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "периметр|площадь|см²|м²",
+                  "угол|острый|тупой|прямой\\s+угол",
+                  "симметри",
+                  "координат|по\\s+клетк|сетк",
+                  "сколько\\s+(квадратов|треугольников)\\s+на\\s+рисунк",
+                  "термометр|температур|°"
+                ],
+                "visual_kinds_any": []
+              }
+            },
+            {
+              "rule_id": "T24_PARALLEL_PERPENDICULAR",
+              "routing_priority": 85,
+              "must_have": {
+                "text_patterns_any": [
+                  "параллельн",
+                  "перпендикулярн",
+                  "(проведи|построй)\\s+(прямую|отрезок|луч)"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "drawing",
+                  "diagram"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "координат|сетк|по\\s+клетк",
+                  "угол|градус|°",
+                  "периметр|площадь"
+                ],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T25",
+            "T22",
+            "T39",
+            "T28"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T24_A",
+        "kind": "positive",
+        "description": "На рисунке показана ломаная линия. Сколько у неё звеньев?",
+        "expected": {
+          "template_id": "T24_pedagogical_template",
+          "task_type": "geometry",
+          "format": "drawing",
+          "topic": "basic_shapes_and_lines"
+        },
+        "why": "Ломаная/звенья — базовые линии."
+      },
+      {
+        "id": "RT_T24_B",
+        "kind": "positive",
+        "description": "Назови фигуры на рисунке: треугольник, квадрат, круг.",
+        "expected": {
+          "template_id": "T24_pedagogical_template",
+          "task_type": "geometry",
+          "format": "drawing",
+          "topic": "basic_shapes_and_lines"
+        },
+        "why": "Идентификация фигур."
+      },
+      {
+        "id": "RT_T24_C",
+        "kind": "negative",
+        "description": "Найди периметр фигуры на рисунке.",
+        "expected": {
+          "not_template_id": "T24_pedagogical_template"
+        },
+        "why": "Периметр — T22/T26."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T24_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Узнавать и называть базовые фигуры и линии (точка, отрезок, луч, прямая, ломаная), считать вершины/стороны и выполнять простые построения.",
+        "l1": {
+          "format": "Что за объект?",
+          "rules": [
+            "Определи, что изображено: линия (прямая/кривая/ломаная) или фигура.",
+            "Если нужно посчитать вершины/стороны — обведи взглядом по кругу, не пропуская."
+          ],
+          "forbidden": [
+            "переписывать условие задачи целиком",
+            "давать конечный ответ сразу"
+          ]
+        },
+        "l2": {
+          "format": "Признаки",
+          "rules": [
+            "Отрезок имеет два конца, луч — один конец и продолжается в одну сторону, прямая продолжается в обе стороны.",
+            "Ломаная состоит из нескольких отрезков; количество звеньев = количество отрезков."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Проверь: число сторон равно числу вершин у многоугольника.",
+            "Если строишь: отметь точки, затем соединяй по инструкции."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путают луч и отрезок: луч бесконечен в одну сторону, отрезок ограничен с двух сторон.",
+        "Путают прямую и отрезок: прямая бесконечна в обе стороны.",
+        "Неправильно называют фигуры: квадрат называют прямоугольником (формально верно, но неточно).",
+        "Путают вершины и стороны многоугольника.",
+        "Не различают ломаную линию и многоугольник (многоугольник замкнут)."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

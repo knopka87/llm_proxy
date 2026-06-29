@@ -9,6 +9,7 @@ import (
 
 	"llm-proxy/api/internal/v2/ocr"
 	"llm-proxy/api/internal/v2/ocr/types"
+	"llm-proxy/api/internal/v2/tmplrouter"
 )
 
 const (
@@ -32,6 +33,11 @@ func New(engs *ocr.Engines) *Handle {
 	return &Handle{
 		engs: engs,
 	}
+}
+
+// templateRouter returns the shared Router (may be nil if templates not loaded).
+func (h *Handle) templateRouter() *tmplrouter.Router {
+	return h.engs.TemplateRouter
 }
 
 // writeStatsHeaders пишет метрики LLM-вызова в заголовки ответа.

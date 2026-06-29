@@ -8,12 +8,19 @@ import (
 	"time"
 
 	"llm-proxy/api/internal/util"
+	"llm-proxy/api/internal/v2/tmplrouter"
 )
 
 type Engine struct {
-	apiKey string
-	Model  string
-	httpc  *http.Client
+	apiKey     string
+	Model      string
+	httpc      *http.Client
+	tmplRouter *tmplrouter.Router
+}
+
+// SetTemplateRouter injects the pedagogical template router.
+func (e *Engine) SetTemplateRouter(r *tmplrouter.Router) {
+	e.tmplRouter = r
 }
 
 func New(key, model string) *Engine {

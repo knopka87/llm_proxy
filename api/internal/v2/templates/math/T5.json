@@ -1,0 +1,379 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2 (1) (1).txt",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T5 only).",
+        "MAPPING_JSON not provided in chat; template_id/topic follow the established slice convention used in T2–T4 outputs."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T5",
+        "template_id": "T5_pedagogical_template",
+        "title": "Письменное сложение и вычитание (столбиком)",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "column",
+          "plain_text",
+          "inline_examples",
+          "fill_gaps"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "arithmetic_fluency",
+          "format": "column",
+          "topic": "written_add_sub_column",
+          "constraints": [
+            "multi_step"
+          ],
+          "template_params_defaults": {
+            "ops": [
+              "add",
+              "sub"
+            ],
+            "written_algorithm": true,
+            "range_max": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "arithmetic_fluency",
+            "topic": "written_add_sub_column",
+            "formats_allowed": [
+              "column",
+              "plain_text",
+              "inline_examples",
+              "fill_gaps"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T5_EXPLICIT_COLUMN_KEYWORDS",
+              "must_have": {
+                "text_patterns_any": [
+                  "(столбиком|в столбик)",
+                  "письменно",
+                  "(запиши|выполни|сложи|вычти|реши)(те)? .* (столбиком|в столбик|письменно)",
+                  "(сложение|вычитание|решение) (столбиком|в столбик)",
+                  "\\d+ [+−\\-] \\d+ .* столбик"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "умнож",
+                  "делен",
+                  "деление с остатком",
+                  "таблица умножения",
+                  "римск",
+                  "уравнен",
+                  "найди неизвестн",
+                  "неизвестное слагаемое",
+                  "неизвестное уменьшаемое",
+                  "неизвестное вычитаемое"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing",
+                  "table"
+                ]
+              },
+              "routing_priority": 95,
+              "tie_breaker": "(1) совпало визуальное требование; (2) 0 нарушений must_not; (3) больше совпадений явных маркеров 'столбик/письменно'; (4) выше routing_priority."
+            },
+            {
+              "rule_id": "T5_COLUMN_LAYOUT_VISUAL",
+              "must_have": {
+                "text_patterns_any": [],
+                "visual_kinds_any": [
+                  "column"
+                ],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "умнож",
+                  "делен",
+                  "деление столбиком",
+                  "умножение столбиком",
+                  "уравнен",
+                  "найди неизвестн"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 90,
+              "tie_breaker": "(1) visual_kinds_any совпало; (2) 0 нарушений must_not; (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T5_FILL_GAPS_CARRY_BORROW",
+              "must_have": {
+                "text_patterns_any": [
+                  "__GAP__",
+                  "перенос",
+                  "заним",
+                  "(взять|занять|займ[её]м) (десяток|сотню|тысячу)",
+                  "(с )?переход(ом)? через (десяток|разряд)",
+                  "(по разрядам|поразрядно)",
+                  "разряд (единиц|десятков|сотен|тысяч)",
+                  "перенеси(те)? (десяток|единицу)"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "умнож",
+                  "делен",
+                  "таблица умножения",
+                  "деление с остатком",
+                  "уравнен",
+                  "найди неизвестн",
+                  "римск",
+                  "[IVXLCDM]{2,}",
+                  "устно",
+                  "в уме",
+                  "считай устно",
+                  "диаграмм",
+                  "координат",
+                  "симметри"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing",
+                  "table"
+                ]
+              },
+              "routing_priority": 70,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений маркеров перенос/заним; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T4",
+            "T6",
+            "T7",
+            "T9",
+            "T37"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Для столбика часто нужна проверка по разрядам и самопроверка обратным действием; третий шаг — короткая проверка без выдачи ответа."
+        },
+        "notes_for_backend": [
+          "Сильные якоря: 'в столбик/столбиком/письменно/запиши столбиком' или визуальная раскладка столбца.",
+          "Отсечка: если встречается 'умнож/делен/остаток' — вероятно другие шаблоны (T6/T7/T9).",
+          "Если просят 'найди неизвестное' — скорее уравнение/компоненты (T37/другие), не T5."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T05_A",
+        "kind": "positive",
+        "description": "Вычисли столбиком: 347 + 58. Запиши решение.",
+        "expected": {
+          "template_id": "T5_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "column",
+          "topic": "written_add_sub_column"
+        },
+        "why": "Явный маркер 'столбиком' + сложение."
+      },
+      {
+        "id": "RT_T05_B",
+        "kind": "positive",
+        "description": "Выполни вычитание столбиком: 503 − 178. Объясни, где нужно занять десяток.",
+        "expected": {
+          "template_id": "T5_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "column",
+          "topic": "written_add_sub_column"
+        },
+        "why": "Якорь 'столбиком' + 'занять десяток'."
+      },
+      {
+        "id": "RT_T05_C",
+        "kind": "near_miss",
+        "description": "Вычисли устно: 47 + 28. Используй переход через десяток.",
+        "expected": {
+          "template_id": "T4_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "mental_add_sub_under_100"
+        },
+        "why": "Маркер 'устно/в уме/переход через десяток' уводит в T4."
+      },
+      {
+        "id": "RT_T05_D",
+        "kind": "positive",
+        "description": "Реши столбиком с переходом через разряд: 678 + 456.",
+        "expected": {
+          "template_id": "T5_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "column",
+          "topic": "written_add_sub_column"
+        },
+        "why": "Фразы 'реши столбиком' и 'переход через разряд' — маркеры T5."
+      },
+      {
+        "id": "RT_T05_E",
+        "kind": "positive",
+        "description": "Выполни сложение в столбик: 1234 + 5678.",
+        "expected": {
+          "template_id": "T5_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "column",
+          "topic": "written_add_sub_column"
+        },
+        "why": "Фраза 'сложение в столбик' — маркер T5."
+      },
+      {
+        "id": "RT_T05_F",
+        "kind": "positive",
+        "description": "Вычисли письменно: 4000 - 1837. Объясни по разрядам.",
+        "expected": {
+          "template_id": "T5_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "column",
+          "topic": "written_add_sub_column"
+        },
+        "why": "Фразы 'вычисли письменно' и 'по разрядам' — маркеры T5."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T5_pedagogical_template": {
+      "hint_style_profile": "written_add_sub_column",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "tone": "спокойный/пошаговый",
+        "complexity_rules": [
+          "короткие инструкции",
+          "использовать слова «единицы/десятки/сотни»",
+          "не вводить лишние переменные",
+          "без воды"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Научиться выполнять сложение и вычитание столбиком по разрядам с переносом/заниманием.",
+        "l1": {
+          "rules": [
+            "Уточни действие: плюс или минус.",
+            "Проверь, что числа записаны одно под другим по разрядам (единицы под единицами).",
+            "Начинай считать с единиц (справа налево)."
+          ],
+          "format": "Проверка записи → 1-й шаг",
+          "forbidden": [
+            "давать конечный ответ сразу",
+            "решать устно, если требуют столбиком"
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Сложение: сложи единицы; если получилось 10 или больше — запиши единицы, десяток перенеси к десяткам.",
+            "Вычитание: если в единицах не хватает — «занять десяток» из десятков (уменьшить десятки на 1, к единицам прибавить 10).",
+            "Повтори то же для десятков и сотен (и тысяч, если есть)."
+          ],
+          "format": "Алгоритм по разрядам → Мини-проверка",
+          "forbidden": [
+            "писать длинные объяснения вместо 3–5 шагов",
+            "менять порядок разрядов"
+          ]
+        },
+        "l3": {
+          "when_allowed": "только если max_hints_default==3",
+          "rules": [
+            "Самопроверка: при сложении — приблизительно прикинь результат округлением; при вычитании — проверь обратным действием (ответ + вычитаемое = уменьшаемое).",
+            "Проверь перенос/заним: перенос — это +1 к следующему разряду; заем — это -1 к следующему разряду.",
+            "Убедись, что все разряды посчитаны (единицы, десятки, сотни…)."
+          ],
+          "format": "Короткая проверка"
+        }
+      },
+      "common_mistakes": [
+        "Записывают числа не по разрядам (сдвиг).",
+        "Начинают считать слева, а не с единиц.",
+        "Забывают перенести десяток при сложении.",
+        "При вычитании «заняли», но не уменьшили следующий разряд на 1.",
+        "Пропускают разряд с нулём (например, в 503 − 178)."
+      ],
+      "terminology_rules": [
+        "1–2 класс: «переносим десяток», «занимаем десяток», «единицы/десятки/сотни».",
+        "3–4 класс: можно добавить «разряд», «перенос/заём», но коротко."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

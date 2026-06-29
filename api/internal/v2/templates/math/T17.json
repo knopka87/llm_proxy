@@ -1,0 +1,296 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.1",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2.updated_after_audit_T1_T5.txt",
+      "generated_at": "2025-12-13T09:41:24Z",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T17 only).",
+        "Основан на описании T17 в педдокументе и routing_keys_table_v1.xlsx без добавления новых ключей.",
+        "PATCH: routing_rules.must_have.text_patterns_any cleared for T17; rely on match_keys/multi_step instead."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T17",
+        "template_id": "T17_pedagogical_template",
+        "title": "Составные текстовые задачи (2–3 шага)",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "constraints": [
+            "multi_step"
+          ],
+          "template_params_defaults": {
+            "ops": [
+              "add",
+              "sub",
+              "mul",
+              "div"
+            ],
+            "word_model": "mixed_story",
+            "change_mode": "none",
+            "compare_mode": "none",
+            "geometry_mode": null,
+            "logic_mode": null,
+            "unit_kind": null,
+            "range_max": null,
+            "unknown_component": null,
+            "data_task_mode": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "word_problems",
+            "topic": "multi_step_word_problems",
+            "formats_allowed": [
+              "plain_text",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T17_MULTI_STEP_WORD_PROBLEMS",
+              "must_have": {
+                "text_patterns_any": [
+                  "в два действия",
+                  "в три действия",
+                  "в \\d+ действи",
+                  "составная задача",
+                  "несколько действий",
+                  "сколько всего .* и",
+                  "сначала .* потом",
+                  "а затем",
+                  "а потом",
+                  "и ещ[её] (купил|дали|взял|привезли)",
+                  "сколько .* осталось",
+                  "всего .* из них",
+                  "\\d+ (ящиков|коробок|пакетов) .* по \\d+",
+                  "(в первый|во второй|в третий) день",
+                  "сколько .* за (два|три|\\d+) дн"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "скорость",
+                  "расстояние",
+                  "км/ч",
+                  "за 1 кг",
+                  "за килограмм",
+                  "за литр"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 68,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) match_keys удовлетворены; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T7",
+            "T10",
+            "T18",
+            "T19"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 3,
+          "h3_reason": "logical_chain"
+        },
+        "notes_for_backend": [
+          "T17: составные текстовые задачи на 2–3 шага, без жесткой привязки к одной сюжетной модели (mixed_story).",
+          "Основной ключ PARSE — ped.constraints включает 'multi_step'. Текстовые якоря ('в два/три действия' и т.п.) считаются необязательными и не используются как must-have.",
+          "task_type='word_problems', template_params.word_model='mixed_story', ops=['add','sub','mul','div'] строго по routing_keys_table_v1.xlsx."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T17_TWO_STEPS",
+        "kind": "positive",
+        "description": "В магазин привезли 6 ящиков яблок по 8 кг и 4 ящика груш по 5 кг. Сколько всего килограммов фруктов привезли?",
+        "expected": {
+          "template_id": "T17_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "multi_step_word_problems"
+        },
+        "why": "Двухшаговая задача: сначала найти массу яблок и груш, потом сложить."
+      },
+      {
+        "id": "RT_T17_THREE_STEPS",
+        "kind": "positive",
+        "description": "В первый день турист прошёл 8 км, во второй — на 3 км меньше, а в третий — на 2 км больше, чем во второй. Сколько километров он прошёл за три дня?",
+        "expected": {
+          "template_id": "T17_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "multi_step_word_problems"
+        },
+        "why": "Трёхшаговая задача: найти путь второго дня, затем третьего, затем сумму трёх дней."
+      },
+      {
+        "id": "RT_T17_SHOP_PROBLEM",
+        "kind": "positive",
+        "description": "Мама купила 3 кг яблок по 40 рублей и 2 кг груш по 60 рублей. Сколько сдачи она получит с 500 рублей?",
+        "expected": {
+          "template_id": "T17_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "multi_step_word_problems"
+        },
+        "why": "Трёхшаговая задача: найти стоимость яблок, стоимость груш, общую стоимость, затем сдачу."
+      },
+      {
+        "id": "RT_T17_EXPLICIT_TWO_STEPS",
+        "kind": "positive",
+        "description": "Реши задачу в два действия: В классе 15 мальчиков и на 3 девочки больше. Сколько всего учеников в классе?",
+        "expected": {
+          "template_id": "T17_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "multi_step_word_problems"
+        },
+        "why": "Явное указание 'в два действия'."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T17_pedagogical_template": {
+      "hint_style_profile": "multi_step_word_problems",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 2,
+        "grade_max": 4,
+        "tone": "спокойный/поддерживающий",
+        "complexity_rules": [
+          "объяснять план решения простыми словами: сначала __, потом __, дальше __",
+          "показывать связь между шагами, а не только отдельные действия.",
+          "не перегружать ребёнка сложными схемами; использовать короткую табличку или список шагов."
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Учиться составлять и реализовывать план решения двух- и трёхшаговых текстовых задач.",
+        "l1": {
+          "rules": [
+            "Прочитать задачу и выделить, что спрашивают в конце.",
+            "Найти в тексте данные, которые напрямую отвечают на вопрос, а какие нужны как промежуточные шаги.",
+            "Разбить задачу на 2–3 вопросов-шага: 'что найдём сначала?', 'что дальше?', 'что в конце?'.",
+            "Сразу выдели величины (кто/что считаем) и связи между ними: «на … больше/меньше», «в … раза больше/меньше», «вместе/всего». Отметь, что именно нужно найти."
+          ],
+          "format": "Разбор условия и построение плана решения (2–3 шага).",
+          "forbidden": [
+            "сразу подставлять числа в пример без обсуждения плана.",
+            "перечитывать условие целиком без выделения шагов.",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Пошагово выполнить действия по составленному плану, каждый шаг связать с текстом задачи.",
+            "Коротко пояснить, почему выбранное действие (сложение, вычитание, умножение, деление) подходит именно здесь.",
+            "Записать промежуточные результаты, чтобы ребёнок видел, как они ведут к ответу.",
+            "Отдельно подчеркни: «в 3 раза меньше» — это деление на 3, а не «на 3 меньше»."
+          ],
+          "format": "Реализация плана: решение задачи по шагам.",
+          "forbidden": [
+            "перескакивать через шаги (сразу к ответу).",
+            "подменять сюжет задачи абстрактными примерами.",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        },
+        "l3": {
+          "when_allowed": "если max_hints_default == 3 и ребёнок уже увидел план и решение.",
+          "rules": [
+            "Предложить ребёнку проверить ответ: ещё раз пройтись по шагам и соотнести каждый с текстом задачи.",
+            "Попросить ребёнка сформулировать своими словами, какие были шаги решения.",
+            "Привести очень короткий похожий пример, чтобы ребёнок попробовал спланировать решение сам.",
+            "Дай самопроверку: выполни обратное действие (например умножь/раздели по условному коэффициенту или сложи части) и убедись, что получается величина/сумма, указанная в условии. Финальное число ученик пишет сам."
+          ],
+          "format": "Самопроверка и закрепление умения строить план решения.",
+          "forbidden": [
+            "вводить новые сложные сюжеты на этом уровне.",
+            "менять исходную формулировку задачи.",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Пытается решить задачу одним действием, хотя нужно 2–3 шага.",
+        "Не понимает, что промежуточный результат нужен для следующего шага.",
+        "Путает порядок действий, из-за чего ответ не соответствует вопросу задачи."
+      ],
+      "terminology_rules": [
+        "Вводить понятие 'составная задача' через идею нескольких связанных шагов.",
+        "Использовать слова 'первый шаг', 'второй шаг', 'третий шаг', а не абстрактные обозначения.",
+        "Подчёркивать связь между текстом задачи и каждым действием в решении."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

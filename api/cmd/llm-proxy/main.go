@@ -18,6 +18,7 @@ import (
 	gpt2 "llm-proxy/api/internal/v2/ocr/gpt"
 	mixed2 "llm-proxy/api/internal/v2/ocr/mixed"
 	or2 "llm-proxy/api/internal/v2/ocr/openrouter"
+	"llm-proxy/api/internal/v2/tmplrouter"
 )
 
 func main() {
@@ -61,11 +62,20 @@ func main() {
 			cfg.OpenRouterHintModel, cfg.OpenRouterCheckModel)
 	}
 
+	// Load pedagogical templates once at startup.
+	// All math hint engines share the same router instance.
+	tmplRouter := tmplrouter.New()
+	gptV2.SetTemplateRouter(tmplRouter)
+	if orEngine, ok := openRouterV2.(interface{ SetTemplateRouter(*tmplrouter.Router) }); ok {
+		orEngine.SetTemplateRouter(tmplRouter)
+	}
+
 	engines2 := &ocr2.Engines{
-		OpenAI:     gptV2,
-		Gemini:     geminiV2,
-		Mixed:      mixedV2,
-		OpenRouter: openRouterV2,
+		OpenAI:         gptV2,
+		Gemini:         geminiV2,
+		Mixed:          mixedV2,
+		OpenRouter:     openRouterV2,
+		TemplateRouter: tmplRouter,
 	}
 	h2 := handle2.New(engines2)
 

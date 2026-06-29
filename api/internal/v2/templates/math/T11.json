@@ -1,0 +1,274 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "chatgpt",
+      "generated_at": "2026-02-09",
+      "notes": "New missing templates batch (T4,T11,T12,T13,T14) built to match existing TemplateRegistry format."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T11",
+        "template_id": "T11_pedagogical_template",
+        "title": "Свойства действий и упрощение выражений",
+        "grade_min": 2,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "inline_examples",
+          "fill_gaps",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "properties_simplify_expressions",
+          "constraints": [
+            "multi_step"
+          ],
+          "template_params_defaults": {
+            "ops": [
+              "add",
+              "sub",
+              "mul"
+            ],
+            "range_max": null,
+            "written_algorithm": false
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "arithmetic_fluency",
+            "topic": "properties_simplify_expressions",
+            "formats_allowed": [
+              "plain_text",
+              "inline_examples",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T11_PROPERTIES_TERMS",
+              "routing_priority": 90,
+              "must_have": {
+                "text_patterns_any": [
+                  "переместительн",
+                  "сочетательн",
+                  "распределительн",
+                  "свойств(о|а)\\s+(сложения|умножения)",
+                  "удобн(ым|ее)\\s+способом",
+                  "сгруппируй(те)?"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "столбик|письменно|в столбик",
+                  "уравнен|=|x|икс",
+                  "порядок действий|скобк",
+                  "процент|%",
+                  "доля|дроб"
+                ],
+                "visual_kinds_any": [
+                  "column",
+                  "diagram",
+                  "table"
+                ]
+              }
+            },
+            {
+              "rule_id": "T11_GROUP_FOR_EASY_COUNT",
+              "routing_priority": 75,
+              "must_have": {
+                "text_patterns_any": [
+                  "(сгруппируй|группируй|переставь|поменяй местами)",
+                  "(удобн(ым|ее)\\s+способом|сначала сложи.*кругл)",
+                  "\\b(25|50|75)\\b"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "порядок действий|скобк",
+                  "уравнен|=|x|икс",
+                  "процент|%",
+                  "доля|дроб"
+                ],
+                "visual_kinds_any": [
+                  "column"
+                ]
+              }
+            }
+          ],
+          "confusables": [
+            "T35",
+            "T37",
+            "T4"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": []
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T11_A",
+        "kind": "positive",
+        "description": "Вычисли удобным способом: 25 + 17 + 75.",
+        "expected": {
+          "template_id": "T11_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "properties_simplify_expressions"
+        },
+        "why": "Явный якорь «удобным способом» + удобная группировка 25+75."
+      },
+      {
+        "id": "RT_T11_B",
+        "kind": "positive",
+        "description": "Используй переместительное свойство: 8×7 = 7×__.",
+        "expected": {
+          "template_id": "T11_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "fill_gaps",
+          "topic": "properties_simplify_expressions"
+        },
+        "why": "Маркер переместительного свойства."
+      },
+      {
+        "id": "RT_T11_C",
+        "kind": "negative",
+        "description": "Вычисли: (12−7)×3.",
+        "expected": {
+          "not_template_id": "T11_pedagogical_template"
+        },
+        "why": "Это про порядок действий/скобки — T35."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T11_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "register": "kid_friendly_ru"
+      },
+      "teaching_pattern": {
+        "goal": "Научить упрощать вычисления с помощью свойств сложения и умножения: перестановка и группировка, чтобы считать быстрее и без ошибок.",
+        "l1": {
+          "format": "Идея",
+          "rules": [
+            "Ищи числа, которые удобно складываются: дают 10, 100, 1000 или круглые десятки.",
+            "Можно переставлять и группировать слагаемые/множители — результат не меняется."
+          ],
+          "forbidden": [
+            "давать конечный ответ сразу",
+            "переписывать условие задачи целиком"
+          ]
+        },
+        "l2": {
+          "format": "Преобразование",
+          "rules": [
+            "Перепиши выражение в удобном виде: (a+b)+c → a+(b+c).",
+            "Если есть умножение: используй распределительное свойство, но только если оно действительно упрощает."
+          ],
+          "forbidden": [
+            "давать полный ответ без шагов"
+          ]
+        },
+        "l3": {
+          "format": "Контроль",
+          "rules": [
+            "Сделай быструю проверку: прикидка результата (округлением).",
+            "Если получилось сложнее — вернись и попробуй другую группировку."
+          ],
+          "forbidden": [
+            "решить за ребёнка полностью",
+            "раскрывать все вычисления до конца без запроса"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Применяют переместительное свойство к вычитанию или делению (a−b ≠ b−a).",
+        "Группируют числа так, что вычисления становятся сложнее, а не проще.",
+        "Путают сочетательное и распределительное свойства.",
+        "Забывают, что распределительное свойство работает только для умножения относительно сложения/вычитания.",
+        "Не проверяют результат: после «удобного» способа получают неверный ответ из-за ошибки в группировке."
+      ],
+      "terminology_rules": {
+        "use_terms": [],
+        "avoid_terms": [
+          "очевидно",
+          "элементарно"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

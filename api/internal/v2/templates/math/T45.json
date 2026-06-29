@@ -1,0 +1,285 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "generated_by": "claude",
+      "generated_at": "2026-02-09",
+      "notes": "New 1st grade templates batch (T45-T50) for better grade 1 coverage."
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T45",
+        "template_id": "T45_pedagogical_template",
+        "title": "Состав числа",
+        "grade_min": 1,
+        "grade_max": 1,
+        "formats_allowed": [
+          "plain_text",
+          "fill_gaps",
+          "diagram",
+          "drawing",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "number_sense",
+          "format": "fill_gaps",
+          "topic": "number_composition",
+          "constraints": [],
+          "template_params_defaults": {
+            "range_max": 10
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "number_sense",
+            "topic": "number_composition",
+            "formats_allowed": [
+              "plain_text",
+              "fill_gaps",
+              "diagram",
+              "drawing",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T45_COMPOSITION_EXPLICIT",
+              "routing_priority": 95,
+              "must_have": {
+                "text_patterns_any": [
+                  "состав числа",
+                  "разложи(те)? число",
+                  "из каких.*слагаемых",
+                  "как получить",
+                  "\\d\\s*=\\s*\\d\\s*\\+\\s*(__GAP__|\\?|_)",
+                  "(__GAP__|\\?)\\s*\\+\\s*\\d\\s*=\\s*\\d",
+                  "домик(и)? (числа|чисел)"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": []
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "столбик|письменно",
+                  "вычисли|реши пример",
+                  "уравнен|неизвестн|x|икс",
+                  "сравни|больше|меньше"
+                ],
+                "visual_kinds_any": [
+                  "column",
+                  "number_line"
+                ]
+              }
+            },
+            {
+              "rule_id": "T45_COMPOSITION_VISUAL",
+              "routing_priority": 85,
+              "must_have": {
+                "text_patterns_any": [
+                  "раскрась.*частей",
+                  "закрась.*кружк",
+                  "нарисуй.*равно",
+                  "покажи.*как.*получить"
+                ],
+                "text_patterns_all": [],
+                "visual_kinds_any": [
+                  "drawing",
+                  "diagram"
+                ]
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "сложи столбиком",
+                  "вычитание",
+                  "умнож|делен"
+                ],
+                "visual_kinds_any": []
+              }
+            }
+          ],
+          "confusables": [
+            "T4",
+            "T6",
+            "T49"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 2
+        },
+        "notes_for_backend": [
+          "Ключевые якоря: «состав числа», «домик числа», «разложи число», паттерн N = ? + M.",
+          "Типичные числа: от 2 до 10.",
+          "Визуально часто представлено как «домик» с крышей-числом."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T45_A",
+        "kind": "positive",
+        "description": "Заполни домик числа 7: 7 = 3 + __.",
+        "expected": {
+          "template_id": "T45_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "fill_gaps",
+          "topic": "number_composition"
+        },
+        "why": "Явный маркер «домик числа» и паттерн состава."
+      },
+      {
+        "id": "RT_T45_B",
+        "kind": "positive",
+        "description": "Из каких двух слагаемых можно получить 9?",
+        "expected": {
+          "template_id": "T45_pedagogical_template",
+          "task_type": "number_sense",
+          "format": "plain_text",
+          "topic": "number_composition"
+        },
+        "why": "Маркер «слагаемых» + «получить»."
+      },
+      {
+        "id": "RT_T45_C",
+        "kind": "negative",
+        "description": "Реши пример: 3 + 4 = __.",
+        "expected": {
+          "not_template_id": "T45_pedagogical_template"
+        },
+        "why": "Это обычное сложение (T49 или T4), не состав числа."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T45_pedagogical_template": {
+      "hint_style_profile": {
+        "tone": "friendly_teacher",
+        "do_not_repeat_task_text": true,
+        "line_break_each_step": true
+      },
+      "max_hints_default": 2,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 1,
+        "register": "kid_friendly_ru",
+        "complexity_rules": [
+          "очень простые слова",
+          "короткие предложения",
+          "без сложных терминов"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Научить понимать, из каких частей состоит число, и быстро называть пары слагаемых.",
+        "l1": {
+          "format": "Понимание задачи",
+          "rules": [
+            "Посмотри на число-целое (например, 7).",
+            "Тебе нужно найти два числа, которые вместе дают это число.",
+            "Если одна часть уже есть (например, 3), подумай: 3 + ? = 7."
+          ],
+          "forbidden": [
+            "давать ответ сразу",
+            "использовать сложные слова"
+          ]
+        },
+        "l2": {
+          "format": "Подсказка по способу",
+          "rules": [
+            "Можно посчитать на пальцах: покажи 7, убери 3 — сколько осталось?",
+            "Можно использовать счётные палочки или кружочки.",
+            "Помни: 7 = 1+6 = 2+5 = 3+4 — несколько вариантов верны!"
+          ],
+          "forbidden": [
+            "давать все варианты сразу",
+            "решать полностью за ребёнка"
+          ]
+        },
+        "l3": {
+          "format": "Проверка",
+          "rules": [
+            "Сложи обратно: твои два числа должны давать исходное число.",
+            "Проверь: 3 + 4 = 7 — верно!"
+          ],
+          "forbidden": [
+            "раскрывать ответ без попытки ребёнка"
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путают части и целое: вместо поиска части ищут сумму.",
+        "Называют только одну пару, хотя спрашивают все варианты.",
+        "При заполнении «домика» путают верх (целое) и низ (части).",
+        "Забывают проверить: части должны давать целое.",
+        "Путают состав числа с обычным примером на сложение."
+      ],
+      "terminology_rules": {
+        "use_terms": [
+          "части",
+          "целое",
+          "вместе",
+          "получится"
+        ],
+        "avoid_terms": [
+          "слагаемое",
+          "сумма"
+        ]
+      },
+      "disclosure_defaults": {
+        "show_checks": false
+      }
+    }
+  }
+}

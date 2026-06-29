@@ -1,0 +1,349 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2.updated_after_audit_T1_T5.txt",
+      "generated_at": "2025-12-13T08:50:36Z",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T22 only).",
+        "ped.* defaults и routing для T22 взяты из routing_keys_table_v1.xlsx и описания T22 в педагогическом документе."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T22",
+        "template_id": "T22_pedagogical_template",
+        "title": "Периметр и площадь прямоугольника/квадрата",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "mixed",
+          "plain_text",
+          "grid",
+          "drawing",
+          "table"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "geometry",
+          "format": "mixed",
+          "constraints": [
+            "needs_visual"
+          ],
+          "template_params_defaults": {
+            "ops": [
+              "add",
+              "sub",
+              "mul"
+            ],
+            "geometry_mode": "perimeter_area_rect",
+            "change_mode": "none",
+            "compare_mode": "none",
+            "unit_kind": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "geometry",
+            "topic": "perimeter_area_rect",
+            "formats_allowed": [
+              "mixed",
+              "plain_text",
+              "grid",
+              "drawing",
+              "table"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T22_PERIMETER_OR_AREA_RECT_SQUARE",
+              "must_have": {
+                "text_patterns_any": [
+                  "периметр",
+                  "площадь",
+                  "прямоугольника",
+                  "прямоугольник",
+                  "квадрата",
+                  "квадрат",
+                  "найди периметр",
+                  "вычисли периметр",
+                  "чему равен периметр",
+                  "найди площадь",
+                  "вычисли площадь",
+                  "чему равна площадь",
+                  "сторона квадрата",
+                  "сторона прямоугольника",
+                  "длина прямоугольника",
+                  "ширина прямоугольника",
+                  "длина и ширина",
+                  "см²",
+                  "м²",
+                  "кв\\. см",
+                  "кв\\. м",
+                  "квадратных сантиметров",
+                  "квадратных метров",
+                  "формула периметра",
+                  "формула площади",
+                  "P = ",
+                  "S = "
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "окружность",
+                  "круг",
+                  "треугольник",
+                  "трапеция",
+                  "параллелограмм",
+                  "радиус",
+                  "диаметр",
+                  "спичк",
+                  "разрезали на",
+                  "сколько квадратов",
+                  "сколько всего квадратов",
+                  "сетка",
+                  "сетке",
+                  "посчитай",
+                  "подсчитай",
+                  "переложи",
+                  "магический квадрат",
+                  "волшебный квадрат",
+                  "заполни квадрат"
+                ],
+                "visual_kinds_any": []
+              },
+              "routing_priority": 80,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений 'периметр/площадь'; (3) выше routing_priority."
+            }
+          ],
+          "confusables": []
+        },
+        "hint_policy_defaults": {
+          "default_visible": 1,
+          "max_hints": 3,
+          "h3_reason": "apply_to_many_places"
+        },
+        "notes_for_backend": [
+          "Основные якоря по тексту — слова 'периметр', 'площадь', 'прямоугольник', 'квадрат'.",
+          "Шаблон T22 предполагает использование формул для прямоугольника/квадрата; задачи с более сложными фигурами логичнее отправлять в другие геометрические шаблоны (например, T26).",
+          "PARSE выставляет ped.task_type='geometry', ped.format='mixed' и ped.constraints=['needs_visual'] для таких заданий согласно routing_keys_table_v1."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T22_A",
+        "kind": "positive",
+        "description": "Найди периметр прямоугольника со сторонами 4 см и 6 см.",
+        "expected": {
+          "template_id": "T22_pedagogical_template",
+          "task_type": "geometry",
+          "format": "plain_text",
+          "topic": "perimeter_area_rect"
+        },
+        "why": "Есть слова 'периметр' и 'прямоугольник'; задача на вычисление периметра по сторонам."
+      },
+      {
+        "id": "RT_T22_B",
+        "kind": "positive",
+        "description": "Вычисли площадь квадрата со стороной 5 см.",
+        "expected": {
+          "template_id": "T22_pedagogical_template",
+          "task_type": "geometry",
+          "format": "plain_text",
+          "topic": "perimeter_area_rect"
+        },
+        "why": "Есть слова 'площадь' и 'квадрат'; классическая задача на площадь квадрата."
+      },
+      {
+        "id": "RT_T22_C",
+        "kind": "positive",
+        "description": "Длина прямоугольника 8 см, ширина 3 см. Чему равна площадь?",
+        "expected": {
+          "template_id": "T22_pedagogical_template",
+          "task_type": "geometry",
+          "format": "plain_text",
+          "topic": "perimeter_area_rect"
+        },
+        "why": "Маркеры 'длина прямоугольника', 'ширина', 'площадь'."
+      },
+      {
+        "id": "RT_T22_D",
+        "kind": "positive",
+        "description": "Сторона квадрата равна 7 м. Найди его периметр и площадь.",
+        "expected": {
+          "template_id": "T22_pedagogical_template",
+          "task_type": "geometry",
+          "format": "plain_text",
+          "topic": "perimeter_area_rect"
+        },
+        "why": "Маркеры 'сторона квадрата', 'периметр', 'площадь'."
+      },
+      {
+        "id": "RT_T22_E",
+        "kind": "positive",
+        "description": "Площадь прямоугольника 24 кв. см. Длина 6 см. Найди ширину.",
+        "expected": {
+          "template_id": "T22_pedagogical_template",
+          "task_type": "geometry",
+          "format": "plain_text",
+          "topic": "perimeter_area_rect"
+        },
+        "why": "Обратная задача: по площади и одной стороне найти другую. Маркеры 'площадь прямоугольника', 'кв. см'."
+      },
+      {
+        "id": "RT_T22_F",
+        "kind": "positive",
+        "description": "Периметр квадрата 20 см. Чему равна его сторона?",
+        "expected": {
+          "template_id": "T22_pedagogical_template",
+          "task_type": "geometry",
+          "format": "plain_text",
+          "topic": "perimeter_area_rect"
+        },
+        "why": "Обратная задача на периметр квадрата."
+      },
+      {
+        "id": "RT_T22_G",
+        "kind": "near_miss",
+        "description": "Найди площадь треугольника с основанием 6 см и высотой 4 см.",
+        "expected": {
+          "template_id": "T26_pedagogical_template",
+          "task_type": "geometry",
+          "format": "plain_text",
+          "topic": "other_geometry"
+        },
+        "why": "Треугольник — это не прямоугольник/квадрат, must_not отсекает."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T22_pedagogical_template": {
+      "hint_style_profile": "perimeter_area_rect",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 2,
+        "grade_max": 4,
+        "tone": "спокойный/поддерживающий",
+        "complexity_rules": [
+          "короткие, понятные шаги без громоздких формул",
+          "объяснять словами, что такое периметр и площадь, а не только давать формулы",
+          "напоминать про единицы измерения (см, м, квадратные см и т.п.)"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Научить понимать периметр и площадь и пользоваться формулами для прямоугольника и квадрата.",
+        "L1": {
+          "rules": [
+            "Разобраться, о чём задача: про периметр, про площадь или и то и другое.",
+            "Найти в тексте данные о сторонах прямоугольника или квадрата.",
+            "Отделить величины длины (см, м и т.п.) от площади (кв. см, кв. м и т.п.)."
+          ],
+          "format": "Понимание условия → выделение данных",
+          "forbidden": [
+            "сразу подставлять числа в формулу без чтения условия",
+            "перегружать ребёнка определениями",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        },
+        "L2": {
+          "rules": [
+            "Для периметра напомнить, что он связан с суммой длин всех сторон.",
+            "Для площади прямоугольника и квадрата использовать соответствующую формулу, но проговаривать её словами.",
+            "Показать один пример пошагового вычисления с подстановкой чисел."
+          ],
+          "format": "Выбор формулы → пошаговое вычисление",
+          "forbidden": [
+            "давать готовый ответ без промежуточных шагов",
+            "использовать только буквенные обозначения без пояснений словами",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        },
+        "L3": {
+          "when_allowed": "если max_hints_default == 3 и ребёнок дошёл до ответа",
+          "rules": [
+            "Организовать самопроверку: прикинуть, разумен ли результат (не слишком ли маленькое/большое число).",
+            "Напомнить, что у периметра и площади разные единицы измерения, и попросить проверить их.",
+            "Предложить ребёнку сформулировать своими словами, что он делал, находя периметр или площадь."
+          ],
+          "format": "Короткая самопроверка и рефлексия",
+          "forbidden": [
+            "дополнять этот уровень новыми задачами",
+            "менять исходное условие",
+            "выдавать готовый финальный ответ (число/формулировку) или писать «Ответ:»."
+          ]
+        }
+      },
+      "common_mistakes": [
+        "Путает периметр и площадь (ищет периметр, но перемножает стороны, или наоборот).",
+        "Складывает не все стороны прямоугольника/квадрата.",
+        "Забывает указать или перепутывает единицы измерения (см и кв. см).",
+        "Подставляет числа в формулу, не разобравшись, какая сторона чему равна."
+      ],
+      "terminology_rules": [
+        "Аккуратно вводить слова 'периметр' и 'площадь' на простых примерах.",
+        "Не перегружать обозначениями типа P, S, a, b: достаточно проговаривать словами и показывать связь с рисунком.",
+        "Регулярно напоминать отличие периметра (длина границы) от площади (место внутри фигуры)."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

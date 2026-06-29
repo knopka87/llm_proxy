@@ -1,0 +1,431 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2 (1) (1).txt",
+      "doc_reference": "Педагогические_шаблоны_математика_1-4_классы.docx",
+      "citations": {
+        "prompt_contract_and_routing_rules": "fileciteturn11file0L1-L29",
+        "t3_definition": "fileciteturn11file1L24-L33"
+      },
+      "notes": [
+        "SINGLE_TEMPLATE_SLICE: содержит только T3 + 3 routing tests (A/B/C).",
+        "MAPPING_JSON (как в промте) в сообщении не передан; template_id/topic заданы в каноничном стиле, используемом в предыдущих T-шаблонах."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T3",
+        "template_id": "T3_pedagogical_template",
+        "title": "Чётность и деление с остатком",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "inline_examples",
+          "plain_text"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "parity_and_remainder_division",
+          "constraints": [],
+          "template_params_defaults": {}
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "arithmetic_fluency",
+            "topic": "parity_and_remainder_division",
+            "formats_allowed": [
+              "inline_examples",
+              "plain_text"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T3_PARITY_ANCHOR",
+              "must_have": {
+                "text_patterns_any": [
+                  "(не)?ч[её]тн(ое|ые|ых)?( числ(о|а))?",
+                  "(делится на 2|кратно 2)",
+                  "разб(ей|ить|ейте) на пары",
+                  "(сумма|произведение|выпиши|найди|определи|является ли) .* (не)?ч[её]тн"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "закономерн",
+                  "продолжи ряд",
+                  "найди правило",
+                  "римск",
+                  "уравнен",
+                  "в столбик",
+                  "деление столбиком",
+                  "таблица умножения"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 80,
+              "tie_breaker": "(1) совпало visual_kinds_any (если задано) > (2) 0 нарушений must_not > (3) больше совпадений сильных якорей > (4) совпало больше template_params_required > (5) выше routing_priority > (6) стабильный порядок по template_code."
+            },
+            {
+              "rule_id": "T3_REMAINDER_DIVISION_ANCHOR",
+              "must_have": {
+                "text_patterns_any": [
+                  "остаток",
+                  "ост\\.",
+                  "(неполное )?частное",
+                  "(деление|раздели(те)?|выполни(те)?) .* с остатком",
+                  "\\d+ (:|разделить на) \\d+ .* остат"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "в столбик",
+                  "деление столбиком",
+                  "умножение столбиком",
+                  "таблица умножения",
+                  "закономерн",
+                  "найди правило",
+                  "уравнен",
+                  "осталось"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 90,
+              "tie_breaker": "(1) совпало visual_kinds_any (если задано) > (2) 0 нарушений must_not > (3) больше совпадений сильных якорей > (4) совпало больше template_params_required > (5) выше routing_priority > (6) стабильный порядок по template_code."
+            },
+            {
+              "rule_id": "T3_DIVISIBILITY_ANCHOR",
+              "must_have": {
+                "text_patterns_any": [
+                  "делится (ли|без остатка)",
+                  "(не )?делится",
+                  "кратно",
+                  "кратность",
+                  "признак(и)? делимости",
+                  "делител(ь|и)( числа| \\d+)?",
+                  "(число )?\\d+ делится на \\d+",
+                  "проверь.* делится"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "в столбик",
+                  "деление столбиком",
+                  "таблица умножения",
+                  "закономерн",
+                  "найди правило",
+                  "уравнен"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 75,
+              "tie_breaker": "(1) 0 нарушений must_not > (2) больше совпадений маркеров делимости > (3) выше routing_priority."
+            },
+            {
+              "rule_id": "T3_PLAIN_TEXT_FALLBACK",
+              "must_have": {
+                "text_patterns_any": [
+                  "(не)?ч[её]тн",
+                  "остаток"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "закономерн",
+                  "продолжи ряд",
+                  "найди правило",
+                  "в \\d+ раза",
+                  "периметр",
+                  "площадь",
+                  "термометр"
+                ],
+                "visual_kinds_any": [
+                  "number_line",
+                  "diagram",
+                  "grid",
+                  "drawing",
+                  "table"
+                ]
+              },
+              "routing_priority": 60,
+              "tie_breaker": "(1) совпало visual_kinds_any (если задано) > (2) 0 нарушений must_not > (3) больше совпадений сильных якорей > (4) совпало больше template_params_required > (5) выше routing_priority > (6) стабильный порядок по template_code."
+            }
+          ],
+          "confusables": [
+            "T7",
+            "T9",
+            "T34",
+            "T37"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Для T3 часто нужна короткая самопроверка правила (чётность по делению на 2; остаток меньше делителя и проверка через частное)."
+        },
+        "notes_for_backend": [
+          "Основные якоря: 'чётн/нечётн' или 'остаток/деление с остатком/ост.'.",
+          "Отсечка конфликтов: 'закономерн/найди правило' (T34), 'в столбик' (T9), 'уравнен' (T37).",
+          "Формат считается по parse ped_keys.format; для T3 текущий slice поддерживает plain_text и inline_examples."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T03_A",
+        "kind": "positive",
+        "description": "Определи, чётное или нечётное число 48. Объясни, почему.",
+        "expected": {
+          "template_id": "T3_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "parity_and_remainder_division"
+        },
+        "why": "Сильный якорь: 'чётное/нечётное'."
+      },
+      {
+        "id": "RT_T03_B",
+        "kind": "positive",
+        "description": "Выполни деление с остатком: 17 : 5. Укажи частное и остаток.",
+        "expected": {
+          "template_id": "T3_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "parity_and_remainder_division"
+        },
+        "why": "Сильный якорь: 'деление с остатком' / 'остаток'."
+      },
+      {
+        "id": "RT_T03_C",
+        "kind": "near_miss",
+        "description": "Продолжи ряд: 2, 4, 6, 8, __. Найди правило.",
+        "expected": {
+          "template_id": "T34_pedagogical_template",
+          "task_type": "patterns_logic",
+          "format": "plain_text",
+          "topic": "patterns_sequences"
+        },
+        "why": "Маркер 'продолжи ряд/найди правило' должен уводить в T34, даже если числа чётные."
+      },
+      {
+        "id": "RT_T03_D",
+        "kind": "positive",
+        "description": "Найди остаток от деления 23 на 7.",
+        "expected": {
+          "template_id": "T3_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "parity_and_remainder_division"
+        },
+        "why": "Фраза 'найди остаток от деления' — маркер T3_REMAINDER_DIVISION_ANCHOR."
+      },
+      {
+        "id": "RT_T03_E",
+        "kind": "positive",
+        "description": "Выпиши все чётные числа от 1 до 20.",
+        "expected": {
+          "template_id": "T3_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "parity_and_remainder_division"
+        },
+        "why": "Фраза 'чётные числа' — маркер T3_PARITY_ANCHOR."
+      },
+      {
+        "id": "RT_T03_F",
+        "kind": "positive",
+        "description": "Делится ли число 45 на 9 без остатка?",
+        "expected": {
+          "template_id": "T3_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "parity_and_remainder_division"
+        },
+        "why": "Фраза 'делится ли' и 'без остатка' — маркеры T3_DIVISIBILITY_ANCHOR."
+      },
+      {
+        "id": "RT_T03_G",
+        "kind": "positive",
+        "description": "Какие признаки делимости на 3 ты знаешь? Примени их к числу 123.",
+        "expected": {
+          "template_id": "T3_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "parity_and_remainder_division"
+        },
+        "why": "Фраза 'признаки делимости' — маркер T3_DIVISIBILITY_ANCHOR."
+      },
+      {
+        "id": "RT_T03_H",
+        "kind": "positive",
+        "description": "Чему равен остаток, если 29 разделить на 4?",
+        "expected": {
+          "template_id": "T3_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "parity_and_remainder_division"
+        },
+        "why": "Фраза 'чему равен остаток' — маркер T3_REMAINDER_DIVISION_ANCHOR."
+      },
+      {
+        "id": "RT_T03_I",
+        "kind": "positive",
+        "description": "Может ли сумма двух нечётных чисел быть нечётной?",
+        "expected": {
+          "template_id": "T3_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "plain_text",
+          "topic": "parity_and_remainder_division"
+        },
+        "why": "Фраза 'нечётных чисел' и 'нечётной' — маркеры T3_PARITY_ANCHOR."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T3_pedagogical_template": {
+      "hint_style_profile": "parity_and_remainder",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "tone": "дружелюбный/поддерживающий",
+        "complexity_rules": [
+          "короткие предложения",
+          "термины упрощать в 1–2",
+          "без лишних переменных",
+          "без воды"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Понять чётные/нечётные числа и смысл остатка при делении.",
+        "l1": {
+          "rules": [
+            "Определи, что просят: (а) чётное/нечётное, или (б) деление с остатком.",
+            "Если про чётность: найди последнюю цифру или проверь, делится ли число на 2 без остатка.",
+            "Если про остаток: уточни, что нужно назвать частное и остаток."
+          ],
+          "format": "Вопрос → Действие → Мини-проверка",
+          "forbidden": [
+            "давать готовый ответ без шагов",
+            "подменять задачу на 'найди правило ряда/закономерность'",
+            "использовать 'в столбик', если в условии про это не сказано"
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Чётность: число чётное, если последняя цифра 0, 2, 4, 6, 8 (или делится на 2 без остатка). Нечётное — если 1, 3, 5, 7, 9.",
+            "Деление с остатком: подбери наибольшее произведение делителя, которое не превышает делимое. Остаток = делимое − (делитель × частное).",
+            "Проверь правило остатка: остаток всегда меньше делителя."
+          ],
+          "format": "Шаги → Где смотреть → Мини-проверка",
+          "forbidden": [
+            "использовать слишком общие подсказки без привязки к чётности/остатку",
+            "сообщать итоговые значения частного и остатка одной строкой без объяснения"
+          ]
+        },
+        "l3": {
+          "when_allowed": "только если max_hints_default==3",
+          "rules": [
+            "Самопроверка чётности: можно ли разбить число на пары без остатка?",
+            "Самопроверка деления: делитель × частное + остаток = делимое, и остаток < делителя.",
+            "Коротко укажи на типичную ошибку (перепутали частное и остаток; остаток получился не меньше делителя)."
+          ],
+          "format": "чуть подробнее, но компактно"
+        }
+      },
+      "common_mistakes": [
+        "Путают чётность по последней цифре (например, считают 0 нечётным).",
+        "При делении с остатком получают остаток больше или равный делителю.",
+        "Неправильно выбирают частное (берут не наибольшее, которое подходит).",
+        "Путают частное и остаток.",
+        "Переходят в «деление в столбик», хотя задача на базовый смысл остатка."
+      ],
+      "terminology_rules": [
+        "1–2 класс: говорить «чётное/нечётное», «делится на 2», «остаток» простыми словами.",
+        "3–4 класс: можно добавлять «делимое/делитель/частное/остаток», но коротко."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

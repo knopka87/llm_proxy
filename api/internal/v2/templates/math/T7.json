@@ -1,0 +1,319 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2 (1) (1).txt",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T7 only).",
+        "MAPPING_JSON not provided in chat; template_id/topic follow the established slice convention used in T2–T4 outputs."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T7",
+        "template_id": "T7_pedagogical_template",
+        "title": "Смысл умножения и деления (равные группы)",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "drawing",
+          "mixed"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "equal_groups_mul_div_meaning",
+          "constraints": [],
+          "template_params_defaults": {
+            "ops": [
+              "mul",
+              "div"
+            ]
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "word_problems",
+            "topic": "equal_groups_mul_div_meaning",
+            "formats_allowed": [
+              "plain_text",
+              "drawing",
+              "mixed"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T7_EQUAL_GROUPS_ANCHORS",
+              "must_have": {
+                "text_patterns_any": [
+                  "(равн|одинаков)(ые|ых) групп(ы|ах)?",
+                  "по одинаково",
+                  "поровну",
+                  "раз(ложи|дели)(те)? поровну",
+                  "раздели(те)? на (равные части|группы)",
+                  "(на )?равн(ые|ыми) части",
+                  "в кажд(ой|ом) (группе|коробке|пакете|ящике|тарелке|ряду|корзине|вазе|мешке|банке|стопке|букете)",
+                  "по сколько в кажд(ой|ом)",
+                  "сколько (всего|групп|частей)",
+                  "одинаковыми (кучками|порциями|частями)",
+                  "многократное сложение",
+                  "по несколько штук",
+                  "по \\d+ (штук|яблок|конфет|карандашей|книг)",
+                  "\\d+ (коробок|пакетов|групп|рядов) по \\d+"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "таблица умножения",
+                  "по таблице",
+                  "выучи таблицу",
+                  "найди значение выражения",
+                  "вычисли",
+                  "пример",
+                  "произведение",
+                  "частное",
+                  "в столбик",
+                  "столбиком",
+                  "письменно",
+                  "дроб",
+                  "дол[яиьюей]",
+                  "половин",
+                  "трет[ьиюей]",
+                  "четверт[ьиюей]",
+                  "\\d+/\\d+",
+                  "процент",
+                  "периметр",
+                  "площадь",
+                  "диаграмма"
+                ],
+                "visual_kinds_any": [
+                  "table",
+                  "diagram",
+                  "number_line",
+                  "grid"
+                ]
+              },
+              "routing_priority": 85,
+              "tie_breaker": "(1) visual_kinds_any совпадение сильнее текста; (2) 0 нарушений must_not; (3) больше совпадений сильных якорей; (4) больше совпадений template_params_required; (5) выше routing_priority; (6) стабильный порядок по template_code."
+            },
+            {
+              "rule_id": "T7_GROUPS_WITH_EACH",
+              "must_have": {
+                "text_patterns_any": [
+                  "в кажд(ой|ом)",
+                  "по \\d+ (штук|в каждой|в каждом)"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "таблица умножения",
+                  "найди значение выражения",
+                  "пример",
+                  "в столбик",
+                  "столбиком",
+                  "письменно",
+                  "дроб",
+                  "дол[яиьюей]",
+                  "половин",
+                  "трет[ьиюей]",
+                  "четверт[ьиюей]",
+                  "\\d+/\\d+"
+                ],
+                "visual_kinds_any": [
+                  "table",
+                  "diagram",
+                  "number_line",
+                  "grid"
+                ]
+              },
+              "routing_priority": 60,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений якорей; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T8",
+            "T9",
+            "T10",
+            "T14",
+            "T44"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Иногда нужно отдельно проговорить модель (группы) и связь умножение↔деление, поэтому полезен третий компактный шаг."
+        },
+        "notes_for_backend": [
+          "Цель T7 — смысл умножения/деления через равные группы, а не тренировка таблицы.",
+          "Если есть явные маркеры «таблица умножения/вычисли пример/значение выражения» — это скорее T8, не T7.",
+          "Если это сюжетная задача на 1 действие без явного смысла равных групп — возможно T14."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T07_A",
+        "kind": "positive",
+        "description": "В каждом пакете по 4 яблока. Пакетов 3. Сколько яблок всего?",
+        "expected": {
+          "template_id": "T7_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "equal_groups_mul_div_meaning"
+        },
+        "why": "Модель равных групп: 3 группы по 4."
+      },
+      {
+        "id": "RT_T07_B",
+        "kind": "positive",
+        "description": "Разложи 12 карандашей поровну по 3 коробкам. Сколько карандашей будет в каждой коробке?",
+        "expected": {
+          "template_id": "T7_pedagogical_template",
+          "task_type": "word_problems",
+          "format": "plain_text",
+          "topic": "equal_groups_mul_div_meaning"
+        },
+        "why": "Деление на равные части: разложить поровну."
+      },
+      {
+        "id": "RT_T07_C",
+        "kind": "near_miss",
+        "description": "Вычисли: 7 × 8. Используй таблицу умножения.",
+        "expected": {
+          "template_id": "T8_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "table_mul_div"
+        },
+        "why": "Явные маркеры «вычисли» и «таблица умножения» — это тренировка таблицы (T8), а не смысл равных групп."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T7_pedagogical_template": {
+      "hint_style_profile": "equal_groups_mul_div_meaning",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "tone": "дружелюбный/поддерживающий",
+        "complexity_rules": [
+          "короткие предложения",
+          "без лишних переменных",
+          "без воды",
+          "объяснять через картинки и примеры"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Понять: умножение — это одинаковые группы, деление — это разложить поровну или узнать, сколько групп.",
+        "l1": {
+          "rules": [
+            "Найди в задаче: сколько групп и сколько в каждой группе (или наоборот).",
+            "Скажи словами модель: «столько-то групп по столько-то».",
+            "Подумай, это умножение (найти всего) или деление (разложить поровну/узнать, сколько групп)."
+          ],
+          "format": "Что дано → Модель → Какое действие",
+          "forbidden": [
+            "давать готовый ответ сразу",
+            "перепрыгивать к таблице умножения без смысла"
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Если ищем «сколько всего»: можно сложить одинаковые части несколько раз или записать умножением.",
+            "Если делим «поровну»: можно раздать по 1, по 1… или использовать деление.",
+            "Если ищем «сколько групп»: деление по содержанию (сколько раз помещается).",
+            "Мини‑проверка: ответ должен подходить по смыслу (группы одинаковые)."
+          ],
+          "format": "Шаги → Почему так → Мини-проверка",
+          "forbidden": [
+            "решать столбиком без запроса",
+            "уходить в сложные термины"
+          ]
+        },
+        "l3": {
+          "when_allowed": "только если max_hints_default==3",
+          "rules": [
+            "Короткая памятка: «в каждой/по столько» помогает увидеть группы.",
+            "Связь: умножение и деление — обратные действия (проверка обратным действием).",
+            "Оставь ребёнку возможность досчитать самому."
+          ],
+          "format": "очень кратко"
+        }
+      },
+      "common_mistakes": [
+        "Путают, что считать: всего, сколько в каждой, или сколько групп.",
+        "Складывают не одинаковые части (теряют условие «поровну»).",
+        "Используют не то действие (умножают вместо деления или наоборот).",
+        "Не делают смысловую проверку ответа."
+      ],
+      "terminology_rules": [
+        "1–2 класс: говорить «группы», «в каждой», «поровну», «всего».",
+        "3–4 класс: можно добавить «деление на равные части» и «деление по содержанию», но коротко."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}

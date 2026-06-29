@@ -1,0 +1,306 @@
+{
+  "template_registry": {
+    "registry_version": "1.1.0",
+    "scope": "math_1_4",
+    "source": {
+      "prompt_reference": "prompt_generate_math_templates_T1_T44.final.v2 (1) (1).txt",
+      "notes": [
+        "SINGLE TEMPLATE EXPORT (T6 only).",
+        "MAPPING_JSON not provided in chat; template_id/topic follow the established slice convention used in T2–T4 outputs."
+      ]
+    },
+    "enums": {
+      "task_type_enum": [
+        "number_sense",
+        "numeral_systems",
+        "arithmetic_fluency",
+        "fractions_percent",
+        "word_problems",
+        "measurement_units",
+        "geometry",
+        "data_representation",
+        "patterns_logic"
+      ],
+      "format_enum": [
+        "plain_text",
+        "inline_examples",
+        "column",
+        "fill_gaps",
+        "table",
+        "diagram",
+        "number_line",
+        "grid",
+        "drawing",
+        "mixed"
+      ],
+      "constraints_enum": [
+        "needs_visual",
+        "has_table",
+        "has_diagram",
+        "has_number_line",
+        "has_grid",
+        "has_drawing",
+        "multi_step",
+        "unit_conversion",
+        "roman_numerals",
+        "fraction_notation",
+        "percent",
+        "trick_question"
+      ],
+      "template_params_keys": [
+        "ops",
+        "range_max",
+        "written_algorithm",
+        "unknown_component",
+        "compare_mode",
+        "change_mode",
+        "word_model",
+        "unit_kind",
+        "data_task_mode",
+        "geometry_mode",
+        "logic_mode"
+      ]
+    },
+    "templates": [
+      {
+        "template_code": "T6",
+        "template_id": "T6_pedagogical_template",
+        "title": "Неизвестный компонент при сложении и вычитании",
+        "grade_min": 1,
+        "grade_max": 4,
+        "formats_allowed": [
+          "plain_text",
+          "inline_examples",
+          "fill_gaps"
+        ],
+        "ped_keys_defaults": {
+          "task_type": "arithmetic_fluency",
+          "format": "fill_gaps",
+          "topic": "unknown_component_add_sub",
+          "constraints": [],
+          "template_params_defaults": {
+            "unknown_component": null
+          }
+        },
+        "routing": {
+          "match_keys": {
+            "task_type": "arithmetic_fluency",
+            "topic": "unknown_component_add_sub",
+            "formats_allowed": [
+              "plain_text",
+              "inline_examples",
+              "fill_gaps"
+            ]
+          },
+          "routing_rules": [
+            {
+              "rule_id": "T6_UNKNOWN_COMPONENT_TERMS",
+              "must_have": {
+                "text_patterns_any": [
+                  "неизвестн(ое|ый) (слагаемое|уменьшаемое|вычитаемое|компонент)",
+                  "найди(те)? (слагаемое|уменьшаемое|вычитаемое)",
+                  "найди(те)? неизвестн(ое|ый)( число)?",
+                  "чему равн(о|а) (слагаемое|уменьшаемое|вычитаемое)",
+                  "какое число (прибавили|вычли|отняли)",
+                  "вместо (точек|зв[её]здочки|пропуска|окошка|\\?|\\*)",
+                  "пропущенное число",
+                  "\\? [+−\\-] \\d+ = \\d+",
+                  "\\d+ [+−\\-] \\? = \\d+",
+                  "x [+−\\-] \\d+ = \\d+",
+                  "\\d+ [+−\\-] x = \\d+"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "умнож",
+                  "делен",
+                  "в столбик",
+                  "столбиком",
+                  "письменно",
+                  "таблица умножения",
+                  "диаграмма",
+                  "периметр",
+                  "площадь",
+                  "дроб",
+                  "процент"
+                ],
+                "visual_kinds_any": [
+                  "table",
+                  "diagram",
+                  "number_line",
+                  "grid",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 90,
+              "tie_breaker": "(1) visual_kinds_any совпадение сильнее текста; (2) 0 нарушений must_not; (3) больше совпадений сильных якорей; (4) больше совпадений template_params_required; (5) выше routing_priority; (6) стабильный порядок по template_code."
+            },
+            {
+              "rule_id": "T6_EQUATION_WITH_X_OR_GAP",
+              "must_have": {
+                "text_patterns_any": [
+                  "__GAP__",
+                  "(x|икс)",
+                  "(уравнение|неизвестное)"
+                ],
+                "visual_kinds_any": [],
+                "template_params_required": {}
+              },
+              "must_not": {
+                "text_patterns_any": [
+                  "умнож",
+                  "делен",
+                  "в раз",
+                  "раза",
+                  "таблица умножения",
+                  "в столбик",
+                  "столбиком",
+                  "письменно",
+                  "периметр",
+                  "площадь",
+                  "дроб",
+                  "процент"
+                ],
+                "visual_kinds_any": [
+                  "table",
+                  "diagram",
+                  "number_line",
+                  "grid",
+                  "drawing"
+                ]
+              },
+              "routing_priority": 70,
+              "tie_breaker": "(1) 0 нарушений must_not; (2) больше совпадений маркеров __GAP__/x/икс/неизвестное; (3) выше routing_priority."
+            }
+          ],
+          "confusables": [
+            "T4",
+            "T5",
+            "T10",
+            "T14",
+            "T37"
+          ]
+        },
+        "hint_policy_defaults": {
+          "default_visible": 2,
+          "max_hints": 3,
+          "h3_reason": "Здесь часто нужна короткая проверка обратным действием и прояснение «что известно / что неизвестно», поэтому иногда полезен третий, очень компактный шаг."
+        },
+        "notes_for_backend": [
+          "Сильные якоря: фразы «неизвестное слагаемое/уменьшаемое/вычитаемое» или «найди неизвестное число».",
+          "Для уравнений допускается fallback по маркерам x/икс/__GAP__/уравнение + отсечки на умножение/деление.",
+          "Если в тексте явно «в столбик/письменно» — это T5; если «устно/в уме» без неизвестного — это T4."
+        ]
+      }
+    ],
+    "routing_tests": [
+      {
+        "id": "RT_T06_A",
+        "kind": "positive",
+        "description": "Найди неизвестное слагаемое: x + 7 = 15.",
+        "expected": {
+          "template_id": "T6_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "unknown_component_add_sub"
+        },
+        "why": "Есть явный маркер «неизвестное слагаемое» и уравнение на сложение."
+      },
+      {
+        "id": "RT_T06_B",
+        "kind": "positive",
+        "description": "__GAP__ − 9 = 23. Найди неизвестное число.",
+        "expected": {
+          "template_id": "T6_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "fill_gaps",
+          "topic": "unknown_component_add_sub"
+        },
+        "why": "Маркер пропуска __GAP__ + «неизвестное число»."
+      },
+      {
+        "id": "RT_T06_C",
+        "kind": "near_miss",
+        "description": "Вычисли устно: 27 + 15.",
+        "expected": {
+          "template_id": "T4_pedagogical_template",
+          "task_type": "arithmetic_fluency",
+          "format": "inline_examples",
+          "topic": "mental_add_sub_under_100"
+        },
+        "why": "Нет неизвестного компонента; это обычный устный пример (T4)."
+      }
+    ]
+  },
+  "template_profiles": {
+    "T6_pedagogical_template": {
+      "hint_style_profile": "unknown_component_add_sub",
+      "max_hints_default": 3,
+      "age_language": {
+        "grade_min": 1,
+        "grade_max": 4,
+        "tone": "дружелюбный/поддерживающий",
+        "complexity_rules": [
+          "короткие предложения",
+          "термины упрощать в 1–2",
+          "без лишних переменных",
+          "без воды"
+        ]
+      },
+      "teaching_pattern": {
+        "goal": "Находить неизвестный компонент в примерах на сложение и вычитание (слагаемое, уменьшаемое, вычитаемое).",
+        "l1": {
+          "rules": [
+            "Назови, что неизвестно: слагаемое, уменьшаемое или вычитаемое (или «неизвестное число»).",
+            "Вспомни правило: как найти неизвестный компонент через обратное действие.",
+            "Мини‑проверка: подставь найденное число обратно и проверь, верно ли стало равенство."
+          ],
+          "format": "Вопрос → Действие → Мини-проверка",
+          "forbidden": [
+            "полное решение сразу",
+            "сложные термины без объяснения"
+          ]
+        },
+        "l2": {
+          "rules": [
+            "Перепиши/прочитай запись и отметь: что известно и что нужно найти.",
+            "Выбери обратное действие: чтобы найти неизвестное слагаемое — вычти; чтобы найти вычитаемое — вычти; чтобы найти уменьшаемое — прибавь.",
+            "Сделай вычисление аккуратно.",
+            "Мини‑проверка: полученное число подставь на место неизвестного и проверь."
+          ],
+          "format": "Шаги → Где смотреть → Мини-проверка",
+          "forbidden": [
+            "уходить в умножение/деление",
+            "вводить новые обозначения кроме уже данных"
+          ]
+        },
+        "l3": {
+          "when_allowed": "только если max_hints_default==3",
+          "rules": [
+            "Дай короткую памятку из 3 случаев: неизвестное слагаемое / уменьшаемое / вычитаемое — какой знак использовать.",
+            "Покажи одну быструю проверку обратным действием (1 строка).",
+            "Не раскрывай финальный ответ, если ребёнок ещё может посчитать сам."
+          ],
+          "format": "чуть подробнее, но компактно"
+        }
+      },
+      "common_mistakes": [
+        "Путает, что искать: слагаемое, уменьшаемое или вычитаемое.",
+        "Делает не то обратное действие.",
+        "Забывает сделать проверку подстановкой.",
+        "Считает верно, но подставляет не туда (в другое место)."
+      ],
+      "terminology_rules": [
+        "В 1–2 классах вместо «уменьшаемое/вычитаемое» можно говорить «первое число/сколько было» и «сколько убрали».",
+        "В 3–4 классах допускаются термины «слагаемое, уменьшаемое, вычитаемое», но кратко."
+      ],
+      "disclosure_defaults": {
+        "h1": "none",
+        "h2": "partial",
+        "h3": "partial"
+      }
+    }
+  }
+}
