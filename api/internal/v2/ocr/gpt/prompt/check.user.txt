@@ -19,17 +19,17 @@
 
 3) Сначала оценить качество фото:
    • если ответ неразборчив или виден не полностью — НЕ угадывать, вернуть:
-     status="need_better_photo", can_evaluate=false, is_correct=null, failure_reason="bad_photo"
+     decision="cannot_evaluate", can_evaluate=false, failure_reason="bad_photo"
    • если ответа не видно — вернуть:
-     status="no_answer", can_evaluate=false, is_correct=null, failure_reason="no_visible_answer"
+     decision="cannot_evaluate", can_evaluate=false, failure_reason="no_visible_answer"
 
 4) Если проверка возможна:
    • нормализовать ответ (запятая/точка, дроби, знаки, единицы);
    • если в task_struct есть готовый финальный ответ PARSE (task_struct.items[0].solution_internal.final_answer) и он не помечен unsafe_to_finalize_answer — используйте его как кандидат-эталон;
    • НО: для задач повышенного риска (логика/превращения/возраст/буквы-время/разрезания) делайте независимую проверку даже при совпадении с PARSE;
    • если ответ ученика НЕ совпал с кандидатом-эталоном, сначала сделайте независимую проверку (решите задачу коротко и подтвердите проверкой условий).
-     Если не удалось честно подтвердить — верните can_evaluate=false, status="internal_error", failure_reason="ground_truth_unverified".
-   • вернуть status="evaluated", can_evaluate=true и is_correct=true/false.
+     Если не удалось честно подтвердить — верните can_evaluate=false, decision="cannot_evaluate", failure_reason="ground_truth_unverified".
+   • вернуть decision="correct" или decision="incorrect", can_evaluate=true.
 
 5) feedback:
    • коротко и по делу, с учётом `student.grade`.
