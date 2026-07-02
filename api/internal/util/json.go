@@ -56,6 +56,10 @@ func LoadPromptSchema(name, version string) (map[string]any, error) {
 		if err := json.Unmarshal(b, &m); err != nil {
 			return nil, fmt.Errorf("bad %s schema (file): %w", name, err)
 		}
+		// Unwrap OpenAI-style wrapper: {"name":..., "strict":..., "schema":{...}}
+		if inner, ok := m["schema"].(map[string]any); ok {
+			m = inner
+		}
 		ensureSchemaMeta(m)
 		return m, nil
 	}
