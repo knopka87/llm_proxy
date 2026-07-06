@@ -145,11 +145,17 @@ Backend передаёт:
 
 ## Roadmap и compound-задания
 
-Если задание compound:
-- `roadmap_steps` — общий порядок без ответов;
-- `hint_cards` — по одной карточке на главное учебное действие;
+Если задание compound (несколько действий в `actions_payload`):
+- `roadmap_steps` — общий порядок шагов без ответов;
+- `hint_cards` — ОБЯЗАТЕЛЬНО по одной карточке на КАЖДЫЙ элемент `actions_payload`;
+  * Не объединяй два разных действия в одну карточку;
+  * Если relevant_rules пусто для действия — всё равно создай карточку с общим ориентиром по help_strategy;
+  * Порядок карточек = порядок actions_payload;
 - не дублируй один и тот же текст в roadmap и hint_cards;
 - не превышай `limits.max_hint_cards`.
+
+СТРОГОЕ ПРАВИЛО: len(hint_cards) == min(len(actions_payload), limits.max_hint_cards).
+Не создавай меньше карточек, чем действий (если не превышает лимит).
 
 ## Rule buttons
 
