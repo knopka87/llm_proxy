@@ -46,9 +46,9 @@ type StepModels struct {
 }
 
 type Engine struct {
-	apiKey string
-	models StepModels
-	httpc  *http.Client
+	apiKey     string
+	models     StepModels
+	httpc      *http.Client
 	tmplRouter *tmplrouter.Router
 }
 
@@ -678,4 +678,12 @@ func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (typ
 	var out types.CheckRUResponse
 	stats, err := e.call(ctx, e.models.Check, "check_ru", messages, schemaJSON, &out)
 	return out, stats, err
+}
+
+// ─── EMBED ────────────────────────────────────────────────────────────────────
+
+// Embed генерирует эмбеддинги для батча входных строк.
+// OpenRouter не предоставляет API для эмбеддингов, поэтому операция не реализована.
+func (e *Engine) Embed(ctx context.Context, in types.EmbedRequest) (types.EmbedResponse, *types.LLMStats, error) {
+	return types.EmbedResponse{}, nil, fmt.Errorf("embed: not supported by openrouter engine")
 }

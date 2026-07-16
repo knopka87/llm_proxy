@@ -97,6 +97,8 @@ func main() {
 	mux.HandleFunc("/v2/hint_ru", h2.HintRU)
 	mux.HandleFunc("/v2/check_ru", h2.CheckRU)
 
+	mux.HandleFunc("/v2/embed", h2.Embed)
+
 	addr := ":" + cfg.Port
 	srv := &http.Server{
 		Addr:              addr,

@@ -534,3 +534,11 @@ func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (typ
 	stats, err := e.call(ctx, e.parseModel, system, schema, 1, parts, &out, "check_ru")
 	return out, stats, err
 }
+
+// ─── EMBED ────────────────────────────────────────────────────────────────────
+
+// Embed генерирует эмбеддинги для батча входных строк.
+// Gemini не поддерживает специализированный embeddings API, поэтому операция не реализована.
+func (e *Engine) Embed(ctx context.Context, in types.EmbedRequest) (types.EmbedResponse, *types.LLMStats, error) {
+	return types.EmbedResponse{}, nil, fmt.Errorf("embed: not supported by gemini engine")
+}

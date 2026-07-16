@@ -18,14 +18,15 @@ type Engine interface {
 	ParseRU(ctx context.Context, in types.ParseRURequest) (types.ParseRUResponse, *types.LLMStats, error)
 	HintRU(ctx context.Context, in types.HintRUCompactInput) (types.HintRUResponse, *types.LLMStats, error)
 	CheckRU(ctx context.Context, in types.CheckRUCompactInput) (types.CheckRUResponse, *types.LLMStats, error)
+	Embed(ctx context.Context, in types.EmbedRequest) (types.EmbedResponse, *types.LLMStats, error)
 }
 
 type Engines struct {
-	OpenAI         Engine                // OpenAI GPT — hint, check, analogue
-	Gemini         Engine                // Gemini    — detect, parse
-	Mixed          Engine                // detect+parse→Gemini, hint+check→OpenAI
-	OpenRouter     Engine                // все шаги через OpenRouter; модели из env
-	TemplateRouter *tmplrouter.Router    // педагогические шаблоны T1–T52
+	OpenAI         Engine             // OpenAI GPT — hint, check, analogue
+	Gemini         Engine             // Gemini    — detect, parse
+	Mixed          Engine             // detect+parse→Gemini, hint+check→OpenAI
+	OpenRouter     Engine             // все шаги через OpenRouter; модели из env
+	TemplateRouter *tmplrouter.Router // педагогические шаблоны T1–T52
 }
 
 // GetEngine возвращает движок по llm_name из запроса:

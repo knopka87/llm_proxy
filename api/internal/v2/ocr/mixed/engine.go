@@ -55,3 +55,11 @@ func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types
 func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (types.CheckRUResponse, *types.LLMStats, error) {
 	return e.openai.CheckRU(ctx, in)
 }
+
+// ─── EMBED ────────────────────────────────────────────────────────────────────
+
+// Embed генерирует эмбеддинги для батча входных строк.
+// Делегирует к OpenAI подмодулю, так как embeddings API поддерживается только OpenAI.
+func (e *Engine) Embed(ctx context.Context, in types.EmbedRequest) (types.EmbedResponse, *types.LLMStats, error) {
+	return e.openai.Embed(ctx, in)
+}
