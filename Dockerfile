@@ -1,7 +1,7 @@
 ########################
 # Build stage
 ########################
-FROM golang:1.24-alpine AS build
+FROM golang:1.26-alpine AS build
 WORKDIR /src
 
 # Сборка без сети: используем вендоренные зависимости
