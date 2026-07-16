@@ -25,7 +25,7 @@ func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types
 		model = "gpt-5-mini"
 	}
 
-	temp := 1
+	temp := 0.4
 
 	system, err := util.LoadSystemPrompt(HINT_RU, e.Name(), e.Version())
 	if err != nil {
