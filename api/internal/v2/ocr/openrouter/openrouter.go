@@ -374,7 +374,7 @@ func (e *Engine) call(
 	case "check", "check_ru", "parse", "parse_ru", "detect":
 		temp = tempPtr(0.1) // максимальный детерминизм
 	case "hint", "hint_ru":
-		temp = tempPtr(0.4) // вариативность, но без случайности
+		temp = tempPtr(0.2) // вариативность, но без случайности
 	}
 
 	reqBody := chatRequest{
