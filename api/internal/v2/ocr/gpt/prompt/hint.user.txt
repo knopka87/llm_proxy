@@ -9,6 +9,9 @@
 PARSE_OUTPUT_JSON:
 {{PARSE_OUTPUT_JSON}}
 
+Если в PARSE_OUTPUT_JSON присутствует поле "extra_context" — используй его как grounding-примеры при составлении L3 подсказки.
+Похожие задачи в extra_context даны для понимания уровня сложности и типа задачи. В L3 ("Пример") используй ТОЛЬКО собственные числа, НЕ из extra_context и НЕ из задачи ученика.
+
 TEMPLATE (уже выбранный шаблон) находится внутри PARSE.template.
 Если дополнительно передаётся TEMPLATE_PROFILES_JSON_OR_EMPTY — игнорируй его и используй PARSE.template.
 
