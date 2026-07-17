@@ -158,6 +158,20 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 		return types.HintResponse{}, nil, fmt.Errorf("openrouter hint: %w", err)
 	}
 
+	// Условная дозагрузка педагогического блока по типу задачи (шаг 09).
+	// Каждый тип задачи имеет отдельный файл hint.advanced_{task_type}.system.txt
+	// с расширенной педагогикой (частые ошибки, паттерны L1/L2/L3 для типа).
+	if len(in.Items) > 0 {
+		taskType := in.Items[0].PedKeys.TaskType
+		if taskType != "" {
+			advancedName := "hint.advanced_" + taskType
+			if advanced, aerr := util.LoadSystemPrompt(advancedName, promptSource, apiVersion); aerr == nil && strings.TrimSpace(advanced) != "" {
+				system = system + "\n\n" + advanced
+			}
+			// Если файл для типа не найден — продолжаем с базовым промптом (graceful fallback).
+		}
+	}
+
 	// Select pedagogical template from the router (replaces child_bot routing).
 	// Template field is deprecated: we ignore any value coming from child_bot and
 	// always resolve the template here from task_text_clean + visual_kinds.
@@ -183,6 +197,12 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 		if strings.TrimSpace(userTemplate) != "" {
 			userText = userTemplate + "\n\n" + userText
 		}
+	}
+
+	// Явно выносим grade в начало для лучшей адаптации языка моделью.
+	grade := in.Task.Grade
+	if grade > 0 {
+		userText = fmt.Sprintf("Класс ученика: %d (1–4).\n\n", grade) + userText
 	}
 
 	messages := []message{systemMsg(system), userMsgText(userText)}
@@ -653,7 +673,7 @@ func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types
 	return out, stats, err
 }
 
-// ─── CHECK_RU ────────────────────────────────────────────────────────────────
+// ─── CHECK_RU ────────────────────────────────────────────────────────────
 
 func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (types.CheckRUResponse, *types.LLMStats, error) {
 	system, schemaJSON, err := loadSystemWithSchema("check_ru")
