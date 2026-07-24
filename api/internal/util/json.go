@@ -12,7 +12,17 @@ import (
 	prompt2 "llm-proxy/api/internal/v2/prompt"
 )
 
-func LoadSystemPrompt(name, provider, version string) (string, error) {
+func LoadSystemPrompt(name, provider, version string, subdirs ...string) (string, error) {
+	// Try to load from subdirectories first
+	if len(subdirs) > 0 {
+		for _, subdir := range subdirs {
+			if p, err := loadPrompt(name, "system", provider, version, subdir); err == nil {
+				return p, nil
+			}
+		}
+	}
+
+	// Fallback to universal prompt
 	system, err := loadPrompt(name, "system", provider, version)
 	if err != nil {
 		system, err = loadPrompt("universal", "system", provider, version)
@@ -20,27 +30,54 @@ func LoadSystemPrompt(name, provider, version string) (string, error) {
 	return system, err
 }
 
-func LoadUserPrompt(name, provider, version string) (string, error) {
+func LoadUserPrompt(name, provider, version string, subdirs ...string) (string, error) {
+	// Try to load from subdirectories first
+	if len(subdirs) > 0 {
+		for _, subdir := range subdirs {
+			if p, err := loadPrompt(name, "user", provider, version, subdir); err == nil {
+				return p, nil
+			}
+		}
+	}
 	return loadPrompt(name, "user", provider, version)
 }
 
-func loadPrompt(name, tp, provider, version string) (string, error) {
+func loadPrompt(name, tp, provider, version string, subdirs ...string) (string, error) {
 	if provider == "" {
 		return "", fmt.Errorf("provider is empty")
 	}
-	// First try provider-aware layout used by UpdateSystemPromptHandler:
-	//   <PROMPT_DIR or api/internal/<version>/ocr/<provider>/prompt/<name>.<type(tp)>.txt
 	baseRoot := os.Getenv("PROMPT_DIR")
 	if baseRoot == "" {
 		baseRoot = filepath.Join("api", "internal")
 	}
 
-	p := filepath.Join(baseRoot, version, "ocr", strings.ToLower(provider), "prompt", fmt.Sprintf("%s.%s.txt", name, tp))
+	// Промпты общие для всех провайдеров — лежат в v2/prompt/
+	pathParts := []string{baseRoot, version, "prompt"}
+	if len(subdirs) > 0 {
+		pathParts = append(pathParts, subdirs...)
+	}
+	pathParts = append(pathParts, fmt.Sprintf("%s.%s.txt", name, tp))
+	p := filepath.Join(pathParts...)
+
 	if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
 		return strings.TrimSpace(string(b)), nil
 	}
 
-	return "", fmt.Errorf("prompt %q not found in %s (provider=%q) or legacy prompt dir", name, p, provider)
+	// Fallback: старая структура v2/ocr/{provider}/prompt/
+	if len(subdirs) > 0 {
+		p = filepath.Join(baseRoot, version, "ocr", strings.ToLower(provider), "prompt", subdirs[len(subdirs)-1], fmt.Sprintf("%s.%s.txt", name, tp))
+		if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
+			return strings.TrimSpace(string(b)), nil
+		}
+	}
+
+	// Fallback: базовый промпт без поддиректорий
+	p = filepath.Join(baseRoot, version, "prompt", fmt.Sprintf("%s.%s.txt", name, tp))
+	if b, err := os.ReadFile(p); err == nil && len(b) > 0 {
+		return strings.TrimSpace(string(b)), nil
+	}
+
+	return "", fmt.Errorf("prompt %q not found (provider=%q, version=%q)", name, provider, version)
 }
 
 // Загружаем <name>.schema.json из PROMPT_SCHEMA_DIR, иначе берём из встроенных prompt.*.

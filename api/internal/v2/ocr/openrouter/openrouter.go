@@ -82,7 +82,7 @@ func (e *Engine) Name() string { return "openrouter" }
 // ─── DETECT ───────────────────────────────────────────────────────────────────
 
 func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.DetectResponse, *types.LLMStats, error) {
-	system, schemaJSON, err := loadSystemWithSchema("detect")
+	system, schemaJSON, err := loadSystemWithSchema("detect", 0)
 	if err != nil {
 		return types.DetectResponse{}, nil, fmt.Errorf("openrouter detect: %w", err)
 	}
@@ -109,7 +109,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 // ─── PARSE ────────────────────────────────────────────────────────────────────
 
 func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseResponse, *types.LLMStats, error) {
-	system, schemaJSON, err := loadSystemWithSchema("parse")
+	system, schemaJSON, err := loadSystemWithSchema("parse", int(in.Grade))
 	if err != nil {
 		return types.ParseResponse{}, nil, fmt.Errorf("openrouter parse: %w", err)
 	}
@@ -153,7 +153,7 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 // ─── HINT ─────────────────────────────────────────────────────────────────────
 
 func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResponse, *types.LLMStats, error) {
-	system, schemaJSON, err := loadSystemWithSchema("hint")
+	system, schemaJSON, err := loadSystemWithSchema("hint", in.Task.Grade)
 	if err != nil {
 		return types.HintResponse{}, nil, fmt.Errorf("openrouter hint: %w", err)
 	}
@@ -165,7 +165,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 		taskType := in.Items[0].PedKeys.TaskType
 		if taskType != "" {
 			advancedName := "hint.advanced_" + taskType
-			if advanced, aerr := util.LoadSystemPrompt(advancedName, promptSource, apiVersion); aerr == nil && strings.TrimSpace(advanced) != "" {
+			if advanced, aerr := loadPrompt(advancedName, in.Task.Grade); aerr == nil && strings.TrimSpace(advanced) != "" {
 				system = system + "\n\n" + advanced
 			}
 			// Если файл для типа не найден — продолжаем с базовым промптом (graceful fallback).
@@ -188,7 +188,8 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	}
 
 	inJSON, _ := json.Marshal(in)
-	userTemplate, _ := util.LoadUserPrompt("hint", promptSource, apiVersion)
+	// Загружаем user-шаблон с учётом класса
+	userTemplate, _ := loadHintUserPrompt(in.Task.Grade)
 	var userText string
 	if strings.Contains(userTemplate, "{{PARSE_OUTPUT_JSON}}") {
 		userText = strings.ReplaceAll(userTemplate, "{{PARSE_OUTPUT_JSON}}", string(inJSON))
@@ -215,7 +216,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 // ─── CHECK ────────────────────────────────────────────────────────────────────
 
 func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, *types.LLMStats, error) {
-	system, schemaJSON, err := loadSystemWithSchema("check")
+	system, schemaJSON, err := loadSystemWithSchema("check", 0)
 	if err != nil {
 		return types.CheckResponse{}, nil, fmt.Errorf("openrouter check: %w", err)
 	}
@@ -266,7 +267,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 // ─── ANALOGUE ─────────────────────────────────────────────────────────────────
 
 func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest) (types.AnalogueResponse, *types.LLMStats, error) {
-	system, schemaJSON, err := loadSystemWithSchema("analogue")
+	system, schemaJSON, err := loadSystemWithSchema("analogue", 0)
 	if err != nil {
 		return types.AnalogueResponse{}, nil, fmt.Errorf("openrouter analogue: %w", err)
 	}
@@ -491,8 +492,60 @@ func userMsgWithImage(text, mime string, imgBytes []byte) message {
 	}
 }
 
-func loadSystemWithSchema(name string) (system, schemaJSON string, err error) {
-	sys, err := util.LoadSystemPrompt(name, promptSource, apiVersion)
+func gradeSubdir(grade int) string {
+	switch grade {
+	case 1:
+		return "1_class"
+	case 2:
+		return "2_class"
+	case 3:
+		return "3_class"
+	case 4:
+		return "4_class"
+	default:
+		return ""
+	}
+}
+
+// hintGradeSubdir возвращает поддиректорию для подсказок по классу.
+func hintGradeSubdir(grade int) string {
+	return gradeSubdir(grade)
+}
+
+// loadHintPrompt загружает системный промпт для подсказок с учётом класса.
+func loadHintPrompt(name string, grade int) (string, error) {
+	if subdir := hintGradeSubdir(grade); subdir != "" {
+		if p, err := util.LoadSystemPrompt(name, promptSource, apiVersion, subdir); err == nil {
+			return p, nil
+		}
+	}
+	return util.LoadSystemPrompt(name, promptSource, apiVersion)
+}
+
+// loadHintUserPrompt загружает пользовательский шаблон для подсказок с учётом класса.
+func loadHintUserPrompt(grade int) (string, error) {
+	if subdir := gradeSubdir(grade); subdir != "" {
+		if p, err := util.LoadUserPrompt("hint", promptSource, apiVersion, subdir); err == nil {
+			return p, nil
+		}
+	}
+	return util.LoadUserPrompt("hint", promptSource, apiVersion)
+}
+
+func loadPrompt(name string, grade int) (string, error) {
+	// Для подсказок используем поддиректорию класса
+	if name == "hint" || name == "hint_ru" {
+		if subdir := gradeSubdir(grade); subdir != "" {
+			if p, err := util.LoadSystemPrompt(name, promptSource, apiVersion, subdir); err == nil {
+				return p, nil
+			}
+		}
+	}
+	return util.LoadSystemPrompt(name, promptSource, apiVersion)
+}
+
+func loadSystemWithSchema(name string, grade int) (system, schemaJSON string, err error) {
+	sys, err := loadPrompt(name, grade)
 	if err != nil {
 		return "", "", fmt.Errorf("load system prompt %q: %w", name, err)
 	}
@@ -617,7 +670,7 @@ func truncate(b []byte, n int) string {
 // ─── PARSE_RU ─────────────────────────────────────────────────────────────────
 
 func (e *Engine) ParseRU(ctx context.Context, in types.ParseRURequest) (types.ParseRUResponse, *types.LLMStats, error) {
-	system, schemaJSON, err := loadSystemWithSchema("parse_ru")
+	system, schemaJSON, err := loadSystemWithSchema("parse_ru", 0)
 	if err != nil {
 		return types.ParseRUResponse{}, nil, fmt.Errorf("openrouter parse_ru: %w", err)
 	}
@@ -649,7 +702,7 @@ func (e *Engine) ParseRU(ctx context.Context, in types.ParseRURequest) (types.Pa
 // ─── HINT_RU ─────────────────────────────────────────────────────────────────
 
 func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types.HintRUResponse, *types.LLMStats, error) {
-	system, schemaJSON, err := loadSystemWithSchema("hint_ru")
+	system, schemaJSON, err := loadSystemWithSchema("hint_ru", 0)
 	if err != nil {
 		return types.HintRUResponse{}, nil, fmt.Errorf("openrouter hint_ru: %w", err)
 	}
@@ -676,7 +729,7 @@ func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types
 // ─── CHECK_RU ────────────────────────────────────────────────────────────
 
 func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (types.CheckRUResponse, *types.LLMStats, error) {
-	system, schemaJSON, err := loadSystemWithSchema("check_ru")
+	system, schemaJSON, err := loadSystemWithSchema("check_ru", 0)
 	if err != nil {
 		return types.CheckRUResponse{}, nil, fmt.Errorf("openrouter check_ru: %w", err)
 	}
