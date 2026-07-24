@@ -161,12 +161,14 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	// Условная дозагрузка педагогического блока по типу задачи (шаг 09).
 	// Каждый тип задачи имеет отдельный файл hint.advanced_{task_type}.system.txt
 	// с расширенной педагогикой (частые ошибки, паттерны L1/L2/L3 для типа).
+	var advancedTopics []string
 	if len(in.Items) > 0 {
 		taskType := in.Items[0].PedKeys.TaskType
 		if taskType != "" {
 			advancedName := "hint.advanced_" + taskType
 			if advanced, aerr := loadPrompt(advancedName, in.Task.Grade); aerr == nil && strings.TrimSpace(advanced) != "" {
 				system = system + "\n\n" + advanced
+				advancedTopics = append(advancedTopics, taskType)
 			}
 			// Если файл для типа не найден — продолжаем с базовым промптом (graceful fallback).
 		}
@@ -210,9 +212,12 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 
 	var hr types.HintResponse
 	stats, err := e.call(ctx, e.models.Hint, "hint", messages, schemaJSON, &hr)
-	// Устанавливаем версию промпта после вызова (LLM ответ перезаписывает поле)
+	// Устанавливаем метрики после вызова (LLM ответ перезаписывает поля)
 	if grade > 0 {
 		hr.PromptVersion = fmt.Sprintf("%d_class", grade)
+	}
+	if len(advancedTopics) > 0 {
+		hr.AdvancedTopics = advancedTopics
 	}
 	return hr, stats, err
 }
