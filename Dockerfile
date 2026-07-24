@@ -23,11 +23,10 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 RUN mkdir -p /out/prompts/v1/ocr/gpt/prompt && cp -r api/internal/v1/ocr/gpt/prompt/. /out/prompts/v1/ocr/gpt/prompt/
 RUN mkdir -p /out/prompts/v1/prompt && cp -r api/internal/v1/prompt/. /out/prompts/v1/prompt/
-RUN mkdir -p /out/prompts/v2/ocr/gpt/prompt && cp -r api/internal/v2/ocr/gpt/prompt/. /out/prompts/v2/ocr/gpt/prompt/
 RUN mkdir -p /out/prompts/v2/prompt && cp -r api/internal/v2/prompt/. /out/prompts/v2/prompt/
 # Ensure readable permissions
 RUN chmod -R a+rX /out/prompts && \
-    test -f /out/prompts/v2/ocr/gpt/prompt/universal.system.txt
+    test -f /out/prompts/v2/prompt/hint.system.txt
 
 ########################
 # Runtime stage
