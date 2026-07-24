@@ -210,6 +210,10 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 
 	var hr types.HintResponse
 	stats, err := e.call(ctx, e.models.Hint, "hint", messages, schemaJSON, &hr)
+	// Устанавливаем версию промпта после вызова (LLM ответ перезаписывает поле)
+	if grade > 0 {
+		hr.PromptVersion = fmt.Sprintf("%d_class", grade)
+	}
 	return hr, stats, err
 }
 

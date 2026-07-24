@@ -87,6 +87,7 @@ type HintUI struct {
 // Required: schema_version, task_ref, task, items, ui.
 type HintResponse struct {
 	SchemaVersion string     `json:"schema_version"`
+	PromptVersion string     `json:"prompt_version,omitempty"` // версия промпта (например "3_class")
 	TaskRef       TaskRef    `json:"task_ref"`
 	Task          HintTask   `json:"task"`
 	Items         []HintItem `json:"items"`
