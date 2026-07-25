@@ -21,6 +21,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -225,9 +227,14 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 // ─── CHECK ────────────────────────────────────────────────────────────────────
 
 func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (types.CheckResponse, *types.LLMStats, error) {
-	system, schemaJSON, err := loadSystemWithSchema("check", 0)
+	system, schemaJSON, err := loadSystemWithSchema("check", int(in.Student.Grade))
 	if err != nil {
 		return types.CheckResponse{}, nil, fmt.Errorf("openrouter check: %w", err)
+	}
+
+	// Подставляем grade-специфичную секцию feedback
+	if gradeSection, serr := loadCheckFeedbackSection(int(in.Student.Grade)); serr == nil {
+		system = strings.ReplaceAll(system, "{{GRADE_FEEDBACK_SECTION}}", gradeSection)
 	}
 
 	imgBytes, mime, err := decodeImage(in.Image)
@@ -738,9 +745,14 @@ func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types
 // ─── CHECK_RU ────────────────────────────────────────────────────────────
 
 func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (types.CheckRUResponse, *types.LLMStats, error) {
-	system, schemaJSON, err := loadSystemWithSchema("check_ru", 0)
+	system, schemaJSON, err := loadSystemWithSchema("check_ru", in.Grade)
 	if err != nil {
 		return types.CheckRUResponse{}, nil, fmt.Errorf("openrouter check_ru: %w", err)
+	}
+
+	// Подставляем grade-специфичную секцию feedback
+	if gradeSection, serr := loadCheckRUFeedbackSection(in.Grade); serr == nil {
+		system = strings.ReplaceAll(system, "{{GRADE_FEEDBACK_SECTION}}", gradeSection)
 	}
 
 	inJSON, _ := json.Marshal(in)
@@ -768,4 +780,40 @@ func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (typ
 // OpenRouter не предоставляет API для эмбеддингов, поэтому операция не реализована.
 func (e *Engine) Embed(ctx context.Context, in types.EmbedRequest) (types.EmbedResponse, *types.LLMStats, error) {
 	return types.EmbedResponse{}, nil, fmt.Errorf("embed: not supported by openrouter engine")
+}
+
+func loadCheckFeedbackSection(grade int) (string, error) {
+	subdir := gradeSubdir(grade)
+	if subdir == "" {
+		return "", fmt.Errorf("unknown grade: %d", grade)
+	}
+
+	baseRoot := os.Getenv("PROMPT_DIR")
+	if baseRoot == "" {
+		baseRoot = filepath.Join("api", "internal")
+	}
+	p := filepath.Join(baseRoot, apiVersion, "prompt", subdir, "check.feedback.txt")
+	b, err := os.ReadFile(p)
+	if err != nil {
+		return "", fmt.Errorf("load check feedback %s: %w", subdir, err)
+	}
+	return strings.TrimSpace(string(b)), nil
+}
+
+func loadCheckRUFeedbackSection(grade int) (string, error) {
+	subdir := gradeSubdir(grade)
+	if subdir == "" {
+		return "", fmt.Errorf("unknown grade: %d", grade)
+	}
+
+	baseRoot := os.Getenv("PROMPT_DIR")
+	if baseRoot == "" {
+		baseRoot = filepath.Join("api", "internal")
+	}
+	p := filepath.Join(baseRoot, apiVersion, "prompt", subdir, "check_ru.feedback.txt")
+	b, err := os.ReadFile(p)
+	if err != nil {
+		return "", fmt.Errorf("load check_ru feedback %s: %w", subdir, err)
+	}
+	return strings.TrimSpace(string(b)), nil
 }

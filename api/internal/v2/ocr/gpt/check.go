@@ -9,6 +9,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -34,6 +36,11 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	system, err := util.LoadSystemPrompt(CHECK, e.Name(), e.Version())
 	if err != nil {
 		return types.CheckResponse{}, nil, err
+	}
+
+	// Подставляем grade-специфичную секцию feedback
+	if gradeSection, serr := loadCheckFeedbackSection(int(in.Student.Grade)); serr == nil {
+		system = strings.ReplaceAll(system, "{{GRADE_FEEDBACK_SECTION}}", gradeSection)
 	}
 
 	schema, err := util.LoadPromptSchema(CHECK, e.Version())
@@ -163,4 +170,37 @@ func truncateStr(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen] + "..."
+}
+
+func gradeSubdir(grade int) string {
+	switch grade {
+	case 1:
+		return "1_class"
+	case 2:
+		return "2_class"
+	case 3:
+		return "3_class"
+	case 4:
+		return "4_class"
+	default:
+		return ""
+	}
+}
+
+func loadCheckFeedbackSection(grade int) (string, error) {
+	subdir := gradeSubdir(grade)
+	if subdir == "" {
+		return "", fmt.Errorf("unknown grade: %d", grade)
+	}
+
+	baseRoot := os.Getenv("PROMPT_DIR")
+	if baseRoot == "" {
+		baseRoot = filepath.Join("api", "internal")
+	}
+	p := filepath.Join(baseRoot, "v2", "prompt", subdir, "check.feedback.txt")
+	b, err := os.ReadFile(p)
+	if err != nil {
+		return "", fmt.Errorf("load check feedback %s: %w", subdir, err)
+	}
+	return strings.TrimSpace(string(b)), nil
 }

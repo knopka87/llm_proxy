@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -30,6 +32,11 @@ func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (typ
 	system, err := util.LoadSystemPrompt(CHECK_RU, e.Name(), e.Version())
 	if err != nil {
 		return types.CheckRUResponse{}, nil, err
+	}
+
+	// Подставляем grade-специфичную секцию feedback
+	if gradeSection, serr := loadCheckRUFeedbackSection(in.Grade); serr == nil {
+		system = strings.ReplaceAll(system, "{{GRADE_FEEDBACK_SECTION}}", gradeSection)
 	}
 
 	schema, err := util.LoadPromptSchema(CHECK_RU, e.Version())
@@ -112,4 +119,22 @@ func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (typ
 		return types.CheckRUResponse{}, stats, fmt.Errorf("openai check_ru: bad JSON: %w", err)
 	}
 	return cr, stats, nil
+}
+
+func loadCheckRUFeedbackSection(grade int) (string, error) {
+	subdir := gradeSubdir(grade)
+	if subdir == "" {
+		return "", fmt.Errorf("unknown grade: %d", grade)
+	}
+
+	baseRoot := os.Getenv("PROMPT_DIR")
+	if baseRoot == "" {
+		baseRoot = filepath.Join("api", "internal")
+	}
+	p := filepath.Join(baseRoot, "v2", "prompt", subdir, "check_ru.feedback.txt")
+	b, err := os.ReadFile(p)
+	if err != nil {
+		return "", fmt.Errorf("load check_ru feedback %s: %w", subdir, err)
+	}
+	return strings.TrimSpace(string(b)), nil
 }
