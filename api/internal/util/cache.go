@@ -1,6 +1,7 @@
 package util
 
 import (
+	"strings"
 	"sync"
 )
 
@@ -35,7 +36,7 @@ func (c *promptCache) InvalidateAll() {
 	c.cache = sync.Map{}
 }
 
-// cachedLoadPrompt загружает промпт с кэшированием
+// cachedLoadPrompt загружает промпт с кэшированием (без поддиректорий)
 func cachedLoadPrompt(name, tp, provider, version string) (string, error) {
 	key := version + ":" + provider + ":" + name + ":" + tp
 
@@ -44,6 +45,23 @@ func cachedLoadPrompt(name, tp, provider, version string) (string, error) {
 	}
 
 	result, err := loadPrompt(name, tp, provider, version)
+	if err != nil {
+		return "", err
+	}
+
+	globalCache.Set(key, result)
+	return result, nil
+}
+
+// cachedLoadPromptSubdirs загружает промпт с кэшированием и поддиректориями
+func cachedLoadPromptSubdirs(name, tp, provider, version string, subdirs ...string) (string, error) {
+	key := version + ":" + provider + ":" + name + ":" + tp + ":" + strings.Join(subdirs, "/")
+
+	if cached, ok := globalCache.Get(key); ok {
+		return cached, nil
+	}
+
+	result, err := loadPrompt(name, tp, provider, version, subdirs...)
 	if err != nil {
 		return "", err
 	}

@@ -138,12 +138,16 @@ type ParseResponse struct {
 // ValidateItems checks all items for final_answer ↔ solution_steps consistency.
 // Sets UnsafeToFinalizeAnswer=true if inconsistency detected.
 // P0.1: Called after JSON unmarshal to catch PARSE errors before CHECK.
-// NOTE: Temporarily disabled - validation logic needs refinement to avoid false positives.
-// The issue is that solution_steps often contain intermediate calculations,
-// not the final answer, causing incorrect "inconsistency" detection.
+// Only flags true contradictions: when final_answer explicitly differs from
+// the answer derived from the last solution step's conclusion pattern.
 func (pr *ParseResponse) ValidateItems() {
-	// TODO: Re-enable with smarter validation that only flags true contradictions
-	// For now, rely on GPT's internal consistency checking via check.system.txt rules
+	for i := range pr.Items {
+		item := &pr.Items[i]
+		consistent, _ := item.SolutionInternal.ValidateFinalAnswer()
+		if !consistent {
+			item.ItemQuality.UnsafeToFinalizeAnswer = true
+		}
+	}
 }
 
 // --- Helper functions for answer validation ---

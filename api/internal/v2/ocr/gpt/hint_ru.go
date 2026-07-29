@@ -76,7 +76,7 @@ func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types
 		},
 	}
 	if strings.Contains(model, "gpt-5") {
-		body["temperature"] = 1
+		delete(body, "temperature")
 	}
 
 	payload, _ := json.Marshal(body)

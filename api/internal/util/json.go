@@ -16,16 +16,16 @@ func LoadSystemPrompt(name, provider, version string, subdirs ...string) (string
 	// Try to load from subdirectories first
 	if len(subdirs) > 0 {
 		for _, subdir := range subdirs {
-			if p, err := loadPrompt(name, "system", provider, version, subdir); err == nil {
+			if p, err := cachedLoadPromptSubdirs(name, "system", provider, version, subdir); err == nil {
 				return p, nil
 			}
 		}
 	}
 
 	// Fallback to universal prompt
-	system, err := loadPrompt(name, "system", provider, version)
+	system, err := cachedLoadPrompt(name, "system", provider, version)
 	if err != nil {
-		system, err = loadPrompt("universal", "system", provider, version)
+		system, err = cachedLoadPrompt("universal", "system", provider, version)
 	}
 	return system, err
 }
@@ -34,12 +34,12 @@ func LoadUserPrompt(name, provider, version string, subdirs ...string) (string, 
 	// Try to load from subdirectories first
 	if len(subdirs) > 0 {
 		for _, subdir := range subdirs {
-			if p, err := loadPrompt(name, "user", provider, version, subdir); err == nil {
+			if p, err := cachedLoadPromptSubdirs(name, "user", provider, version, subdir); err == nil {
 				return p, nil
 			}
 		}
 	}
-	return loadPrompt(name, "user", provider, version)
+	return cachedLoadPrompt(name, "user", provider, version)
 }
 
 func loadPrompt(name, tp, provider, version string, subdirs ...string) (string, error) {
@@ -152,6 +152,7 @@ func ensureSchemaMeta(m map[string]any) {
 }
 
 // Приводим схему к «строгому» виду для OpenAI: если есть properties — добавляем type=object и required со всеми полями.
+// Nullable-поля (type: ["string", "null"]) не добавляются в required.
 func FixJSONSchemaStrict(node any) {
 	switch n := node.(type) {
 	case map[string]any:
@@ -160,7 +161,11 @@ func FixJSONSchemaStrict(node any) {
 				n["type"] = "object"
 			}
 			req := make([]any, 0, len(props))
-			for k := range props {
+			for k, v := range props {
+				// Skip nullable fields — they have type as array containing "null"
+				if isNullableField(v) {
+					continue
+				}
 				req = append(req, k)
 			}
 			n["required"] = req
@@ -192,4 +197,23 @@ func FixJSONSchemaStrict(node any) {
 			FixJSONSchemaStrict(v)
 		}
 	}
+}
+
+// isNullableField checks if a JSON schema field is nullable (type array contains "null")
+func isNullableField(field any) bool {
+	f, ok := field.(map[string]any)
+	if !ok {
+		return false
+	}
+	// Check for type: ["string", "null"] pattern
+	if typeVal, ok := f["type"]; ok {
+		if typeArr, ok := typeVal.([]any); ok {
+			for _, t := range typeArr {
+				if s, ok := t.(string); ok && s == "null" {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
