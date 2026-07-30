@@ -201,6 +201,9 @@ func FixJSONSchemaStrict(node any) {
 
 // convertNullableToAnyOf replaces "type": ["string", "null"] with
 // "anyOf": [{"type":"string"}, {"type":"null"}] — required by OpenAI strict mode.
+// For object/array types, copies sibling schema keywords (properties, required,
+// additionalProperties, items, etc.) into the anyOf branch so OpenAI strict
+// mode accepts the schema.
 func convertNullableToAnyOf(n map[string]any) {
 	typeVal, ok := n["type"]
 	if !ok {
@@ -224,11 +227,39 @@ func convertNullableToAnyOf(n map[string]any) {
 		return
 	}
 
-	// Replace type array with anyOf
+	// Remove nullable from parent — build anyOf branches
 	delete(n, "type")
+
+	// Keywords to move into the non-null anyOf branch (OpenAI strict requires them)
+	objectKeywords := []string{"properties", "required", "additionalProperties"}
+	arrayKeywords := []string{"items", "minItems", "maxItems"}
+
 	anyOf := make([]any, 0, len(baseTypes)+1)
 	for _, bt := range baseTypes {
-		anyOf = append(anyOf, map[string]any{"type": bt})
+		branch := map[string]any{"type": bt}
+		if s, ok := bt.(string); ok {
+			switch s {
+			case "object":
+				for _, kw := range objectKeywords {
+					if v, ok := n[kw]; ok {
+						branch[kw] = v
+						delete(n, kw)
+					}
+				}
+				// OpenAI strict mode requires additionalProperties: false on every object
+				if _, has := branch["additionalProperties"]; !has {
+					branch["additionalProperties"] = false
+				}
+			case "array":
+				for _, kw := range arrayKeywords {
+					if v, ok := n[kw]; ok {
+						branch[kw] = v
+						delete(n, kw)
+					}
+				}
+			}
+		}
+		anyOf = append(anyOf, branch)
 	}
 	anyOf = append(anyOf, map[string]any{"type": "null"})
 	n["anyOf"] = anyOf
