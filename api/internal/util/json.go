@@ -151,21 +151,21 @@ func ensureSchemaMeta(m map[string]any) {
 	}
 }
 
-// Приводим схему к «строгому» виду для OpenAI: если есть properties — добавляем type=object и required со всеми полями.
-// Nullable-поля (type: ["string", "null"]) не добавляются в required.
+// Приводим схему к «строгому» виду для OpenAI:
+//   - nullable-поля (type: ["string", "null"]) конвертируются в anyOf: [{type:X}, {type:null}]
+//   - required содержит ВСЕ ключи из properties (включая nullable)
 func FixJSONSchemaStrict(node any) {
 	switch n := node.(type) {
 	case map[string]any:
+		// Convert nullable type arrays to anyOf BEFORE processing required
+		convertNullableToAnyOf(n)
+
 		if props, ok := n["properties"].(map[string]any); ok {
 			if _, hasType := n["type"]; !hasType {
 				n["type"] = "object"
 			}
 			req := make([]any, 0, len(props))
-			for k, v := range props {
-				// Skip nullable fields — they have type as array containing "null"
-				if isNullableField(v) {
-					continue
-				}
+			for k := range props {
 				req = append(req, k)
 			}
 			n["required"] = req
@@ -199,21 +199,38 @@ func FixJSONSchemaStrict(node any) {
 	}
 }
 
-// isNullableField checks if a JSON schema field is nullable (type array contains "null")
-func isNullableField(field any) bool {
-	f, ok := field.(map[string]any)
+// convertNullableToAnyOf replaces "type": ["string", "null"] with
+// "anyOf": [{"type":"string"}, {"type":"null"}] — required by OpenAI strict mode.
+func convertNullableToAnyOf(n map[string]any) {
+	typeVal, ok := n["type"]
 	if !ok {
-		return false
+		return
 	}
-	// Check for type: ["string", "null"] pattern
-	if typeVal, ok := f["type"]; ok {
-		if typeArr, ok := typeVal.([]any); ok {
-			for _, t := range typeArr {
-				if s, ok := t.(string); ok && s == "null" {
-					return true
-				}
-			}
+	typeArr, ok := typeVal.([]any)
+	if len(typeArr) < 2 {
+		return
+	}
+
+	var baseTypes []any
+	hasNull := false
+	for _, t := range typeArr {
+		if s, ok := t.(string); ok && s == "null" {
+			hasNull = true
+		} else {
+			baseTypes = append(baseTypes, t)
 		}
 	}
-	return false
+	if !hasNull {
+		return
+	}
+
+	// Replace type array with anyOf
+	delete(n, "type")
+	anyOf := make([]any, 0, len(baseTypes)+1)
+	for _, bt := range baseTypes {
+		anyOf = append(anyOf, map[string]any{"type": bt})
+	}
+	anyOf = append(anyOf, map[string]any{"type": "null"})
+	n["anyOf"] = anyOf
 }
+
