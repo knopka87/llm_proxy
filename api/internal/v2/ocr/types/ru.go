@@ -18,15 +18,21 @@ type RUParseMeta struct {
 	TaskTextClean   string `json:"task_text_clean"`
 	HasChildAnswer  bool   `json:"has_child_answer"`
 	HasHandwriting  bool   `json:"has_handwriting"`
+	// Поля для поддержки нового формата, где meta может быть внутри task
+	Task *struct {
+		Meta *struct {
+			TaskTextClean string `json:"task_text_clean"`
+		} `json:"meta"`
+	} `json:"task,omitempty"`
 }
 
 // RUActionPlan — план действий из PARSE_RU
 type RUActionPlan struct {
-	Schema  string     `json:"schema"`
-	Subject string     `json:"subject"`
-	Grade   int        `json:"grade"`
-	TaskKind string    `json:"task_kind"`
-	Coverage string    `json:"coverage"`
+	Schema   string     `json:"schema"`
+	Subject  string     `json:"subject"`
+	Grade    int        `json:"grade"`
+	TaskKind string     `json:"task_kind"`
+	Coverage string     `json:"coverage"`
 	Actions  []RUAction `json:"actions"`
 }
 
@@ -58,26 +64,26 @@ type ParseRUResponse struct {
 
 // HintRUCompactInput — компактный payload для HINT_RU
 type HintRUCompactInput struct {
-	Grade          int                `json:"grade"`
-	FlowStatus     string             `json:"flow_status"`
-	ActionsPayload []RUHintPayload    `json:"actions_payload"`
-	SourceItems    []string           `json:"source_items"`
-	AntiGDZBans    []string           `json:"anti_gdz_bans"`
-	Limits         RULimits           `json:"limits"`
+	Grade          int             `json:"grade"`
+	FlowStatus     string          `json:"flow_status"`
+	ActionsPayload []RUHintPayload `json:"actions_payload"`
+	SourceItems    []string        `json:"source_items"`
+	AntiGDZBans    []string        `json:"anti_gdz_bans"`
+	Limits         RULimits        `json:"limits"`
 }
 
 // RUHintPayload — payload для одного действия в HINT
 type RUHintPayload struct {
-	ActionID        string              `json:"action_id"`
-	TemplateID      string              `json:"template_id"`
-	TaskAction      string              `json:"task_action"`
-	RuleFamily      string              `json:"rule_family"`
-	SubRuleKey      *string             `json:"sub_rule_key"`
-	Reliability     string              `json:"reliability"`
-	HelpStrategy    string              `json:"help_strategy"`
-	RelevantRules   []RUCompactRuleHint `json:"relevant_rules"`
-	AntiGDZBans     []string            `json:"anti_gdz_bans"`
-	SourceItems     []string            `json:"source_items"`
+	ActionID      string              `json:"action_id"`
+	TemplateID    string              `json:"template_id"`
+	TaskAction    string              `json:"task_action"`
+	RuleFamily    string              `json:"rule_family"`
+	SubRuleKey    *string             `json:"sub_rule_key"`
+	Reliability   string              `json:"reliability"`
+	HelpStrategy  string              `json:"help_strategy"`
+	RelevantRules []RUCompactRuleHint `json:"relevant_rules"`
+	AntiGDZBans   []string            `json:"anti_gdz_bans"`
+	SourceItems   []string            `json:"source_items"`
 }
 
 // RUCompactRuleHint — компактная карточка правила для HINT
@@ -98,13 +104,13 @@ type RULimits struct {
 
 // HintRUResponse — ответ HINT_RU
 type HintRUResponse struct {
-	Status              string             `json:"status"`
-	Confidence          string             `json:"confidence"`
-	ChildMessage        string             `json:"child_message"`
-	RoadmapSteps        []string           `json:"roadmap_steps"`
-	HintCards           []RUHintCard       `json:"hint_cards"`
-	RuleButtons         []RURuleButton     `json:"rule_buttons"`
-	AntiGDZViolationRisk bool             `json:"anti_gdz_violation_risk"`
+	Status               string         `json:"status"`
+	Confidence           string         `json:"confidence"`
+	ChildMessage         string         `json:"child_message"`
+	RoadmapSteps         []string       `json:"roadmap_steps"`
+	HintCards            []RUHintCard   `json:"hint_cards"`
+	RuleButtons          []RURuleButton `json:"rule_buttons"`
+	AntiGDZViolationRisk bool           `json:"anti_gdz_violation_risk"`
 }
 
 // RUHintCard — карточка подсказки
@@ -128,29 +134,29 @@ type RURuleButton struct {
 
 // CheckRUCompactInput — компактный payload для CHECK_RU
 type CheckRUCompactInput struct {
-	Grade          int                 `json:"grade"`
-	CheckFlow      string              `json:"check_flow"`
-	ActionsPayload []RUCheckPayload    `json:"actions_payload"`
-	SourceItems    []string            `json:"source_items"`
-	AntiGDZBans    []string            `json:"anti_gdz_bans"`
-	Limits         RULimits            `json:"limits"`
+	Grade          int              `json:"grade"`
+	CheckFlow      string           `json:"check_flow"`
+	ActionsPayload []RUCheckPayload `json:"actions_payload"`
+	SourceItems    []string         `json:"source_items"`
+	AntiGDZBans    []string         `json:"anti_gdz_bans"`
+	Limits         RULimits         `json:"limits"`
 }
 
 // RUCheckPayload — payload для одного действия в CHECK
 type RUCheckPayload struct {
-	ActionID          string                `json:"action_id"`
-	TemplateID        string                `json:"template_id"`
-	TaskAction        string                `json:"task_action"`
-	CheckMode         string                `json:"check_mode"`
-	RuleFamily        string                `json:"rule_family"`
-	SubRuleKey        *string               `json:"sub_rule_key"`
-	Reliability       string                `json:"reliability"`
-	AnswerReliability string                `json:"answer_reliability"`
-	CheckStrategy     string                `json:"check_strategy"`
-	RelevantRules     []RUCompactRuleCheck  `json:"relevant_rules"`
-	AntiGDZBans       []string              `json:"anti_gdz_bans"`
-	SourceItems       []string              `json:"source_items"`
-	CheckItems        []RUCheckItem         `json:"check_items"`
+	ActionID          string               `json:"action_id"`
+	TemplateID        string               `json:"template_id"`
+	TaskAction        string               `json:"task_action"`
+	CheckMode         string               `json:"check_mode"`
+	RuleFamily        string               `json:"rule_family"`
+	SubRuleKey        *string              `json:"sub_rule_key"`
+	Reliability       string               `json:"reliability"`
+	AnswerReliability string               `json:"answer_reliability"`
+	CheckStrategy     string               `json:"check_strategy"`
+	RelevantRules     []RUCompactRuleCheck `json:"relevant_rules"`
+	AntiGDZBans       []string             `json:"anti_gdz_bans"`
+	SourceItems       []string             `json:"source_items"`
+	CheckItems        []RUCheckItem        `json:"check_items"`
 }
 
 // RUCompactRuleCheck — компактная карточка правила для CHECK
@@ -170,12 +176,12 @@ type RUCheckItem struct {
 
 // CheckRUResponse — ответ CHECK_RU
 type CheckRUResponse struct {
-	Status              string              `json:"status"`
-	Confidence          string              `json:"confidence"`
-	ChildMessage        string              `json:"child_message"`
-	CheckedActions      []RUCheckedAction   `json:"checked_actions"`
-	ErrorGroups         []RUErrorGroup      `json:"error_groups"`
-	RuleButtons         []RURuleButton      `json:"rule_buttons"`
+	Status               string            `json:"status"`
+	Confidence           string            `json:"confidence"`
+	ChildMessage         string            `json:"child_message"`
+	CheckedActions       []RUCheckedAction `json:"checked_actions"`
+	ErrorGroups          []RUErrorGroup    `json:"error_groups"`
+	RuleButtons          []RURuleButton    `json:"rule_buttons"`
 	AntiGDZViolationRisk bool              `json:"anti_gdz_violation_risk"`
 }
 
