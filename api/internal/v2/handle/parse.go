@@ -41,7 +41,7 @@ func (h *Handle) Parse(w http.ResponseWriter, r *http.Request) {
 	out, stats, err = engine.Parse(ctx, req.ParseRequest)
 	if err != nil {
 		log.Printf("[parse] LLM error: %v", err)
-		http.Error(w, "parse processing failed", http.StatusBadGateway)
+		http.Error(w, "parse processing failed: "+err.Error(), http.StatusBadGateway)
 		return
 	}
 

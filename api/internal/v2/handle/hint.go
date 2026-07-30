@@ -41,7 +41,7 @@ func (h *Handle) Hint(w http.ResponseWriter, r *http.Request) {
 	out, stats, err = engine.Hint(ctx, req.HintRequest)
 	if err != nil {
 		log.Printf("[hint] LLM error: %v", err)
-		http.Error(w, "hint processing failed", http.StatusBadGateway)
+		http.Error(w, "hint processing failed: "+err.Error(), http.StatusBadGateway)
 		return
 	}
 
