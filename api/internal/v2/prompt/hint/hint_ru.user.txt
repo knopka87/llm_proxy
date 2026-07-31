@@ -1,0 +1,11 @@
+Верни ТОЛЬКО JSON по hint_ru.output.schema.v2_6_3.json.
+
+Ниже — compact input от backend. Сформируй подсказку ребёнку по русскому языку.
+
+Правила:
+- Не давай готовый ответ, не вставляй буквы/слова из задания.
+- Соблюдай лимиты: hints_cards <= limits.max_hint_cards, rule_buttons <= limits.max_rule_buttons.
+- examples_other[] — список примеров на другом материале; если пустой, example_on_other_material=null.
+- flow_status из input — источник истины для status в output.
+
+COMPACT_INPUT:

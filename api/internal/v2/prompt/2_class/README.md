@@ -1,1 +1,0 @@
-This directory will contain prompts for grade 2.

@@ -23,7 +23,7 @@ func LoadSystemPrompt(name, provider, version string, subdirs ...string) (string
 	}
 
 	// Fallback to universal prompt
-	system, err := cachedLoadPrompt(name, "system", provider, version)
+	system, err := cachedLoadPromptSubdirs("universal", "system", provider, version, "universal")
 	if err != nil {
 		system, err = cachedLoadPrompt("universal", "system", provider, version)
 	}
@@ -151,9 +151,10 @@ func ensureSchemaMeta(m map[string]any) {
 	}
 }
 
-// Приводим схему к «строгому» виду для OpenAI:
+// Приводим схему к «строгому» виду для OpenAI/OpenRouter strict mode:
 //   - nullable-поля (type: ["string", "null"]) конвертируются в anyOf: [{type:X}, {type:null}]
 //   - required содержит ВСЕ ключи из properties (включая nullable)
+//   - additionalProperties: false на каждом объекте с properties (OpenAI strict requirement)
 func FixJSONSchemaStrict(node any) {
 	switch n := node.(type) {
 	case map[string]any:
@@ -169,6 +170,10 @@ func FixJSONSchemaStrict(node any) {
 				req = append(req, k)
 			}
 			n["required"] = req
+			// OpenAI strict mode requires additionalProperties: false on every object
+			if _, has := n["additionalProperties"]; !has {
+				n["additionalProperties"] = false
+			}
 			for _, v := range props {
 				FixJSONSchemaStrict(v)
 			}

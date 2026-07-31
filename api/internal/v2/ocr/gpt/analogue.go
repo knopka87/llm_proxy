@@ -25,7 +25,7 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 		model = "gpt-5-mini"
 	}
 
-	system, err := util.LoadSystemPrompt(ANALOGUE, e.Name(), e.Version())
+	system, err := util.LoadSystemPrompt(ANALOGUE, e.Name(), e.Version(), "analogue")
 	if err != nil {
 		return types.AnalogueResponse{}, nil, err
 	}
@@ -36,7 +36,7 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 	}
 	util.FixJSONSchemaStrict(schema)
 
-	user, err := util.LoadUserPrompt(ANALOGUE, e.Name(), e.Version())
+	user, err := util.LoadUserPrompt(ANALOGUE, e.Name(), e.Version(), "analogue")
 	if err != nil {
 		return types.AnalogueResponse{}, nil, err
 	}

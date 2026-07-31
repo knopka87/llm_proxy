@@ -1,0 +1,18 @@
+Верни ТОЛЬКО JSON по parse.schema v2.1.1.
+
+Вход:
+- homework_image (фото ОДНОГО задания; подпункты могут быть внутри)
+- task_id (string; backend подставляет; верни в task.task_id)
+- grade (1..4; если пришло строкой — верни integer)
+- subject_candidate (результат DETECT)
+- subject_confidence (0..1)
+- optional locale
+
+Правила продукта:
+- items всегда содержит РОВНО 1 элемент (item_id="i1") для одного фото.
+- Подсказки в боте максимум 3 (L1/L2/L3) и будут на всё задание целиком.
+- PARSE НЕ выбирает шаблон: ped_keys.template_id на этапе PARSE всегда "UNRESOLVED_MATH" (backend выберет реальный template_id позже).
+
+Про hint_policy:
+- default_visible всегда 1.
+- max_hints: 2 по умолчанию; 3 только если задача реально многосоставная/с подпунктами/с разбором случаев или иначе L2 станет слишком длинной.

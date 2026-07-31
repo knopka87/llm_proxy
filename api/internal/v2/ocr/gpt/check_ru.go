@@ -29,7 +29,7 @@ func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (typ
 
 	temp := 1
 
-	system, err := util.LoadSystemPrompt(CHECK_RU, e.Name(), e.Version())
+	system, err := util.LoadSystemPrompt(CHECK_RU, e.Name(), e.Version(), "check")
 	if err != nil {
 		return types.CheckRUResponse{}, nil, err
 	}
@@ -39,13 +39,16 @@ func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (typ
 		system = strings.ReplaceAll(system, "{{GRADE_FEEDBACK_SECTION}}", gradeSection)
 	}
 
+	// Композиция дополнительных блоков промпта (RU: пока без дополнительных блоков)
+	system = composeCheckRUBlocks(system)
+
 	schema, err := util.LoadPromptSchema(CHECK_RU, e.Version())
 	if err != nil {
 		return types.CheckRUResponse{}, nil, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
-	userTask, err := util.LoadUserPrompt(CHECK_RU, e.Name(), e.Version())
+	userTask, err := util.LoadUserPrompt(CHECK_RU, e.Name(), e.Version(), "check")
 	if err != nil {
 		userTask = ""
 	}
@@ -131,10 +134,16 @@ func loadCheckRUFeedbackSection(grade int) (string, error) {
 	if baseRoot == "" {
 		baseRoot = filepath.Join("api", "internal")
 	}
-	p := filepath.Join(baseRoot, "v2", "prompt", subdir, "check_ru.feedback.txt")
+	p := filepath.Join(baseRoot, "v2", "prompt", "check", subdir, "check_ru.feedback.txt")
 	b, err := os.ReadFile(p)
 	if err != nil {
 		return "", fmt.Errorf("load check_ru feedback %s: %w", subdir, err)
 	}
 	return strings.TrimSpace(string(b)), nil
+}
+
+// composeCheckRUBlocks добавляет к базовому промпту условные блоки для проверки РКИ.
+// RU prompt уже самодостаточен — функция-заглушка для будущих расширений.
+func composeCheckRUBlocks(system string) string {
+	return system
 }

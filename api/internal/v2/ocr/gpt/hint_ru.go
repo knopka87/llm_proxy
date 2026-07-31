@@ -27,7 +27,7 @@ func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types
 
 	temp := 0.4
 
-	system, err := util.LoadSystemPrompt(HINT_RU, e.Name(), e.Version())
+	system, err := util.LoadSystemPrompt(HINT_RU, e.Name(), e.Version(), "hint")
 	if err != nil {
 		return types.HintRUResponse{}, nil, err
 	}
@@ -38,7 +38,7 @@ func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types
 	}
 	util.FixJSONSchemaStrict(schema)
 
-	userTask, err := util.LoadUserPrompt(HINT_RU, e.Name(), e.Version())
+	userTask, err := util.LoadUserPrompt(HINT_RU, e.Name(), e.Version(), "hint")
 	if err != nil {
 		userTask = ""
 	}

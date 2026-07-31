@@ -26,7 +26,7 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 		model = "gpt-4.1-mini"
 	}
 
-	system, err := util.LoadSystemPrompt(PARSE, e.Name(), e.Version())
+	system, err := util.LoadSystemPrompt(PARSE, e.Name(), e.Version(), "parse")
 	if err != nil {
 		return types.ParseResponse{}, nil, err
 	}
@@ -37,7 +37,7 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	}
 	util.FixJSONSchemaStrict(schema)
 
-	user, err := util.LoadUserPrompt(PARSE, e.Name(), e.Version())
+	user, err := util.LoadUserPrompt(PARSE, e.Name(), e.Version(), "parse")
 	if err != nil {
 		return types.ParseResponse{}, nil, err
 	}

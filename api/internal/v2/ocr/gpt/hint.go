@@ -31,7 +31,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	temp := 0.4
 
 	// Try to load system prompt from /prompt/hint<L1|L2|L3>.txt; fallback to the default text if not found.
-	system, err := util.LoadSystemPrompt(HINT, e.Name(), e.Version())
+	system, err := util.LoadSystemPrompt(HINT, e.Name(), e.Version(), "hint")
 	if err != nil {
 		return types.HintResponse{}, nil, err
 	}
@@ -55,7 +55,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 		}
 	}
 
-	userTask, err := util.LoadUserPrompt(HINT, e.Name(), e.Version())
+	userTask, err := util.LoadUserPrompt(HINT, e.Name(), e.Version(), "hint")
 	if err != nil {
 		return types.HintResponse{}, nil, err
 	}

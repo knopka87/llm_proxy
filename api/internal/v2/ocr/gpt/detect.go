@@ -44,7 +44,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 	dataURL := "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(imgBytes)
 	in.Image = ""
 
-	system, err := util.LoadSystemPrompt(DETECT, e.Name(), e.Version())
+	system, err := util.LoadSystemPrompt(DETECT, e.Name(), e.Version(), "detect")
 	if err != nil {
 		return types.DetectResponse{}, nil, err
 	}
@@ -55,7 +55,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 	}
 	util.FixJSONSchemaStrict(schema)
 
-	user, err := util.LoadUserPrompt(DETECT, e.Name(), e.Version())
+	user, err := util.LoadUserPrompt(DETECT, e.Name(), e.Version(), "detect")
 	if err != nil {
 		return types.DetectResponse{}, nil, err
 	}

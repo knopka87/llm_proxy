@@ -67,7 +67,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 		return types.DetectResponse{}, nil, fmt.Errorf("gemini detect: %w", err)
 	}
 
-	userPrompt, _ := util.LoadUserPrompt("detect", promptSource, apiVersion)
+	userPrompt, _ := util.LoadUserPrompt("detect", promptSource, apiVersion, "detect")
 	if strings.TrimSpace(userPrompt) == "" {
 		userPrompt = "Верни ТОЛЬКО JSON по detect.schema v2.2.2."
 	}
@@ -121,7 +121,7 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	}
 	ctxJSON, _ := json.Marshal(ctxData)
 
-	userPrompt, _ := util.LoadUserPrompt("parse", promptSource, apiVersion)
+	userPrompt, _ := util.LoadUserPrompt("parse", promptSource, apiVersion, "parse")
 	if strings.TrimSpace(userPrompt) == "" {
 		userPrompt = "Верни ТОЛЬКО JSON по parse.schema v2.1.1."
 	}
@@ -158,7 +158,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	inJSON, _ := json.Marshal(in)
 
 	// Подставляем PARSE_OUTPUT_JSON в user-промпт (плейсхолдер {{PARSE_OUTPUT_JSON}})
-	userTemplate, _ := util.LoadUserPrompt("hint", promptSource, apiVersion)
+	userTemplate, _ := util.LoadUserPrompt("hint", promptSource, apiVersion, "hint")
 	var userText string
 	if strings.Contains(userTemplate, "{{PARSE_OUTPUT_JSON}}") {
 		userText = strings.ReplaceAll(userTemplate, "{{PARSE_OUTPUT_JSON}}", string(inJSON))
@@ -215,7 +215,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	reqJSON, _ := json.Marshal(reqForJSON)
 
 	// Подставляем {{request_json}} в user-промпт
-	userTemplate, _ := util.LoadUserPrompt("check", promptSource, apiVersion)
+	userTemplate, _ := util.LoadUserPrompt("check", promptSource, apiVersion, "check")
 	var userText string
 	if strings.Contains(userTemplate, "{{request_json}}") {
 		userText = strings.ReplaceAll(userTemplate, "{{request_json}}", string(reqJSON))
@@ -257,7 +257,7 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 
 	inJSON, _ := json.Marshal(in)
 
-	userTemplate, _ := util.LoadUserPrompt("analogue", promptSource, apiVersion)
+	userTemplate, _ := util.LoadUserPrompt("analogue", promptSource, apiVersion, "analogue")
 	var userText string
 	if strings.TrimSpace(userTemplate) != "" {
 		userText = userTemplate + "\n\nINPUT_JSON:\n" + string(inJSON)
@@ -388,7 +388,7 @@ func (e *Engine) call(
 // loadSystemWithSchema загружает system-промпт и схему, возвращает их как строки.
 // Промпты берутся из директории gpt (содержимое одинаковое для обоих провайдеров).
 func loadSystemWithSchema(name string) (system, schemaJSON string, err error) {
-	sys, err := util.LoadSystemPrompt(name, promptSource, apiVersion)
+	sys, err := util.LoadSystemPrompt(name, promptSource, apiVersion, name)
 	if err != nil {
 		return "", "", fmt.Errorf("load system prompt %q: %w", name, err)
 	}
@@ -457,7 +457,7 @@ func (e *Engine) ParseRU(ctx context.Context, in types.ParseRURequest) (types.Pa
 
 	in.Image = ""
 	inJSON, _ := json.Marshal(in)
-	userPrompt, _ := util.LoadUserPrompt("parse_ru", promptSource, apiVersion)
+	userPrompt, _ := util.LoadUserPrompt("parse_ru", promptSource, apiVersion, "parse")
 	if strings.TrimSpace(userPrompt) == "" {
 		userPrompt = "Верни ТОЛЬКО JSON по parse_ru.output.schema."
 	}
@@ -486,7 +486,7 @@ func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types
 	}
 
 	inJSON, _ := json.Marshal(in)
-	userPrompt, _ := util.LoadUserPrompt("hint_ru", promptSource, apiVersion)
+	userPrompt, _ := util.LoadUserPrompt("hint_ru", promptSource, apiVersion, "hint")
 	var userText string
 	if strings.Contains(userPrompt, "COMPACT_INPUT:") {
 		userText = strings.ReplaceAll(userPrompt, "COMPACT_INPUT:", "COMPACT_INPUT:\n"+string(inJSON))
@@ -517,7 +517,7 @@ func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (typ
 	}
 
 	inJSON, _ := json.Marshal(in)
-	userPrompt, _ := util.LoadUserPrompt("check_ru", promptSource, apiVersion)
+	userPrompt, _ := util.LoadUserPrompt("check_ru", promptSource, apiVersion, "check")
 	var userText string
 	if strings.Contains(userPrompt, "COMPACT_INPUT:") {
 		userText = strings.ReplaceAll(userPrompt, "COMPACT_INPUT:", "COMPACT_INPUT:\n"+string(inJSON))
