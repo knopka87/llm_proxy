@@ -26,7 +26,9 @@ RUN mkdir -p /out/prompts/v1/prompt && cp -r api/internal/v1/prompt/. /out/promp
 RUN mkdir -p /out/prompts/v2/prompt && cp -r api/internal/v2/prompt/. /out/prompts/v2/prompt/
 # Ensure readable permissions
 RUN chmod -R a+rX /out/prompts && \
-    test -f /out/prompts/v2/prompt/hint.system.txt
+    test -f /out/prompts/v2/prompt/hint/hint.system.txt && \
+    test -f /out/prompts/v2/prompt/check/check.system.txt && \
+    test -f /out/prompts/v2/prompt/universal/universal.system.txt
 
 ########################
 # Runtime stage

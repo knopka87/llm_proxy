@@ -33,7 +33,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 		model = "gpt-5-mini"
 	}
 
-	system, err := util.LoadSystemPrompt(CHECK, e.Name(), e.Version())
+	system, err := util.LoadSystemPrompt(CHECK, e.Name(), e.Version(), "check")
 	if err != nil {
 		return types.CheckResponse{}, nil, err
 	}
@@ -43,13 +43,16 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 		system = strings.ReplaceAll(system, "{{GRADE_FEEDBACK_SECTION}}", gradeSection)
 	}
 
+	// Композиция дополнительных блоков промпта
+	system = composeCheckBlocks(system, in.TaskStruct)
+
 	schema, err := util.LoadPromptSchema(CHECK, e.Version())
 	if err != nil {
 		return types.CheckResponse{}, nil, err
 	}
 	util.FixJSONSchemaStrict(schema)
 
-	user, err := util.LoadUserPrompt(CHECK, e.Name(), e.Version())
+	user, err := util.LoadUserPrompt(CHECK, e.Name(), e.Version(), "check")
 	if err != nil {
 		return types.CheckResponse{}, nil, err
 	}
@@ -197,10 +200,81 @@ func loadCheckFeedbackSection(grade int) (string, error) {
 	if baseRoot == "" {
 		baseRoot = filepath.Join("api", "internal")
 	}
-	p := filepath.Join(baseRoot, "v2", "prompt", subdir, "check.feedback.txt")
+	p := filepath.Join(baseRoot, "v2", "prompt", "check", subdir, "check.feedback.txt")
 	b, err := os.ReadFile(p)
 	if err != nil {
 		return "", fmt.Errorf("load check feedback %s: %w", subdir, err)
+	}
+	return strings.TrimSpace(string(b)), nil
+}
+
+// composeCheckBlocks добавляет к базовому промпту условные блоки для проверки ответа.
+// Загружает: advanced (по task_type), format (по формату), conditional (visual, multiple_subtasks).
+func composeCheckBlocks(system string, taskStruct types.TaskStructCheck) string {
+	var blocks []string
+
+	if len(taskStruct.Items) > 0 {
+		item := taskStruct.Items[0]
+
+		// Advanced блок по типу задачи
+		if item.PedKeys.TaskType != "" {
+			if advanced, aerr := loadCheckBlock("check.advanced_" + item.PedKeys.TaskType); aerr == nil {
+				blocks = append(blocks, advanced)
+			}
+		}
+
+		// Format блок по формату
+		if item.PedKeys.Format != "" {
+			if format, ferr := loadCheckBlock("check.format_" + item.PedKeys.Format); ferr == nil {
+				blocks = append(blocks, format)
+			}
+		}
+	}
+
+	// Conditional блоки
+	if taskStruct.VisualReasoning != nil && strings.TrimSpace(*taskStruct.VisualReasoning) != "" {
+		if visual, verr := loadCheckBlock("check.visual"); verr == nil {
+			blocks = append(blocks, visual)
+		}
+	}
+
+	if len(taskStruct.Items) > 1 {
+		if multi, merr := loadCheckBlock("check.multiple_subtasks"); merr == nil {
+			blocks = append(blocks, multi)
+		}
+	}
+
+	// Verify блоки по типу задачи
+	if len(taskStruct.Items) > 0 {
+		taskType := taskStruct.Items[0].PedKeys.TaskType
+		switch taskType {
+		case "arithmetic", "comparison":
+			if v, err := loadCheckBlock("check.verify_arithmetic"); err == nil {
+				blocks = append(blocks, v)
+			}
+		case "patterns":
+			if v, err := loadCheckBlock("check.verify_transforms"); err == nil {
+				blocks = append(blocks, v)
+			}
+		}
+	}
+
+	if len(blocks) > 0 {
+		system = system + "\n\n" + strings.Join(blocks, "\n\n")
+	}
+	return system
+}
+
+// loadCheckBlock загружает промпт-блок по имени из prompt-директории.
+func loadCheckBlock(name string) (string, error) {
+	baseRoot := os.Getenv("PROMPT_DIR")
+	if baseRoot == "" {
+		baseRoot = filepath.Join("api", "internal")
+	}
+	p := filepath.Join(baseRoot, "v2", "prompt", "check", name+".system.txt")
+	b, err := os.ReadFile(p)
+	if err != nil {
+		return "", fmt.Errorf("load check block %s: %w", name, err)
 	}
 	return strings.TrimSpace(string(b)), nil
 }

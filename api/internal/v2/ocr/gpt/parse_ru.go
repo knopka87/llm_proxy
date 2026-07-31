@@ -26,7 +26,7 @@ func (e *Engine) ParseRU(ctx context.Context, in types.ParseRURequest) (types.Pa
 		model = "gpt-4.1-mini"
 	}
 
-	system, err := util.LoadSystemPrompt(PARSE_RU, e.Name(), e.Version())
+	system, err := util.LoadSystemPrompt(PARSE_RU, e.Name(), e.Version(), "parse")
 	if err != nil {
 		return types.ParseRUResponse{}, nil, err
 	}
@@ -37,7 +37,7 @@ func (e *Engine) ParseRU(ctx context.Context, in types.ParseRURequest) (types.Pa
 	}
 	util.FixJSONSchemaStrict(schema)
 
-	user, err := util.LoadUserPrompt(PARSE_RU, e.Name(), e.Version())
+	user, err := util.LoadUserPrompt(PARSE_RU, e.Name(), e.Version(), "parse")
 	if err != nil {
 		// user prompt is optional for PARSE_RU
 		user = ""

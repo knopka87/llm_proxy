@@ -88,7 +88,7 @@ func (e *Engine) Detect(ctx context.Context, in types.DetectRequest) (types.Dete
 	if err != nil {
 		return types.DetectResponse{}, nil, fmt.Errorf("openrouter detect: %w", err)
 	}
-	userPrompt, _ := util.LoadUserPrompt("detect", promptSource, apiVersion)
+	userPrompt, _ := util.LoadUserPrompt("detect", promptSource, apiVersion, "detect")
 	if strings.TrimSpace(userPrompt) == "" {
 		userPrompt = "Верни ТОЛЬКО JSON по detect.schema v2.2.2."
 	}
@@ -132,7 +132,7 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	}
 	ctxJSON, _ := json.Marshal(ctxData)
 
-	userPrompt, _ := util.LoadUserPrompt("parse", promptSource, apiVersion)
+	userPrompt, _ := util.LoadUserPrompt("parse", promptSource, apiVersion, "parse")
 	if strings.TrimSpace(userPrompt) == "" {
 		userPrompt = "Верни ТОЛЬКО JSON по parse.schema v2.1.1."
 	}
@@ -168,7 +168,7 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 		taskType := in.Items[0].PedKeys.TaskType
 		if taskType != "" {
 			advancedName := "hint.advanced_" + taskType
-			if advanced, aerr := loadPrompt(advancedName, in.Task.Grade); aerr == nil && strings.TrimSpace(advanced) != "" {
+			if advanced, aerr := util.LoadSystemPrompt(advancedName, promptSource, apiVersion, "hint", advancedName); aerr == nil && strings.TrimSpace(advanced) != "" {
 				system = system + "\n\n" + advanced
 				advancedTopics = append(advancedTopics, taskType)
 			}
@@ -237,6 +237,9 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 		system = strings.ReplaceAll(system, "{{GRADE_FEEDBACK_SECTION}}", gradeSection)
 	}
 
+	// Композиция дополнительных блоков промпта
+	system = composeCheckBlocks(system, in.TaskStruct)
+
 	imgBytes, mime, err := decodeImage(in.Image)
 	if err != nil {
 		return types.CheckResponse{}, nil, fmt.Errorf("openrouter check: %w", err)
@@ -257,7 +260,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	}
 	reqJSON, _ := json.Marshal(reqForJSON)
 
-	userTemplate, _ := util.LoadUserPrompt("check", promptSource, apiVersion)
+	userTemplate, _ := util.LoadUserPrompt("check", promptSource, apiVersion, "check")
 	var userText string
 	if strings.Contains(userTemplate, "{{request_json}}") {
 		userText = strings.ReplaceAll(userTemplate, "{{request_json}}", string(reqJSON))
@@ -289,7 +292,7 @@ func (e *Engine) AnalogueSolution(ctx context.Context, in types.AnalogueRequest)
 	}
 
 	inJSON, _ := json.Marshal(in)
-	userTemplate, _ := util.LoadUserPrompt("analogue", promptSource, apiVersion)
+	userTemplate, _ := util.LoadUserPrompt("analogue", promptSource, apiVersion, "analogue")
 	var userText string
 	if strings.TrimSpace(userTemplate) != "" {
 		userText = userTemplate + "\n\nINPUT_JSON:\n" + string(inJSON)
@@ -523,41 +526,26 @@ func gradeSubdir(grade int) string {
 	}
 }
 
-// hintGradeSubdir возвращает поддиректорию для подсказок по классу.
-func hintGradeSubdir(grade int) string {
-	return gradeSubdir(grade)
-}
-
-// loadHintPrompt загружает системный промпт для подсказок с учётом класса.
-func loadHintPrompt(name string, grade int) (string, error) {
-	if subdir := hintGradeSubdir(grade); subdir != "" {
-		if p, err := util.LoadSystemPrompt(name, promptSource, apiVersion, subdir); err == nil {
-			return p, nil
-		}
-	}
-	return util.LoadSystemPrompt(name, promptSource, apiVersion)
-}
-
 // loadHintUserPrompt загружает пользовательский шаблон для подсказок с учётом класса.
 func loadHintUserPrompt(grade int) (string, error) {
 	if subdir := gradeSubdir(grade); subdir != "" {
-		if p, err := util.LoadUserPrompt("hint", promptSource, apiVersion, subdir); err == nil {
+		if p, err := util.LoadUserPrompt("hint", promptSource, apiVersion, subdir, "hint"); err == nil {
 			return p, nil
 		}
 	}
-	return util.LoadUserPrompt("hint", promptSource, apiVersion)
+	return util.LoadUserPrompt("hint", promptSource, apiVersion, "hint")
 }
 
 func loadPrompt(name string, grade int) (string, error) {
-	// Для подсказок используем поддиректорию класса
-	if name == "hint" || name == "hint_ru" {
+	// Для подсказок и проверки используем поддиректорию класса
+	if name == "hint" || name == "hint_ru" || name == "check" || name == "check_ru" {
 		if subdir := gradeSubdir(grade); subdir != "" {
-			if p, err := util.LoadSystemPrompt(name, promptSource, apiVersion, subdir); err == nil {
+			if p, err := util.LoadSystemPrompt(name, promptSource, apiVersion, subdir, name); err == nil {
 				return p, nil
 			}
 		}
 	}
-	return util.LoadSystemPrompt(name, promptSource, apiVersion)
+	return util.LoadSystemPrompt(name, promptSource, apiVersion, name)
 }
 
 func loadSystemWithSchema(name string, grade int) (system, schemaJSON string, err error) {
@@ -697,7 +685,7 @@ func (e *Engine) ParseRU(ctx context.Context, in types.ParseRURequest) (types.Pa
 	}
 
 	in.Image = ""
-	userPrompt, _ := util.LoadUserPrompt("parse_ru", promptSource, apiVersion)
+	userPrompt, _ := util.LoadUserPrompt("parse_ru", promptSource, apiVersion, "parse")
 	if strings.TrimSpace(userPrompt) == "" {
 		userPrompt = "Верни ТОЛЬКО JSON по parse_ru.output.schema."
 	}
@@ -724,7 +712,7 @@ func (e *Engine) HintRU(ctx context.Context, in types.HintRUCompactInput) (types
 	}
 
 	inJSON, _ := json.Marshal(in)
-	userPrompt, _ := util.LoadUserPrompt("hint_ru", promptSource, apiVersion)
+	userPrompt, _ := util.LoadUserPrompt("hint_ru", promptSource, apiVersion, "hint")
 	var userText string
 	if strings.Contains(userPrompt, "COMPACT_INPUT:") {
 		userText = strings.ReplaceAll(userPrompt, "COMPACT_INPUT:", "COMPACT_INPUT:\n"+string(inJSON))
@@ -755,8 +743,11 @@ func (e *Engine) CheckRU(ctx context.Context, in types.CheckRUCompactInput) (typ
 		system = strings.ReplaceAll(system, "{{GRADE_FEEDBACK_SECTION}}", gradeSection)
 	}
 
+	// Композиция дополнительных блоков промпта (RU: пока без дополнительных блоков)
+	system = composeCheckRUBlocks(system)
+
 	inJSON, _ := json.Marshal(in)
-	userPrompt, _ := util.LoadUserPrompt("check_ru", promptSource, apiVersion)
+	userPrompt, _ := util.LoadUserPrompt("check_ru", promptSource, apiVersion, "check")
 	var userText string
 	if strings.Contains(userPrompt, "COMPACT_INPUT:") {
 		userText = strings.ReplaceAll(userPrompt, "COMPACT_INPUT:", "COMPACT_INPUT:\n"+string(inJSON))
@@ -792,7 +783,7 @@ func loadCheckFeedbackSection(grade int) (string, error) {
 	if baseRoot == "" {
 		baseRoot = filepath.Join("api", "internal")
 	}
-	p := filepath.Join(baseRoot, apiVersion, "prompt", subdir, "check.feedback.txt")
+	p := filepath.Join(baseRoot, apiVersion, "prompt", "check", subdir, "check.feedback.txt")
 	b, err := os.ReadFile(p)
 	if err != nil {
 		return "", fmt.Errorf("load check feedback %s: %w", subdir, err)
@@ -810,10 +801,79 @@ func loadCheckRUFeedbackSection(grade int) (string, error) {
 	if baseRoot == "" {
 		baseRoot = filepath.Join("api", "internal")
 	}
-	p := filepath.Join(baseRoot, apiVersion, "prompt", subdir, "check_ru.feedback.txt")
+	p := filepath.Join(baseRoot, apiVersion, "prompt", "check", subdir, "check_ru.feedback.txt")
 	b, err := os.ReadFile(p)
 	if err != nil {
 		return "", fmt.Errorf("load check_ru feedback %s: %w", subdir, err)
 	}
 	return strings.TrimSpace(string(b)), nil
+}
+
+// composeCheckBlocks добавляет к базовому промпту условные блоки для проверки ответа.
+// Загружает: advanced (по task_type), format (по формату), conditional (visual, high_risk, multiple_subtasks).
+func composeCheckBlocks(system string, taskStruct types.TaskStructCheck) string {
+	var blocks []string
+
+	loadCheckBlock := func(name string) (string, error) {
+		return util.LoadSystemPrompt(name, promptSource, apiVersion, "check", name)
+	}
+
+	if len(taskStruct.Items) > 0 {
+		item := taskStruct.Items[0]
+
+		// Advanced блок по типу задачи
+		if item.PedKeys.TaskType != "" {
+			advancedName := "check.advanced_" + item.PedKeys.TaskType
+			if advanced, aerr := loadCheckBlock(advancedName); aerr == nil && strings.TrimSpace(advanced) != "" {
+				blocks = append(blocks, advanced)
+			}
+		}
+
+		// Format блок по формату
+		if item.PedKeys.Format != "" {
+			formatName := "check.format_" + item.PedKeys.Format
+			if format, ferr := loadCheckBlock(formatName); ferr == nil && strings.TrimSpace(format) != "" {
+				blocks = append(blocks, format)
+			}
+		}
+	}
+
+	// Conditional блоки
+	if taskStruct.VisualReasoning != nil && strings.TrimSpace(*taskStruct.VisualReasoning) != "" {
+		if visual, verr := loadCheckBlock("check.visual"); verr == nil && strings.TrimSpace(visual) != "" {
+			blocks = append(blocks, visual)
+		}
+	}
+
+	if len(taskStruct.Items) > 1 {
+		if multi, merr := loadCheckBlock("check.multiple_subtasks"); merr == nil && strings.TrimSpace(multi) != "" {
+			blocks = append(blocks, multi)
+		}
+	}
+
+	// Verify блоки по типу задачи (verify_transforms, verify_age, verify_tables, verify_arithmetic)
+	if len(taskStruct.Items) > 0 {
+		taskType := taskStruct.Items[0].PedKeys.TaskType
+		switch taskType {
+		case "arithmetic", "comparison":
+			if v, err := loadCheckBlock("check.verify_arithmetic"); err == nil && strings.TrimSpace(v) != "" {
+				blocks = append(blocks, v)
+			}
+		case "patterns":
+			if v, err := loadCheckBlock("check.verify_transforms"); err == nil && strings.TrimSpace(v) != "" {
+				blocks = append(blocks, v)
+			}
+		}
+	}
+
+	if len(blocks) > 0 {
+		system = system + "\n\n" + strings.Join(blocks, "\n\n")
+	}
+	return system
+}
+
+// composeCheckRUBlocks добавляет к базовому промпту условные блоки для проверки РКИ.
+// RU prompt уже самодостаточен — функция-заглушка для будущих расширений.
+func composeCheckRUBlocks(system string) string {
+	return system
 }
