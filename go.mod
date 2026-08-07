@@ -1,6 +1,6 @@
 module llm-proxy
 
-go 1.26.2
+go 1.26
 
 require (
 	github.com/google/generative-ai-go v0.20.1

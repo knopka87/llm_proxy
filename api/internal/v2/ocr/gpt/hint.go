@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -31,9 +32,23 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	temp := 0.4
 
 	// Try to load system prompt from /prompt/hint<L1|L2|L3>.txt; fallback to the default text if not found.
-	system, err := util.LoadSystemPrompt(HINT, e.Name(), e.Version(), "hint")
+	promptSubdirs := []string{"hint"}
+	if subdir := gradeSubdir(in.Task.Grade); subdir != "" {
+		promptSubdirs = []string{"hint", subdir}
+	}
+	system, err := util.LoadSystemPrompt(HINT, e.Name(), e.Version(), promptSubdirs...)
 	if err != nil {
 		return types.HintResponse{}, nil, err
+	}
+	if len(in.Items) > 0 {
+		in.Items[0].PedKeys.TaskType = types.NormalizeTaskType(in.Items[0].PedKeys.TaskType)
+		if block := types.HintAdvancedPromptBlock(in.Items[0].PedKeys.TaskType); block != "" {
+			if advanced, loadErr := loadHintAdvancedBlock(in.Task.Grade, block); loadErr == nil {
+				system += "\n\n" + advanced
+			} else {
+				log.Printf("[hint] advanced block %q not loaded: %v", block, loadErr)
+			}
+		}
 	}
 
 	schema, err := util.LoadPromptSchema(HINT, e.Version())
@@ -128,6 +143,9 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	var hr types.HintResponse
 	if err := json.Unmarshal([]byte(out), &hr); err != nil {
 		return types.HintResponse{}, stats, fmt.Errorf("openai hint: bad JSON: %w", err)
+	}
+	if err := hr.ValidateAgainstRequest(in); err != nil {
+		return types.HintResponse{}, stats, fmt.Errorf("openai hint: semantic validation: %w", err)
 	}
 	return hr, stats, nil
 }

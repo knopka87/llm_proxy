@@ -222,12 +222,45 @@
             "null"
           ],
           "description": "P2.2: Причина решения (matched_parse, independent_verification, parse_inconsistency и т.д.)."
+        },
+        "verification_method": {
+          "type": ["string", "null"],
+          "description": "Независимый способ подтверждения эталона: reverse_operation, substitution, full_recalculation, visual_count."
+        },
+        "parse_consistent": {
+          "type": ["boolean", "null"],
+          "description": "Совпал ли независимо вычисленный эталон с кандидатом PARSE."
+        },
+        "verification_complete": {
+          "type": ["boolean", "null"],
+          "description": "true только если эталон полностью подтверждён до сравнения с учеником."
+        },
+        "visual_evidence": {
+          "type": "array",
+          "maxItems": 30,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "object_id": {"type": "string"},
+              "observed": {"type": "string"},
+              "expected": {"type": "string"},
+              "matches": {"type": "boolean"}
+            },
+            "required": ["object_id", "observed", "expected", "matches"]
+          }
         }
       },
       "default": null,
       "required": [
         "raw_answer_text",
-        "normalized_answer"
+        "normalized_answer",
+        "expected_answer",
+        "decision_reason",
+        "verification_method",
+        "parse_consistent",
+        "verification_complete",
+        "visual_evidence"
       ]
     }
   }

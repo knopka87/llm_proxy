@@ -162,6 +162,11 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	cr.NormalizeDecision()
 	// Заполняем IsCorrect из Decision для обратной совместимости с клиентами
 	cr.SetIsCorrectFromDecision()
+	if validationErr := cr.ValidateSemantics(in); validationErr != nil {
+		log.Printf("[check] semantic validation failed: %v", validationErr)
+		cr = types.ConservativeCheckResponse()
+		cr.SetIsCorrectFromDecision()
+	}
 
 	log.Printf("[check] success: status=%s, can_evaluate=%v, decision=%s, is_correct=%v",
 		cr.Status, cr.CanEvaluate, cr.Decision, cr.IsCorrect)
@@ -208,6 +213,26 @@ func loadCheckFeedbackSection(grade int) (string, error) {
 	return strings.TrimSpace(string(b)), nil
 }
 
+func loadHintAdvancedBlock(grade int, block string) (string, error) {
+	baseRoot := os.Getenv("PROMPT_DIR")
+	if baseRoot == "" {
+		baseRoot = filepath.Join("api", "internal")
+	}
+	filename := "hint.advanced_" + block + ".system.txt"
+	if subdir := gradeSubdir(grade); subdir != "" {
+		path := filepath.Join(baseRoot, "v2", "prompt", "hint", subdir, filename)
+		if data, err := os.ReadFile(path); err == nil {
+			return strings.TrimSpace(string(data)), nil
+		}
+	}
+	path := filepath.Join(baseRoot, "v2", "prompt", "hint", filename)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("load hint block %s: %w", block, err)
+	}
+	return strings.TrimSpace(string(data)), nil
+}
+
 // composeCheckBlocks добавляет к базовому промпту условные блоки для проверки ответа.
 // Загружает: advanced (по task_type), format (по формату), conditional (visual, multiple_subtasks).
 func composeCheckBlocks(system string, taskStruct types.TaskStructCheck) string {
@@ -217,9 +242,11 @@ func composeCheckBlocks(system string, taskStruct types.TaskStructCheck) string 
 		item := taskStruct.Items[0]
 
 		// Advanced блок по типу задачи
-		if item.PedKeys.TaskType != "" {
-			if advanced, aerr := loadCheckBlock("check.advanced_" + item.PedKeys.TaskType); aerr == nil {
+		if block := types.CheckAdvancedPromptBlock(item.PedKeys.TaskType); block != "" {
+			if advanced, aerr := loadCheckBlock("check.advanced_" + block); aerr == nil {
 				blocks = append(blocks, advanced)
+			} else {
+				log.Printf("[check] advanced block %q not loaded: %v", block, aerr)
 			}
 		}
 
@@ -246,15 +273,11 @@ func composeCheckBlocks(system string, taskStruct types.TaskStructCheck) string 
 
 	// Verify блоки по типу задачи
 	if len(taskStruct.Items) > 0 {
-		taskType := taskStruct.Items[0].PedKeys.TaskType
-		switch taskType {
-		case "arithmetic", "comparison":
-			if v, err := loadCheckBlock("check.verify_arithmetic"); err == nil {
+		if verification := types.VerificationPromptBlock(taskStruct.Items[0].PedKeys.TaskType); verification != "" {
+			if v, err := loadCheckBlock("check.verify_" + verification); err == nil {
 				blocks = append(blocks, v)
-			}
-		case "patterns":
-			if v, err := loadCheckBlock("check.verify_transforms"); err == nil {
-				blocks = append(blocks, v)
+			} else {
+				log.Printf("[check] verification block %q not loaded: %v", verification, err)
 			}
 		}
 	}

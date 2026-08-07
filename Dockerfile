@@ -24,6 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 RUN mkdir -p /out/prompts/v1/ocr/gpt/prompt && cp -r api/internal/v1/ocr/gpt/prompt/. /out/prompts/v1/ocr/gpt/prompt/
 RUN mkdir -p /out/prompts/v1/prompt && cp -r api/internal/v1/prompt/. /out/prompts/v1/prompt/
 RUN mkdir -p /out/prompts/v2/prompt && cp -r api/internal/v2/prompt/. /out/prompts/v2/prompt/
+RUN mkdir -p /out/templates && cp -r api/internal/v2/templates/. /out/templates/
 # Ensure readable permissions
 RUN chmod -R a+rX /out/prompts && \
     test -f /out/prompts/v2/prompt/hint/hint.system.txt && \
@@ -37,7 +38,9 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /app
 COPY --from=build /out/server /app/server
 COPY --from=build --chown=nonroot:nonroot /out/prompts/ /app/prompts/
+COPY --from=build --chown=nonroot:nonroot /out/templates/ /app/templates/
 ENV PROMPT_DIR=/app/prompts
+ENV TEMPLATES_DIR=/app/templates
 ENV PORT=8000
 EXPOSE 8000
 USER nonroot:nonroot

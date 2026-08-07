@@ -176,6 +176,9 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	if err != nil {
 		return types.HintResponse{}, stats, err
 	}
+	if err := hr.ValidateAgainstRequest(in); err != nil {
+		return types.HintResponse{}, stats, fmt.Errorf("gemini hint semantic validation: %w", err)
+	}
 	return hr, stats, nil
 }
 
@@ -238,6 +241,9 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	}
 	cr.NormalizeDecision()
 	cr.SetIsCorrectFromDecision()
+	if err := cr.ValidateSemantics(in); err != nil {
+		return types.CheckResponse{}, stats, fmt.Errorf("gemini check semantic validation: %w", err)
+	}
 	return cr, stats, nil
 }
 

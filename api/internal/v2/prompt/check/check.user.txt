@@ -25,10 +25,12 @@
 
 4) Если проверка возможна:
    • нормализовать ответ (запятая/точка, дроби, знаки, единицы);
-   • если в task_struct есть готовый финальный ответ PARSE (task_struct.items[0].solution_internal.final_answer) и он не помечен unsafe_to_finalize_answer — используйте его как кандидат-эталон;
-   • НО: для задач повышенного риска (логика/превращения/возраст/буквы-время/разрезания) делайте независимую проверку даже при совпадении с PARSE;
-   • если ответ ученика НЕ совпал с кандидатом-эталоном, сначала сделайте независимую проверку (решите задачу коротко и подтвердите проверкой условий).
-     Если не удалось честно подтвердить — верните can_evaluate=false, decision="cannot_evaluate", failure_reason="ground_truth_unverified".
+   • сначала независимо решите задачу, не учитывая ответ ученика и final_answer PARSE;
+   • подтвердите independent_answer вторым способом для ЛЮБОГО типа задачи;
+   • сравните independent_answer с PARSE: при расхождении верните invalid_expected/parse_inconsistency и не оценивайте ученика;
+   • только при полном совпадении и verification_complete=true сравнивайте эталон с ответом ученика;
+   • для визуальной задачи перечислите каждый проверенный объект в debug.visual_evidence;
+   • если не удалось честно подтвердить — верните can_evaluate=false, decision="cannot_evaluate", failure_reason="ground_truth_unverified".
    • вернуть decision="correct" или decision="incorrect", can_evaluate=true.
 
 5) feedback:

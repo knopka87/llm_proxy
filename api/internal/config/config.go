@@ -1,12 +1,14 @@
 package config
 
 import (
-	"log"
 	"os"
 )
 
 type Config struct {
-	Port string
+	Port               string
+	APIKey             string
+	AllowedClientCIDRs string
+	TrustedProxyCIDRs  string
 
 	GeminiAPIKey      string
 	GeminiModel       string // используется v1
@@ -18,20 +20,12 @@ type Config struct {
 	// OpenRouter — единый API для 300+ моделей.
 	// Модели задаются отдельно для каждого шага; ни одна не захардкожена.
 	// Если ключ не задан — движок "openrouter" недоступен.
-	OpenRouterAPIKey      string // OPENROUTER_API_KEY
-	OpenRouterDetectModel string // OPENROUTER_DETECT_MODEL
-	OpenRouterParseModel  string // OPENROUTER_PARSE_MODEL
-	OpenRouterHintModel   string // OPENROUTER_HINT_MODEL
-	OpenRouterCheckModel  string // OPENROUTER_CHECK_MODEL
+	OpenRouterAPIKey        string // OPENROUTER_API_KEY
+	OpenRouterDetectModel   string // OPENROUTER_DETECT_MODEL
+	OpenRouterParseModel    string // OPENROUTER_PARSE_MODEL
+	OpenRouterHintModel     string // OPENROUTER_HINT_MODEL
+	OpenRouterCheckModel    string // OPENROUTER_CHECK_MODEL
 	OpenRouterAnalogueModel string // OPENROUTER_ANALOGUE_MODEL
-}
-
-func mustEnv(k string) string {
-	v := os.Getenv(k)
-	if v == "" {
-		log.Fatalf("missing required env %s", k)
-	}
-	return v
 }
 
 func getEnv(k, def string) string {
@@ -43,13 +37,16 @@ func getEnv(k, def string) string {
 
 func Load() *Config {
 	return &Config{
-		Port: getEnv("PORT", "8000"),
+		Port:               getEnv("PORT", "8000"),
+		APIKey:             getEnv("LLM_PROXY_API_KEY", ""),
+		AllowedClientCIDRs: getEnv("LLM_PROXY_ALLOWED_CLIENT_CIDRS", ""),
+		TrustedProxyCIDRs:  getEnv("LLM_PROXY_TRUSTED_PROXY_CIDRS", ""),
 
-		GeminiAPIKey:      mustEnv("GEMINI_API_KEY"),
+		GeminiAPIKey:      getEnv("GEMINI_API_KEY", ""),
 		GeminiModel:       getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
 		GeminiDetectModel: getEnv("GEMINI_DETECT_MODEL", "gemini-2.0-flash-lite"),
 		GeminiParseModel:  getEnv("GEMINI_PARSE_MODEL", "gemini-2.5-flash"),
-		OpenAIAPIKey:      mustEnv("OPENAI_API_KEY"),
+		OpenAIAPIKey:      getEnv("OPENAI_API_KEY", ""),
 		OpenAIModel:       getEnv("OPENAI_MODEL", "gpt-4o-mini"),
 
 		// OpenRouter необязателен: если ключ не задан, движок просто недоступен.

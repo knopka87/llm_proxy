@@ -18,6 +18,14 @@ type Router struct {
 	entries []entry
 }
 
+// Len возвращает число валидных загруженных шаблонов.
+func (r *Router) Len() int {
+	if r == nil {
+		return 0
+	}
+	return len(r.entries)
+}
+
 type entry struct {
 	profile json.RawMessage // extracted teaching profile sent to LLM
 	code    string

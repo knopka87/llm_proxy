@@ -44,7 +44,7 @@ Makefile нет — используй `go`/`docker` напрямую. Go-вер
 ```bash
 go build -o server ./api/cmd/llm-proxy    # сборка
 go test ./...                             # тесты (покрытие минимальное)
-GEMINI_API_KEY=... OPENAI_API_KEY=... PORT=8000 ./server   # запуск, сервер на :8000
+GEMINI_API_KEY=... OPENAI_API_KEY=... LLM_PROXY_ALLOWED_CLIENT_CIDRS=127.0.0.1/32 PORT=8000 ./server   # запуск, сервер на :8000
 docker compose -f llm-proxy.compose.yml up --build         # через Docker
 ```
 
@@ -59,6 +59,8 @@ Health-check: `GET /healthz`.
 - Модели по шагам: `GEMINI_DETECT_MODEL`, `GEMINI_PARSE_MODEL`, `OPENAI_MODEL`,
   `OPENROUTER_{DETECT,PARSE,HINT,CHECK}_MODEL` (дефолты — в `llm-proxy.compose.yml`).
 - `PORT` (8000), `PROMPT_DIR` (переопределяет встроенные промпты).
+- `LLM_PROXY_ALLOWED_CLIENT_CIDRS` обязателен; `LLM_PROXY_TRUSTED_PROXY_CIDRS`
+  задаётся только для reverse proxy, который перезаписывает `X-Forwarded-For`.
 
 ## Подводные камни
 

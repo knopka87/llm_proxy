@@ -1,8 +1,12 @@
 package handle
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -53,12 +57,23 @@ func writeStatsHeaders(w http.ResponseWriter, stats *types.LLMStats) {
 	if stats.Model != "" {
 		w.Header().Set("X-LLM-Model", stats.Model)
 	}
+	if stats.PromptHash != "" {
+		w.Header().Set("X-LLM-Prompt-Hash", stats.PromptHash)
+	}
+	if stats.PromptBlocks != "" {
+		w.Header().Set("X-LLM-Prompt-Blocks", stats.PromptBlocks)
+	}
+	if stats.CostUSD > 0 {
+		w.Header().Set("X-LLM-Cost-USD", strconv.FormatFloat(stats.CostUSD, 'f', 9, 64))
+	}
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(v)
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Printf("[http] encode response: %v", err)
+	}
 }
 
 // parseDeadline извлекает timeout из запроса с верхним лимитом maxTimeout.
@@ -89,7 +104,20 @@ func limitBodyReader(w http.ResponseWriter, r *http.Request) {
 // Возвращает ошибку, если тело превышает maxBodySize или невалидный JSON.
 func readAndLimitBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	limitBodyReader(w, r)
-	// io.LimitReader как дополнительная страховка
-	limited := io.LimitReader(r.Body, maxBodySize+1)
-	return json.NewDecoder(limited).Decode(dst)
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxBodySize+1))
+	if err != nil {
+		return fmt.Errorf("read request body: %w", err)
+	}
+	if len(body) > maxBodySize {
+		return fmt.Errorf("request body exceeds %d bytes", maxBodySize)
+	}
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(dst); err != nil {
+		return fmt.Errorf("decode request body: %w", err)
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		return fmt.Errorf("request body must contain exactly one JSON value")
+	}
+	return nil
 }

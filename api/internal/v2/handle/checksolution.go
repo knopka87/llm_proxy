@@ -43,7 +43,7 @@ func (h *Handle) CheckSolution(w http.ResponseWriter, r *http.Request) {
 	out, stats, err := engine.CheckSolution(ctx, req.CheckRequest)
 	if err != nil {
 		log.Printf("[check] LLM error: %v", err)
-		http.Error(w, "check processing failed: "+err.Error(), http.StatusBadGateway)
+		http.Error(w, "check processing failed", http.StatusBadGateway)
 		return
 	}
 

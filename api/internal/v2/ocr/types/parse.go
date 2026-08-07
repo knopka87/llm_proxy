@@ -8,9 +8,10 @@ import (
 
 // Pre-compiled regexes for answer extraction (compiled once, not per-call).
 var (
-	reEquals = regexp.MustCompile(`=\s*([\d.,]+)\s*$`)
-	reAnswer = regexp.MustCompile(`(?i)ответ[:\s]+(.+?)(?:\.|$)`)
-	reTotal  = regexp.MustCompile(`(?i)итого\s+([\d.,]+)`)
+	reEquals        = regexp.MustCompile(`=\s*([-+]?\d+(?:[.,]\d+)?(?:\s*/\s*\d+)?)\s*(?:[[:alpha:]а-яА-ЯёЁ²³./]+)?\s*[.;]?$`)
+	reAnswer        = regexp.MustCompile(`(?i)ответ[:\s]+\s*([-+]?\d+(?:[.,]\d+)?(?:\s*/\s*\d+)?(?:\s+[[:alpha:]а-яА-ЯёЁ²³./]+)?)`)
+	reTotal         = regexp.MustCompile(`(?i)итого[:\s]+\s*([-+]?\d+(?:[.,]\d+)?(?:\s*/\s*\d+)?)`)
+	reLeadingNumber = regexp.MustCompile(`^[-+]?\d+(?:[.,]\d+)?(?:\s*/\s*\d+)?`)
 )
 
 // ParseRequest — вход запроса (PARSE.request.v1)
@@ -35,9 +36,12 @@ const (
 
 // VisualFact — факт из изображения
 type VisualFact struct {
-	Kind     string      `json:"kind"`
-	Value    interface{} `json:"value"` // string | number | null | array
-	Critical bool        `json:"critical"`
+	Kind       string      `json:"kind"`
+	Value      interface{} `json:"value"` // string | number | null
+	Critical   bool        `json:"critical"`
+	ObjectID   *string     `json:"object_id,omitempty"`
+	Labels     []string    `json:"labels,omitempty"`
+	Confidence *float64    `json:"confidence,omitempty"`
 }
 
 // ParseTaskQuality — quality flags for task
@@ -81,15 +85,33 @@ type ItemQuality struct {
 
 // SolutionInternal — internal solution representation
 type SolutionInternal struct {
-	Plan          []string    `json:"plan"`
-	SolutionSteps []string    `json:"solution_steps"`
-	FinalAnswer   interface{} `json:"final_answer"` // string | number | null
+	Plan          []string              `json:"plan"`
+	SolutionSteps []string              `json:"solution_steps"`
+	FinalAnswer   interface{}           `json:"final_answer"` // string | number | null
+	Verification  *SolutionVerification `json:"verification,omitempty"`
+}
+
+// SolutionVerification is PARSE's explicit second-pass verification result.
+type SolutionVerification struct {
+	Method        *string     `json:"method"`
+	DerivedAnswer interface{} `json:"derived_answer"`
+	Passed        bool        `json:"passed"`
 }
 
 // ValidateFinalAnswer checks consistency between solution_steps and final_answer.
 // Returns (isConsistent, derivedAnswer).
 // P0.1: Prevents false "correct" verdicts when PARSE answer contradicts solution steps.
 func (si *SolutionInternal) ValidateFinalAnswer() (consistent bool, derivedAnswer string) {
+	if si.Verification != nil {
+		derivedAnswer = formatAnswerForComparison(si.Verification.DerivedAnswer)
+		if !si.Verification.Passed {
+			return false, derivedAnswer
+		}
+		if si.FinalAnswer != nil && derivedAnswer != "" {
+			finalAnswer := formatAnswerForComparison(si.FinalAnswer)
+			return normalizeAnswer(derivedAnswer) == normalizeAnswer(finalAnswer), derivedAnswer
+		}
+	}
 	if si.FinalAnswer == nil {
 		// No final answer to validate
 		return true, ""
@@ -140,14 +162,31 @@ type ParseResponse struct {
 // P0.1: Called after JSON unmarshal to catch PARSE errors before CHECK.
 // Only flags true contradictions: when final_answer explicitly differs from
 // the answer derived from the last solution step's conclusion pattern.
-func (pr *ParseResponse) ValidateItems() {
+func (pr *ParseResponse) ValidateItems() int {
+	inconsistent := 0
 	for i := range pr.Items {
 		item := &pr.Items[i]
+		item.PedKeys.TaskType = NormalizeTaskType(item.PedKeys.TaskType)
 		consistent, _ := item.SolutionInternal.ValidateFinalAnswer()
 		if !consistent {
 			item.ItemQuality.UnsafeToFinalizeAnswer = true
+			item.SolutionInternal.FinalAnswer = nil
+			if !containsString(pr.Task.Quality.Flags, "solution_inconsistent") {
+				pr.Task.Quality.Flags = append(pr.Task.Quality.Flags, "solution_inconsistent")
+			}
+			inconsistent++
 		}
 	}
+	return inconsistent
+}
+
+func containsString(values []string, target string) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
 }
 
 // --- Helper functions for answer validation ---
@@ -155,15 +194,15 @@ func (pr *ParseResponse) ValidateItems() {
 // extractAnswerFromStep extracts final numeric/text answer from a solution step.
 // Looks for patterns like "= 42", "Ответ: 42", "итого 42" etc.
 func extractAnswerFromStep(step string) string {
-	if m := reEquals.FindStringSubmatch(step); len(m) > 1 {
-		return m[1]
-	}
-
 	if m := reAnswer.FindStringSubmatch(step); len(m) > 1 {
 		return strings.TrimSpace(m[1])
 	}
 
 	if m := reTotal.FindStringSubmatch(step); len(m) > 1 {
+		return m[1]
+	}
+
+	if m := reEquals.FindStringSubmatch(step); len(m) > 1 {
 		return m[1]
 	}
 
@@ -196,6 +235,9 @@ func formatAnswerForComparison(answer interface{}) string {
 func normalizeAnswer(s string) string {
 	s = strings.TrimSpace(s)
 	s = strings.ToLower(s)
+	if numeric := reLeadingNumber.FindString(s); numeric != "" {
+		s = numeric
+	}
 	// Replace comma with dot for decimal comparison
 	s = strings.ReplaceAll(s, ",", ".")
 	// Remove trailing zeros after decimal point

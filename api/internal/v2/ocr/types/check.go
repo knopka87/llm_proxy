@@ -1,5 +1,10 @@
 package types
 
+import (
+	"fmt"
+	"strings"
+)
+
 // --- CHECK (v1) ----------------------------------------------------
 // Соответствует схемам CHECK.request.v1 и CHECK.response.v1.
 
@@ -60,10 +65,22 @@ type PhotoQuality struct {
 
 // CheckDebug — диагностическая информация (не показывать пользователю)
 type CheckDebug struct {
-	RawAnswerText    *string `json:"raw_answer_text"`
-	NormalizedAnswer *string `json:"normalized_answer"`
-	ExpectedAnswer   *string `json:"expected_answer,omitempty"` // P2.2: что сравниваем
-	DecisionReason   *string `json:"decision_reason,omitempty"` // P2.2: причина решения
+	RawAnswerText        *string               `json:"raw_answer_text"`
+	NormalizedAnswer     *string               `json:"normalized_answer"`
+	ExpectedAnswer       *string               `json:"expected_answer,omitempty"`
+	DecisionReason       *string               `json:"decision_reason,omitempty"`
+	VerificationMethod   *string               `json:"verification_method,omitempty"`
+	ParseConsistent      *bool                 `json:"parse_consistent,omitempty"`
+	VerificationComplete *bool                 `json:"verification_complete,omitempty"`
+	VisualEvidence       []CheckVisualEvidence `json:"visual_evidence,omitempty"`
+}
+
+// CheckVisualEvidence is one independently observed visual assertion.
+type CheckVisualEvidence struct {
+	ObjectID string `json:"object_id"`
+	Observed string `json:"observed"`
+	Expected string `json:"expected"`
+	Matches  bool   `json:"matches"`
 }
 
 // CheckDecision — результат проверки ответа (P0.3: enum вместо nullable bool)
@@ -133,5 +150,114 @@ func (r *CheckResponse) SetIsCorrectFromDecision() {
 		r.IsCorrect = &f
 	default:
 		r.IsCorrect = nil
+	}
+}
+
+// ValidateSemantics enforces cross-field and evidence invariants that cannot be
+// represented reliably by JSON Schema alone.
+func (r CheckResponse) ValidateSemantics(in CheckRequest) error {
+	if r.CanEvaluate {
+		if r.Status != CheckStatusEvaluated {
+			return fmt.Errorf("can_evaluate=true requires status=evaluated")
+		}
+		if r.Decision != CheckDecisionCorrect && r.Decision != CheckDecisionIncorrect {
+			return fmt.Errorf("can_evaluate=true requires correct or incorrect decision")
+		}
+		if r.Confidence == nil || r.FailureReason != nil {
+			return fmt.Errorf("evaluated response requires confidence and no failure_reason")
+		}
+		if r.Debug == nil || r.Debug.ExpectedAnswer == nil || strings.TrimSpace(*r.Debug.ExpectedAnswer) == "" {
+			return fmt.Errorf("evaluated response requires independently verified expected_answer")
+		}
+		if r.Debug.NormalizedAnswer == nil || strings.TrimSpace(*r.Debug.NormalizedAnswer) == "" {
+			return fmt.Errorf("evaluated response requires normalized_answer")
+		}
+		if !checkRequestIsVisual(in) {
+			normalizedStudent := normalizeCheckAnswer(*r.Debug.NormalizedAnswer)
+			normalizedExpected := normalizeCheckAnswer(*r.Debug.ExpectedAnswer)
+			if r.Decision == CheckDecisionCorrect && normalizedStudent != normalizedExpected {
+				return fmt.Errorf("correct decision contradicts normalized and expected answers")
+			}
+			if r.Decision == CheckDecisionIncorrect && normalizedStudent == normalizedExpected {
+				return fmt.Errorf("incorrect decision contradicts equal normalized and expected answers")
+			}
+		}
+		if r.Debug.VerificationComplete == nil || !*r.Debug.VerificationComplete {
+			return fmt.Errorf("evaluated response requires verification_complete=true")
+		}
+		if r.Debug.VerificationMethod == nil || strings.TrimSpace(*r.Debug.VerificationMethod) == "" {
+			return fmt.Errorf("evaluated response requires verification_method")
+		}
+		if r.Debug.ParseConsistent == nil || !*r.Debug.ParseConsistent {
+			return fmt.Errorf("evaluated response requires parse_consistent=true")
+		}
+		if r.Debug.DecisionReason == nil || !strings.Contains(*r.Debug.DecisionReason, "independent_verification") {
+			return fmt.Errorf("evaluated response requires independent_verification decision_reason")
+		}
+		if checkRequestIsVisual(in) {
+			if len(r.Debug.VisualEvidence) == 0 {
+				return fmt.Errorf("visual task requires visual_evidence")
+			}
+			for i, evidence := range r.Debug.VisualEvidence {
+				if strings.TrimSpace(evidence.ObjectID) == "" || strings.TrimSpace(evidence.Observed) == "" || strings.TrimSpace(evidence.Expected) == "" {
+					return fmt.Errorf("visual_evidence[%d] is incomplete", i)
+				}
+			}
+		}
+		return nil
+	}
+
+	if r.Decision == CheckDecisionCorrect || r.Decision == CheckDecisionIncorrect {
+		return fmt.Errorf("can_evaluate=false cannot have evaluated decision")
+	}
+	if r.Confidence != nil {
+		return fmt.Errorf("can_evaluate=false requires confidence=null")
+	}
+	if r.Decision == CheckDecisionInvalidExpected {
+		if r.FailureReason == nil || *r.FailureReason != "parse_inconsistency" {
+			return fmt.Errorf("invalid_expected requires parse_inconsistency")
+		}
+	}
+	return nil
+}
+
+func normalizeCheckAnswer(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	value = strings.ReplaceAll(value, ",", ".")
+	return strings.Join(strings.Fields(value), "")
+}
+
+func checkRequestIsVisual(in CheckRequest) bool {
+	if in.TaskStruct.VisualReasoning != nil && strings.TrimSpace(*in.TaskStruct.VisualReasoning) != "" {
+		return true
+	}
+	if len(in.TaskStruct.VisualFacts) > 0 {
+		return true
+	}
+	if len(in.TaskStruct.Items) == 0 {
+		return false
+	}
+	item := in.TaskStruct.Items[0]
+	if item.PedKeys.Format == "drawing" || item.PedKeys.Format == "diagram" || item.PedKeys.Format == "visual" {
+		return true
+	}
+	return containsString(item.PedKeys.Constraints, "needs_visual")
+}
+
+// ConservativeCheckResponse avoids publishing an unsupported correct/incorrect
+// verdict when semantic validation still fails after one retry.
+func ConservativeCheckResponse() CheckResponse {
+	reason := "ground_truth_unverified"
+	return CheckResponse{
+		Status:        CheckStatusInternalError,
+		CanEvaluate:   false,
+		Decision:      CheckDecisionCannotEvaluate,
+		Feedback:      "Не удалось надёжно подтвердить эталон ответа. Попробуй проверить решение ещё раз позже.",
+		ErrorSpans:    nil,
+		Confidence:    nil,
+		PhotoQuality:  nil,
+		FailureReason: &reason,
+		Debug:         nil,
+		ErrorDetails:  nil,
 	}
 }

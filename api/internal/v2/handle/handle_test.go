@@ -3,6 +3,7 @@ package handle
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -97,6 +98,33 @@ func TestParseDeadline(t *testing.T) {
 			got := parseDeadline(req)
 			if got != tt.expected {
 				t.Errorf("parseDeadline() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestReadAndLimitBody_StrictJSON(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		body    string
+		wantErr bool
+	}{
+		{name: "valid", body: `{"name":"task"}`},
+		{name: "unknown field", body: `{"name":"task","unexpected":true}`, wantErr: true},
+		{name: "trailing value", body: `{"name":"task"} {}`, wantErr: true},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(test.body))
+			var dst struct {
+				Name string `json:"name"`
+			}
+			err := readAndLimitBody(httptest.NewRecorder(), req, &dst)
+			if (err != nil) != test.wantErr {
+				t.Fatalf("readAndLimitBody() error=%v, wantErr=%v", err, test.wantErr)
 			}
 		})
 	}

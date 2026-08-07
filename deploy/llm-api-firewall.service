@@ -1,0 +1,12 @@
+[Unit]
+Description=Restrict llm_proxy Docker API to the bot server
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/llm-api-firewall
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

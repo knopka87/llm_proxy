@@ -1,10 +1,15 @@
 package main
 
 import (
+	"context"
+	"crypto/subtle"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"llm-proxy/api/internal/config"
@@ -65,6 +70,9 @@ func main() {
 	// Load pedagogical templates once at startup.
 	// All math hint engines share the same router instance.
 	tmplRouter := tmplrouter.New()
+	if tmplRouter.Len() == 0 {
+		log.Fatal("no valid pedagogical templates loaded")
+	}
 	gptV2.SetTemplateRouter(tmplRouter)
 	if orEngine, ok := openRouterV2.(interface{ SetTemplateRouter(*tmplrouter.Router) }); ok {
 		orEngine.SetTemplateRouter(tmplRouter)
@@ -98,16 +106,60 @@ func main() {
 	mux.HandleFunc("/v2/check_ru", h2.CheckRU)
 
 	mux.HandleFunc("/v2/embed", h2.Embed)
+	clientIPFilter, err := newClientIPFilter(cfg.AllowedClientCIDRs, cfg.TrustedProxyCIDRs)
+	if err != nil {
+		log.Fatalf("invalid client IP allowlist: %v", err)
+	}
 
 	addr := ":" + cfg.Port
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           mux,
+		Handler:           clientIPFilter.Middleware(serviceAuth(cfg.APIKey, mux)),
 		ReadHeaderTimeout: 15 * time.Second,
 		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      5 * time.Minute,
+		WriteTimeout:      5*time.Minute + 15*time.Second,
 		IdleTimeout:       2 * time.Minute,
 	}
 	log.Printf("llm-proxy listening on %s", addr)
-	log.Fatal(srv.ListenAndServe())
+	serverErr := make(chan error, 1)
+	go func() {
+		serverErr <- srv.ListenAndServe()
+	}()
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	select {
+	case err := <-serverErr:
+		if !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("llm-proxy server failed: %v", err)
+		}
+	case sig := <-signals:
+		log.Printf("received signal %s, shutting down", sig)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Printf("llm-proxy graceful shutdown failed: %v", err)
+		}
+	}
+}
+
+func serviceAuth(apiKey string, next http.Handler) http.Handler {
+	apiKey = strings.TrimSpace(apiKey)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/healthz" || apiKey == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		authorization := r.Header.Get("Authorization")
+		if !strings.HasPrefix(authorization, "Bearer ") {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		provided := strings.TrimSpace(strings.TrimPrefix(authorization, "Bearer "))
+		if subtle.ConstantTimeCompare([]byte(provided), []byte(apiKey)) != 1 {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

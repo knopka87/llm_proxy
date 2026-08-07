@@ -15,6 +15,9 @@ import (
 func LoadSystemPrompt(name, provider, version string, subdirs ...string) (string, error) {
 	// Try to load from subdirectories first
 	if len(subdirs) > 0 {
+		if p, err := cachedLoadPromptSubdirs(name, "system", provider, version, subdirs...); err == nil {
+			return p, nil
+		}
 		for _, subdir := range subdirs {
 			if p, err := cachedLoadPromptSubdirs(name, "system", provider, version, subdir); err == nil {
 				return p, nil
@@ -33,6 +36,9 @@ func LoadSystemPrompt(name, provider, version string, subdirs ...string) (string
 func LoadUserPrompt(name, provider, version string, subdirs ...string) (string, error) {
 	// Try to load from subdirectories first
 	if len(subdirs) > 0 {
+		if p, err := cachedLoadPromptSubdirs(name, "user", provider, version, subdirs...); err == nil {
+			return p, nil
+		}
 		for _, subdir := range subdirs {
 			if p, err := cachedLoadPromptSubdirs(name, "user", provider, version, subdir); err == nil {
 				return p, nil
@@ -269,4 +275,3 @@ func convertNullableToAnyOf(n map[string]any) {
 	anyOf = append(anyOf, map[string]any{"type": "null"})
 	n["anyOf"] = anyOf
 }
-

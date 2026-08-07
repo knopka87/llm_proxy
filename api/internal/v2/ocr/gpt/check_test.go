@@ -10,7 +10,7 @@ import (
 
 func TestLoadCheckFeedbackSection(t *testing.T) {
 	tmpDir := t.TempDir()
-	promptDir := filepath.Join(tmpDir, "api", "internal", "v2", "prompt")
+	promptDir := filepath.Join(tmpDir, "api", "internal", "v2", "prompt", "check")
 
 	// Создаём структуру {N}_class/check.feedback.txt
 	feedbackFiles := map[string]string{

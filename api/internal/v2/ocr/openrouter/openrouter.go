@@ -14,6 +14,7 @@ package openrouter
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -23,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -62,6 +64,7 @@ func (e *Engine) SetTemplateRouter(r *tmplrouter.Router) {
 
 func New(apiKey string, models StepModels) *Engine {
 	tr := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
 			Timeout:   10 * time.Second,
 			KeepAlive: 30 * time.Second,
@@ -148,7 +151,22 @@ func (e *Engine) Parse(ctx context.Context, in types.ParseRequest) (types.ParseR
 	if err != nil {
 		return types.ParseResponse{}, stats, err
 	}
-	pr.ValidateItems()
+	stats.PromptHash = promptHash(system, userText, schemaJSON, e.models.Parse)
+	if pr.ValidateItems() > 0 {
+		retryMessages := appendCorrection(messages,
+			"В предыдущем результате final_answer противоречил последнему выводу solution_steps. "+
+				"Реши задачу заново независимо, проверь обратным действием и верни согласованный JSON. "+
+				"Если подтвердить ответ нельзя, верни final_answer=null и unsafe_to_finalize_answer=true.")
+		var retried types.ParseResponse
+		retryStats, retryErr := e.call(ctx, e.models.Parse, "parse", retryMessages, schemaJSON, &retried)
+		stats.Add(retryStats)
+		if retryErr == nil {
+			retried.ValidateItems()
+			pr = retried
+		} else {
+			log.Printf("[openrouter] parse semantic retry failed: %v", retryErr)
+		}
+	}
 	return pr, stats, nil
 }
 
@@ -165,14 +183,15 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 	// с расширенной педагогикой (частые ошибки, паттерны L1/L2/L3 для типа).
 	var advancedTopics []string
 	if len(in.Items) > 0 {
-		taskType := in.Items[0].PedKeys.TaskType
-		if taskType != "" {
-			advancedName := "hint.advanced_" + taskType
-			if advanced, aerr := util.LoadSystemPrompt(advancedName, promptSource, apiVersion, "hint", advancedName); aerr == nil && strings.TrimSpace(advanced) != "" {
+		taskType := types.NormalizeTaskType(in.Items[0].PedKeys.TaskType)
+		in.Items[0].PedKeys.TaskType = taskType
+		if block := types.HintAdvancedPromptBlock(taskType); block != "" {
+			if advanced, aerr := loadHintAdvancedBlock(in.Task.Grade, block); aerr == nil && strings.TrimSpace(advanced) != "" {
 				system = system + "\n\n" + advanced
-				advancedTopics = append(advancedTopics, taskType)
+				advancedTopics = append(advancedTopics, block)
+			} else if aerr != nil {
+				log.Printf("[openrouter] hint advanced block %q not loaded: %v", block, aerr)
 			}
-			// Если файл для типа не найден — продолжаем с базовым промптом (graceful fallback).
 		}
 	}
 
@@ -214,6 +233,27 @@ func (e *Engine) Hint(ctx context.Context, in types.HintRequest) (types.HintResp
 
 	var hr types.HintResponse
 	stats, err := e.call(ctx, e.models.Hint, "hint", messages, schemaJSON, &hr)
+	if stats != nil {
+		stats.PromptHash = promptHash(system, userText, schemaJSON, e.models.Hint)
+		stats.PromptBlocks = strings.Join(advancedTopics, ",")
+	}
+	if err == nil {
+		if validationErr := hr.ValidateAgainstRequest(in); validationErr != nil {
+			retryMessages := appendCorrection(messages,
+				"Предыдущая подсказка не прошла semantic validation: "+validationErr.Error()+". "+
+					"Покрой каждый шаг solution_internal.plan, выставь точный plan_coverage и верни все обязательные уровни L1/L2/L3.")
+			var retried types.HintResponse
+			retryStats, retryErr := e.call(ctx, e.models.Hint, "hint", retryMessages, schemaJSON, &retried)
+			stats.Add(retryStats)
+			if retryErr != nil {
+				return types.HintResponse{}, stats, fmt.Errorf("openrouter hint semantic retry: %w", retryErr)
+			}
+			if retryValidationErr := retried.ValidateAgainstRequest(in); retryValidationErr != nil {
+				return types.HintResponse{}, stats, fmt.Errorf("openrouter hint semantic validation: %w", retryValidationErr)
+			}
+			hr = retried
+		}
+	}
 	// Устанавливаем метрики после вызова (LLM ответ перезаписывает поля)
 	if grade > 0 {
 		hr.PromptVersion = fmt.Sprintf("%d_class", grade)
@@ -238,7 +278,7 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	}
 
 	// Композиция дополнительных блоков промпта
-	system = composeCheckBlocks(system, in.TaskStruct)
+	system, checkBlocks := composeCheckBlocks(system, in.TaskStruct)
 
 	imgBytes, mime, err := decodeImage(in.Image)
 	if err != nil {
@@ -278,8 +318,33 @@ func (e *Engine) CheckSolution(ctx context.Context, in types.CheckRequest) (type
 	if err != nil {
 		return types.CheckResponse{}, stats, err
 	}
+	stats.PromptHash = promptHash(system, userText, schemaJSON, e.models.Check)
+	stats.PromptBlocks = strings.Join(checkBlocks, ",")
 	cr.NormalizeDecision()
 	cr.SetIsCorrectFromDecision()
+	if validationErr := cr.ValidateSemantics(in); validationErr != nil {
+		retryMessages := appendCorrection(messages,
+			"Предыдущая проверка не прошла semantic validation: "+validationErr.Error()+". "+
+				"Независимо реши задачу до сравнения с ответом ученика, подтверди эталон вторым способом, "+
+				"заполни все verification-поля и visual_evidence для визуальной задачи.")
+		var retried types.CheckResponse
+		retryStats, retryErr := e.call(ctx, e.models.Check, "check", retryMessages, schemaJSON, &retried)
+		stats.Add(retryStats)
+		if retryErr == nil {
+			retried.NormalizeDecision()
+			retried.SetIsCorrectFromDecision()
+			if retryValidationErr := retried.ValidateSemantics(in); retryValidationErr == nil {
+				return retried, stats, nil
+			} else {
+				log.Printf("[openrouter] check semantic retry invalid: %v", retryValidationErr)
+			}
+		} else {
+			log.Printf("[openrouter] check semantic retry failed: %v", retryErr)
+		}
+		fallback := types.ConservativeCheckResponse()
+		fallback.SetIsCorrectFromDecision()
+		return fallback, stats, nil
+	}
 	return cr, stats, err
 }
 
@@ -351,8 +416,9 @@ type chatResponse struct {
 		} `json:"message"`
 	} `json:"choices"`
 	Usage struct {
-		PromptTokens     int `json:"prompt_tokens"`
-		CompletionTokens int `json:"completion_tokens"`
+		PromptTokens     int     `json:"prompt_tokens"`
+		CompletionTokens int     `json:"completion_tokens"`
+		Cost             float64 `json:"cost"`
 	} `json:"usage"`
 }
 
@@ -438,25 +504,55 @@ func (e *Engine) call(
 		}
 	}
 
-	payload, _ := json.Marshal(reqBody)
-	req, _ := http.NewRequestWithContext(ctx, "POST", baseURL, bytes.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+e.apiKey)
-	req.Header.Set("HTTP-Referer", "https://vk.obyasnyatel.ru")
-	req.Header.Set("X-Title", "Объяснятель ДЗ")
-
-	start := time.Now()
-	resp, err := e.httpc.Do(req)
-	latencyMs := time.Since(start).Milliseconds()
+	payload, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil, fmt.Errorf("openrouter %s: %w", op, err)
+		return nil, fmt.Errorf("openrouter %s: marshal request: %w", op, err)
 	}
-	defer resp.Body.Close()
+	start := time.Now()
+	var raw []byte
+	for attempt := 0; attempt < 2; attempt++ {
+		req, requestErr := http.NewRequestWithContext(ctx, http.MethodPost, baseURL, bytes.NewReader(payload))
+		if requestErr != nil {
+			return nil, fmt.Errorf("openrouter %s: create request: %w", op, requestErr)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+e.apiKey)
+		req.Header.Set("HTTP-Referer", "https://vk.obyasnyatel.ru")
+		req.Header.Set("X-Title", "Объяснятель ДЗ")
 
-	raw, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusOK {
+		resp, callErr := e.httpc.Do(req)
+		if callErr != nil {
+			return nil, fmt.Errorf("openrouter %s: %w", op, callErr)
+		}
+		raw, err = io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+		closeErr := resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("openrouter %s: read response: %w", op, err)
+		}
+		if closeErr != nil {
+			log.Printf("[openrouter] close response body: %v", closeErr)
+		}
+		if resp.StatusCode == http.StatusOK {
+			break
+		}
+		retryable := resp.StatusCode == http.StatusRequestTimeout || resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500
+		if attempt == 0 && retryable {
+			delay := 250 * time.Millisecond
+			if retryAfter, parseErr := strconv.Atoi(resp.Header.Get("Retry-After")); parseErr == nil && retryAfter > 0 {
+				delay = min(time.Duration(retryAfter)*time.Second, 2*time.Second)
+			}
+			timer := time.NewTimer(delay)
+			select {
+			case <-ctx.Done():
+				timer.Stop()
+				return nil, fmt.Errorf("openrouter %s retry: %w", op, ctx.Err())
+			case <-timer.C:
+			}
+			continue
+		}
 		return nil, fmt.Errorf("openrouter %s %d: %s", op, resp.StatusCode, truncate(raw, 512))
 	}
+	latencyMs := time.Since(start).Milliseconds()
 
 	var cr chatResponse
 	if err := json.Unmarshal(raw, &cr); err != nil {
@@ -471,6 +567,7 @@ func (e *Engine) call(
 		OutputTokens: cr.Usage.CompletionTokens,
 		LatencyMs:    latencyMs,
 		Model:        model,
+		CostUSD:      cr.Usage.Cost,
 	}
 
 	text := util.StripCodeFences(strings.TrimSpace(cr.Choices[0].Message.Content))
@@ -511,6 +608,18 @@ func userMsgWithImage(text, mime string, imgBytes []byte) message {
 	}
 }
 
+func appendCorrection(messages []message, correction string) []message {
+	result := make([]message, 0, len(messages)+1)
+	result = append(result, messages...)
+	result = append(result, userMsgText("CORRECTION_REQUIRED:\n"+correction))
+	return result
+}
+
+func promptHash(parts ...string) string {
+	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
+	return fmt.Sprintf("%x", sum[:8])
+}
+
 func gradeSubdir(grade int) string {
 	switch grade {
 	case 1:
@@ -529,18 +638,38 @@ func gradeSubdir(grade int) string {
 // loadHintUserPrompt загружает пользовательский шаблон для подсказок с учётом класса.
 func loadHintUserPrompt(grade int) (string, error) {
 	if subdir := gradeSubdir(grade); subdir != "" {
-		if p, err := util.LoadUserPrompt("hint", promptSource, apiVersion, subdir, "hint"); err == nil {
+		if p, err := util.LoadUserPrompt("hint", promptSource, apiVersion, "hint", subdir); err == nil {
 			return p, nil
 		}
 	}
 	return util.LoadUserPrompt("hint", promptSource, apiVersion, "hint")
 }
 
+func loadHintAdvancedBlock(grade int, block string) (string, error) {
+	name := "hint.advanced_" + block + ".system.txt"
+	baseRoot := os.Getenv("PROMPT_DIR")
+	if baseRoot == "" {
+		baseRoot = filepath.Join("api", "internal")
+	}
+	if subdir := gradeSubdir(grade); subdir != "" {
+		path := filepath.Join(baseRoot, apiVersion, "prompt", "hint", subdir, name)
+		if data, err := os.ReadFile(path); err == nil {
+			return strings.TrimSpace(string(data)), nil
+		}
+	}
+	path := filepath.Join(baseRoot, apiVersion, "prompt", "hint", name)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("load hint block %s: %w", block, err)
+	}
+	return strings.TrimSpace(string(data)), nil
+}
+
 func loadPrompt(name string, grade int) (string, error) {
 	// Для подсказок и проверки используем поддиректорию класса
 	if name == "hint" || name == "hint_ru" || name == "check" || name == "check_ru" {
 		if subdir := gradeSubdir(grade); subdir != "" {
-			if p, err := util.LoadSystemPrompt(name, promptSource, apiVersion, subdir, name); err == nil {
+			if p, err := util.LoadSystemPrompt(name, promptSource, apiVersion, name, subdir); err == nil {
 				return p, nil
 			}
 		}
@@ -591,7 +720,7 @@ func fixEmptyArrayFields(s string) string {
 	// Быстрая замена пустых {} → [] для array-полей
 	arrayFields := []string{
 		"visual_facts", "items", "plan", "solution_steps",
-		"flags", "constraints", "issues", "hints", "error_spans", "buttons",
+		"flags", "constraints", "labels", "issues", "hints", "error_spans", "buttons", "visual_evidence",
 	}
 	for _, f := range arrayFields {
 		s = strings.ReplaceAll(s, `"`+f+`":{}`, `"`+f+`":[]`)
@@ -811,8 +940,13 @@ func loadCheckRUFeedbackSection(grade int) (string, error) {
 
 // composeCheckBlocks добавляет к базовому промпту условные блоки для проверки ответа.
 // Загружает: advanced (по task_type), format (по формату), conditional (visual, high_risk, multiple_subtasks).
-func composeCheckBlocks(system string, taskStruct types.TaskStructCheck) string {
+func composeCheckBlocks(system string, taskStruct types.TaskStructCheck) (string, []string) {
 	var blocks []string
+	var blockNames []string
+	appendBlock := func(name, content string) {
+		blocks = append(blocks, content)
+		blockNames = append(blockNames, name)
+	}
 
 	loadCheckBlock := func(name string) (string, error) {
 		return util.LoadSystemPrompt(name, promptSource, apiVersion, "check", name)
@@ -822,10 +956,12 @@ func composeCheckBlocks(system string, taskStruct types.TaskStructCheck) string 
 		item := taskStruct.Items[0]
 
 		// Advanced блок по типу задачи
-		if item.PedKeys.TaskType != "" {
-			advancedName := "check.advanced_" + item.PedKeys.TaskType
+		if block := types.CheckAdvancedPromptBlock(item.PedKeys.TaskType); block != "" {
+			advancedName := "check.advanced_" + block
 			if advanced, aerr := loadCheckBlock(advancedName); aerr == nil && strings.TrimSpace(advanced) != "" {
-				blocks = append(blocks, advanced)
+				appendBlock(advancedName, advanced)
+			} else if aerr != nil {
+				log.Printf("[openrouter] check block %q not loaded: %v", advancedName, aerr)
 			}
 		}
 
@@ -833,35 +969,40 @@ func composeCheckBlocks(system string, taskStruct types.TaskStructCheck) string 
 		if item.PedKeys.Format != "" {
 			formatName := "check.format_" + item.PedKeys.Format
 			if format, ferr := loadCheckBlock(formatName); ferr == nil && strings.TrimSpace(format) != "" {
-				blocks = append(blocks, format)
+				appendBlock(formatName, format)
 			}
 		}
 	}
 
 	// Conditional блоки
-	if taskStruct.VisualReasoning != nil && strings.TrimSpace(*taskStruct.VisualReasoning) != "" {
+	if isVisualTask(taskStruct) {
 		if visual, verr := loadCheckBlock("check.visual"); verr == nil && strings.TrimSpace(visual) != "" {
-			blocks = append(blocks, visual)
+			appendBlock("check.visual", visual)
 		}
 	}
 
-	if len(taskStruct.Items) > 1 {
+	if hasMultipleSubtasks(taskStruct) {
 		if multi, merr := loadCheckBlock("check.multiple_subtasks"); merr == nil && strings.TrimSpace(multi) != "" {
-			blocks = append(blocks, multi)
+			appendBlock("check.multiple_subtasks", multi)
 		}
 	}
 
 	// Verify блоки по типу задачи (verify_transforms, verify_age, verify_tables, verify_arithmetic)
 	if len(taskStruct.Items) > 0 {
-		taskType := taskStruct.Items[0].PedKeys.TaskType
-		switch taskType {
-		case "arithmetic", "comparison":
-			if v, err := loadCheckBlock("check.verify_arithmetic"); err == nil && strings.TrimSpace(v) != "" {
-				blocks = append(blocks, v)
+		verification := types.VerificationPromptBlock(taskStruct.Items[0].PedKeys.TaskType)
+		if verification != "" {
+			name := "check.verify_" + verification
+			if v, err := loadCheckBlock(name); err == nil && strings.TrimSpace(v) != "" {
+				appendBlock(name, v)
+			} else if err != nil {
+				log.Printf("[openrouter] check verification block %q not loaded: %v", name, err)
 			}
-		case "patterns":
-			if v, err := loadCheckBlock("check.verify_transforms"); err == nil && strings.TrimSpace(v) != "" {
-				blocks = append(blocks, v)
+		}
+		if isHighRiskTask(taskStruct.Items[0]) {
+			if v, err := loadCheckBlock("check.high_risk"); err == nil && strings.TrimSpace(v) != "" {
+				appendBlock("check.high_risk", v)
+			} else if err != nil {
+				log.Printf("[openrouter] check high-risk block not loaded: %v", err)
 			}
 		}
 	}
@@ -869,7 +1010,46 @@ func composeCheckBlocks(system string, taskStruct types.TaskStructCheck) string 
 	if len(blocks) > 0 {
 		system = system + "\n\n" + strings.Join(blocks, "\n\n")
 	}
-	return system
+	return system, blockNames
+}
+
+func isVisualTask(taskStruct types.TaskStructCheck) bool {
+	if taskStruct.VisualReasoning != nil && strings.TrimSpace(*taskStruct.VisualReasoning) != "" {
+		return true
+	}
+	if len(taskStruct.VisualFacts) > 0 {
+		return true
+	}
+	if len(taskStruct.Items) == 0 {
+		return false
+	}
+	item := taskStruct.Items[0]
+	if item.PedKeys.Format == "drawing" || item.PedKeys.Format == "diagram" || item.PedKeys.Format == "visual" {
+		return true
+	}
+	return slicesContain(item.PedKeys.Constraints, "needs_visual")
+}
+
+func hasMultipleSubtasks(taskStruct types.TaskStructCheck) bool {
+	if len(taskStruct.Items) > 1 {
+		return true
+	}
+	return len(taskStruct.Items) == 1 && slicesContain(taskStruct.Items[0].PedKeys.Constraints, "has_subparts")
+}
+
+func isHighRiskTask(item types.ParseItem) bool {
+	taskType := types.NormalizeTaskType(item.PedKeys.TaskType)
+	return taskType == types.TaskTypeLogic || taskType == types.TaskTypePatternsLogic ||
+		taskType == types.TaskTypeSetsLogic || slicesContain(item.PedKeys.Constraints, "high_risk")
+}
+
+func slicesContain(values []string, target string) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
 }
 
 // composeCheckRUBlocks добавляет к базовому промпту условные блоки для проверки РКИ.

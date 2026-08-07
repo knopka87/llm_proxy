@@ -64,18 +64,20 @@
 
 Если нет визуальных элементов — `visual_reasoning: null`
 
-**task.visual_facts**: структурированные данные из визуального анализа:
-- Для таблиц: `{ "kind": "table", "headers": ["Столбец1", "Столбец2", ...], "rows": [["значение1", "значение2", ...], ...] }`. Каждая ячейка = отдельное значение. Пустые ячейки = null. Если ячейка содержит выражение (3 × 4 + 2) — запиши именно выражение, не результат.
-- Для весов: `{ "kind": "balance", "left": "...", "right": "..." }` — что на каждой чаше, какие гири, их значения
-- Для геометрии: размеры, углы, взаимное расположение фигур
-- Для диаграмм: `{ "kind": "chart", "type": "bar|pie|line", "values": {"подпись": значение, ...} }`
-- Для схем/рисунков: `{ "kind": "image", "elements": [...] }` — список видимых элементов
+**task.visual_facts**: массив атомарных структурированных фактов. Каждый видимый объект или значение — отдельный элемент:
+`{ "kind": "...", "value": число|строка|null, "critical": true|false, "object_id": строка|null, "labels": [], "confidence": 0..1|null }`.
+- Для таблиц: отдельный факт на каждую ячейку, `kind="table_cell"`, `object_id="r1c2"`, `labels=["строка 1","столбец Цена"]`, `value="3 × 4 + 2"`. Пустая ячейка: `value=null`.
+- Для весов: отдельные факты `balance_left` и `balance_right` для каждого предмета/гири.
+- Для диаграмм: отдельный факт `chart_value` на каждый столбик/сектор/точку, `object_id` равен подписи.
+- Для дробной закраски ОБЯЗАТЕЛЬНО два critical-факта: `fraction_total_parts` и `fraction_colored_parts`; отдельно укажи `fraction_equal_parts` со значением `"true"` или `"false"`.
+- Для диаграмм Венна/Эйлера: отдельный `venn_object` для каждой точки/фигуры; `object_id="point_1"`, а `labels` содержит ВСЕ области, внутри которых она находится. Объект в пересечении имеет две и более labels.
 
 Правила:
 - Заполняй visual_facts ПОСЛЕ visual_reasoning (сначала опиши, потом структурируй)
 - Если рисунок плохо виден — добавь флаг "visual_unclear" и НЕ указывай конкретных чисел
 - Если не можешь точно определить значение — ставь unsafe_to_finalize_answer=true
 - Для таблиц: не пропускай пустые ячейки — ставь null. Не придумывай значения для незаполненных ячеек.
+- Запрещены общие факты вроде «рисунок соответствует условию». Факт должен быть проверяемым: конкретный объект, положение или количество.
 
 **task.quality.flags**: массив строк с проблемами (например: "visual_unclear", "digit_unclear", "text_cutoff", "has_corrections")
 
@@ -101,7 +103,10 @@ items = [{
 ## 3. ped_keys (ключи для роутинга)
 
 - **template_id**: всегда "UNRESOLVED_MATH"
-- **task_type**: одно из: "word_problems" | "equations" | "expressions" | "geometry" | "tables" | "fractions" | "comparison" | "other_math"
+- **task_type**: используй только общую routing-таксономию:
+  "arithmetic_fluency" | "creative_composition" | "data_representation" | "fractions_percent" |
+  "geometry" | "logic" | "measurement_units" | "number_sense" | "numeral_systems" |
+  "patterns_logic" | "sets_logic" | "word_problems"
 - **unit_kind**: "none" или "time"/"money"/"length"/"mass"/"area"
 - **constraints**: массив тегов:
   - "multi_step" — если 2+ смысловых шага или есть подпункты
@@ -129,8 +134,19 @@ items = [{
 - **final_answer**:
   - Если вычислен конкретный ответ — ОБЯЗАТЕЛЬНО заполни (число или строка с единицами)
   - Если не уверен — null и unsafe_to_finalize_answer=true
+- **verification** — обязательный независимый второй проход:
+  - method: `reverse_operation` | `substitution` | `full_recalculation` | `visual_count` | null
+  - derived_answer: результат второго прохода или null
+  - passed: true только если derived_answer подтверждает solution_steps и final_answer
 
-Валидация: проверь, что промежуточные значения разумны (нет отрицательных масс/длин). При абсурде: final_answer=null, unsafe_to_finalize_answer=true, добавь "absurd_intermediate_values" в flags.
+ОБЯЗАТЕЛЬНЫЙ SELF-CHECK перед возвратом JSON:
+1. Повторно вычисли final_answer независимо от записанных solution_steps.
+2. Проверь его обратным действием, подстановкой или полной сверкой всех объектов.
+3. Сравни результат последнего действия, final_answer, единицы измерения и ответы всех подпунктов.
+4. Проверь разумность промежуточных значений (нет отрицательных масс/длин).
+5. Запиши второй результат и способ в `verification`.
+6. При любом несовпадении: verification.passed=false, final_answer=null, unsafe_to_finalize_answer=true, добавь "solution_inconsistent" в flags. При абсурдных значениях также добавь "absurd_intermediate_values".
+Запрещено исправлять противоречие угадыванием.
 
 ## 6. item_quality
 

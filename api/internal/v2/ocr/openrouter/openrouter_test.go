@@ -2,7 +2,13 @@ package openrouter
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
+
+	"llm-proxy/api/internal/v2/ocr/types"
 )
 
 func TestFixEmptyArrayFields(t *testing.T) {
@@ -120,6 +126,41 @@ func TestFixEmptyArrayFields(t *testing.T) {
 				t.Errorf("fixEmptyArrayFields(%q)\n  got:  %q\n  want: %q", tt.input, got, tt.expected)
 			}
 		})
+	}
+}
+
+func TestComposeCheckBlocks_UsesCanonicalTaxonomyAndVisualGuard(t *testing.T) {
+	root := t.TempDir()
+	promptDir := filepath.Join(root, "v2", "prompt", "check")
+	if err := os.MkdirAll(promptDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	files := map[string]string{
+		"check.advanced_arithmetic.system.txt": "ADVANCED_ARITHMETIC",
+		"check.verify_arithmetic.system.txt":   "VERIFY_ARITHMETIC",
+		"check.visual.system.txt":              "VISUAL_EVIDENCE",
+	}
+	for name, content := range files {
+		if err := os.WriteFile(filepath.Join(promptDir, name), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Setenv("PROMPT_DIR", root)
+
+	task := types.TaskStructCheck{
+		VisualFacts: []types.VisualFact{{Kind: "fraction_total_parts", Value: 6, Critical: true}},
+		Items:       []types.ParseItem{{PedKeys: types.PedKeys{TaskType: "fractions"}}},
+	}
+	composed, blocks := composeCheckBlocks("BASE", task)
+	for _, block := range []string{"check.advanced_arithmetic", "check.verify_arithmetic", "check.visual"} {
+		if !slices.Contains(blocks, block) {
+			t.Errorf("block %q not loaded; got %v", block, blocks)
+		}
+	}
+	for _, marker := range []string{"BASE", "ADVANCED_ARITHMETIC", "VERIFY_ARITHMETIC", "VISUAL_EVIDENCE"} {
+		if !strings.Contains(composed, marker) {
+			t.Errorf("composed prompt does not contain %q", marker)
+		}
 	}
 }
 

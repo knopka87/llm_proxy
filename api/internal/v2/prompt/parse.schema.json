@@ -29,9 +29,17 @@
             "properties": {
               "kind":     { "type": "string" },
               "value":    { "type": ["string", "number", "null"] },
-              "critical": { "type": "boolean" }
+              "critical": { "type": "boolean" },
+              "object_id": { "type": ["string", "null"], "description": "Стабильный идентификатор отдельного объекта: point_1, part_3, bar_A." },
+              "labels": {
+                "type": "array",
+                "maxItems": 10,
+                "items": { "type": "string" },
+                "description": "Области/множества/категории, к которым относится объект."
+              },
+              "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
             },
-            "required": ["kind", "value", "critical"]
+            "required": ["kind", "value", "critical", "object_id", "labels", "confidence"]
           }
         },
         "quality": {
@@ -66,7 +74,15 @@
                 "type": "string",
                 "description": "На этапе PARSE используй UNRESOLVED_MATH. Бэкенд подставит реальный template_id перед HINT."
               },
-              "task_type":   { "type": "string" },
+              "task_type": {
+                "type": "string",
+                "enum": [
+                  "arithmetic_fluency", "creative_composition", "data_representation",
+                  "fractions_percent", "geometry", "logic", "measurement_units",
+                  "number_sense", "numeral_systems", "patterns_logic", "sets_logic",
+                  "word_problems"
+                ]
+              },
               "unit_kind":   { "type": ["string", "null"] },
               "constraints": {
                 "type": "array",
@@ -111,9 +127,22 @@
                 "maxItems": 20,
                 "items": { "type": "string" }
               },
-              "final_answer": { "type": ["string", "number", "null"] }
+              "final_answer": { "type": ["string", "number", "null"] },
+              "verification": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "method": {
+                    "type": ["string", "null"],
+                    "description": "reverse_operation, substitution, full_recalculation или visual_count"
+                  },
+                  "derived_answer": { "type": ["string", "number", "null"] },
+                  "passed": { "type": "boolean" }
+                },
+                "required": ["method", "derived_answer", "passed"]
+              }
             },
-            "required": ["plan", "solution_steps", "final_answer"]
+            "required": ["plan", "solution_steps", "final_answer", "verification"]
           }
         },
         "required": ["item_id", "item_text_clean", "ped_keys", "hint_policy", "item_quality", "solution_internal"]
